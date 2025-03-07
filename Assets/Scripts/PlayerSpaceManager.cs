@@ -80,4 +80,13 @@ public class PlayerSpaceManager : MonoBehaviour
         }
     }
 
+    public void DragSelect(PlayerUnit unit)
+    {
+        if(!selectedUnits.Contains(unit))
+        {
+            selectedUnits.Add(unit);
+            Debug.Log("Added Unit");
+        }
+    }
+
 }

@@ -13,6 +13,7 @@ public class PlayerUnit : MonoBehaviour
 
     void Start()
     {
+        GameManager.Instance.allFriendlyUnits.Add(this);
         agent = GetComponent<NavMeshAgent>();   
         moveState = GetComponentInChildren<PlayerUnitMoveState>();
         stateMachine = GetComponentInChildren<PlayerUnitStateMachine>();
