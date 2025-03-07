@@ -1,18 +1,19 @@
 using SolarStudios;
+using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.AI;
 
 public class PlayerSpaceManager : MonoBehaviour
 {
     private Camera cam;
 
-    public NavMeshAgent agent;
+
 
     public LayerMask groundLayer;
     public LayerMask friendlyUnitLayer;
 
-    private PlayerUnitMoveState moveState;
-    private PlayerUnitStateMachine stateMachine;
+
+
+    public List<PlayerUnit> selectedUnits = new List<PlayerUnit>();
     void Start()
     {
         cam = Camera.main;
@@ -21,31 +22,62 @@ public class PlayerSpaceManager : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetMouseButton(0))
+        if (Input.GetMouseButtonDown(0))
         {
             RaycastHit hit;
             Ray ray = cam.ScreenPointToRay(Input.mousePosition);
 
             if (Physics.Raycast(ray, out hit, Mathf.Infinity, friendlyUnitLayer))
             {
-                agent = hit.collider.GetComponentInParent<NavMeshAgent>();
-                moveState = agent.GetComponentInChildren<PlayerUnitMoveState>();
-                stateMachine = agent.GetComponentInChildren<PlayerUnitStateMachine>();
-                Debug.Log("Unit Selected");
+                PlayerUnit unit = hit.collider.GetComponentInParent<PlayerUnit>();
+                if (unit == null) return;
+
+                if (Input.GetKey(KeyCode.LeftShift)) //Multi selection
+                {
+                    if (!selectedUnits.Contains(unit))
+                    {
+                        selectedUnits.Add(unit);
+                        Debug.Log("Unit Selected");
+                    }
+                }
+                else //Single selection
+                {
+                    selectedUnits.Clear();
+                    selectedUnits.Add(unit);
+                    Debug.Log("Single Unit Selected");
+                }
             }
-            else if (agent != null && Physics.Raycast(ray, out hit, Mathf.Infinity, groundLayer))
+            else if (Physics.Raycast(ray, out hit, Mathf.Infinity, groundLayer) && selectedUnits.Count > 0) //Location selection
             {
-                moveState.destinations.Add(hit.point);
-                stateMachine.SetState(agent.GetComponentInChildren<PlayerUnitMoveState>());
-                Debug.Log("Location selected");
+                if (Input.GetKey(KeyCode.LeftShift)) //Multi selection
+                {
+                    foreach (PlayerUnit unit in selectedUnits)
+                    {
+                        unit.moveState.destinations.Add(hit.point);
+
+                        unit.stateMachine.SetState(unit.GetComponentInChildren<PlayerUnitMoveState>());
+                    }
+                    Debug.Log("Location Selected");
+                }
+                else
+                {
+                    foreach (PlayerUnit unit in selectedUnits) //Single selection.
+                    {
+                        unit.agent.isStopped = true;
+                        unit.moveState.destinations.Clear();
+                        unit.moveState.destinations.Add(hit.point);
+                        unit.agent.isStopped = false;
+                        unit.stateMachine.SetState(unit.GetComponentInChildren<PlayerUnitMoveState>());
+                    }
+                    Debug.Log("Location Selected");
+                }
+
             }
-
-
         }
-
-        if (Input.GetMouseButton(1))
+        else if (Input.GetMouseButtonDown(1)) // Clear selection
         {
-            agent = null;
+            selectedUnits.Clear();
         }
     }
+
 }
