@@ -2,6 +2,7 @@ using NUnit.Framework;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.UIElements;
 
 public class TurretController : MonoBehaviour
 {
@@ -113,8 +114,7 @@ public class TurretController : MonoBehaviour
         if (target == null) return;
         
         Vector3 direction = (target.position - firingPoint.position).normalized;
-  
-        GameObject projectile = Instantiate(projectilePrefab, firingPoint.position, Quaternion.LookRotation(target.position - firingPoint.position, Vector3.up));
+        GameObject projectile = Instantiate(projectilePrefab, firingPoint.position, firingPoint.parent.parent.rotation);
 
 
         Rigidbody rb = projectile.GetComponent<Rigidbody>();
