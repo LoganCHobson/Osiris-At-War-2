@@ -120,7 +120,7 @@ public class TurretController : MonoBehaviour
         Rigidbody rb = projectile.GetComponent<Rigidbody>();
         if (rb != null)
         {
-            rb.velocity = direction * 20f;  
+            rb.linearVelocity = direction * 20f;  
         }
     }
 }
