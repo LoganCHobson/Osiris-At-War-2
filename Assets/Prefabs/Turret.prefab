@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 6662451452227052038}
   - component: {fileID: 5866368729410564775}
   - component: {fileID: 6898477530009788000}
+  - component: {fileID: 671592425408615553}
   m_Layer: 0
   m_Name: Cylinder.003
   m_TagString: Untagged
@@ -87,6 +88,28 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!64 &671592425408615553
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 979076354533647198}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 6239881831769578202, guid: 4e17ea925feea5a469bbcf1c9d461b57, type: 3}
 --- !u!1 &1249871243058726414
 GameObject:
   m_ObjectHideFlags: 0
@@ -130,6 +153,7 @@ GameObject:
   - component: {fileID: 5377902074289672568}
   - component: {fileID: 879238414942267752}
   - component: {fileID: 5210893212885451559}
+  - component: {fileID: 6884533401837104260}
   m_Layer: 0
   m_Name: Cylinder
   m_TagString: Untagged
@@ -206,6 +230,28 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!64 &6884533401837104260
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1381821590201411752}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 2534964839176971238, guid: 4e17ea925feea5a469bbcf1c9d461b57, type: 3}
 --- !u!1 &1504744278171664965
 GameObject:
   m_ObjectHideFlags: 0
@@ -217,6 +263,7 @@ GameObject:
   - component: {fileID: 1239400856308769653}
   - component: {fileID: 397612166350883767}
   - component: {fileID: 1578559664591691941}
+  - component: {fileID: 6209244359254613199}
   m_Layer: 0
   m_Name: Base
   m_TagString: Untagged
@@ -293,6 +340,28 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!64 &6209244359254613199
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1504744278171664965}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 4493585093827132993, guid: 4e17ea925feea5a469bbcf1c9d461b57, type: 3}
 --- !u!1 &1617254058777581404
 GameObject:
   m_ObjectHideFlags: 0
@@ -452,6 +521,7 @@ GameObject:
   - component: {fileID: 8863024174913148988}
   - component: {fileID: 1473121642991532938}
   - component: {fileID: 6144163140215240062}
+  - component: {fileID: 4555951429262741731}
   m_Layer: 0
   m_Name: Cylinder.001
   m_TagString: Untagged
@@ -528,6 +598,28 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!64 &4555951429262741731
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3643247577481488938}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: -7387706064836869012, guid: 4e17ea925feea5a469bbcf1c9d461b57, type: 3}
 --- !u!1 &4492348103529059814
 GameObject:
   m_ObjectHideFlags: 0
@@ -570,6 +662,7 @@ GameObject:
   - component: {fileID: 5766531202366321021}
   - component: {fileID: 3320388416544975297}
   - component: {fileID: 5958482828550590562}
+  - component: {fileID: 3609009335238502356}
   m_Layer: 0
   m_Name: Cylinder.002
   m_TagString: Untagged
@@ -646,6 +739,28 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!64 &3609009335238502356
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5116881792759676162}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 8691780276856062721, guid: 4e17ea925feea5a469bbcf1c9d461b57, type: 3}
 --- !u!1 &6151780503806732716
 GameObject:
   m_ObjectHideFlags: 0
@@ -755,6 +870,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2296964697691420413}
   - component: {fileID: 850194435089992307}
+  - component: {fileID: 7131148162251498535}
   m_Layer: 0
   m_Name: Turret
   m_TagString: Untagged
@@ -811,3 +927,24 @@ MonoBehaviour:
   target: {fileID: 0}
   fireRate: 1
   projectilePrefab: {fileID: 4029229886622301429, guid: 12ab0677751a6fb428ccaeb66fc2f058, type: 3}
+  damage: 10
+--- !u!114 &7131148162251498535
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8898680857692750844}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d53c2defb8ece6459d6927c193df464, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealth: 100
+  currentHealth: 0
+  dealDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  die:
+    m_PersistentCalls:
+      m_Calls: []

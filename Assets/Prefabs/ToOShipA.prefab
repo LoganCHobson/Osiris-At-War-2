@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 5121363685595423591}
   - component: {fileID: 1919120721878840183}
   - component: {fileID: 4504919472738613192}
+  - component: {fileID: 4907623263746312637}
   m_Layer: 7
   m_Name: ToOShipA
   m_TagString: Untagged
@@ -118,6 +119,21 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
   isSelected: 0
+--- !u!114 &4907623263746312637
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1349032318270045980}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ebf12b1c8e06774982596ee4a009881, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealth: 0
+  currentHealth: 0
+  hardpoints: []
 --- !u!1 &3103444984201265857
 GameObject:
   m_ObjectHideFlags: 0
@@ -854,15 +870,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2296964697691420413, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -1.8738227
+      value: -0.048107892
       objectReference: {fileID: 0}
     - target: {fileID: 2296964697691420413, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -4.76
+      value: -6.71
       objectReference: {fileID: 0}
     - target: {fileID: 2296964697691420413, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -11.67
+      value: -13.929998
       objectReference: {fileID: 0}
     - target: {fileID: 2296964697691420413, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: m_LocalRotation.w

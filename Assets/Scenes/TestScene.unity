@@ -731,23 +731,6 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
---- !u!1 &783371943 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 1349032318270045980, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
-  m_PrefabInstance: {fileID: 7704120674275380904}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &783371944
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 783371943}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d0beb5c20acf2634ebfc64d1a32e3c07, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
@@ -1060,7 +1043,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2347634693412252689, guid: e9ef02e392a59ff4bb33c27ab876f27e, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 2.6211
+      value: 2.08
       objectReference: {fileID: 0}
     - target: {fileID: 2347634693412252689, guid: e9ef02e392a59ff4bb33c27ab876f27e, type: 3}
       propertyPath: m_LocalRotation.w
@@ -1151,13 +1134,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7352391012482868404, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+      propertyPath: m_Convex
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 1349032318270045980, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 783371944}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:

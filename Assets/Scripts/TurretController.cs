@@ -1,8 +1,6 @@
-using NUnit.Framework;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.UIElements;
 
 public class TurretController : MonoBehaviour
 {
@@ -26,33 +24,37 @@ public class TurretController : MonoBehaviour
     public float fireRate = 1f;
     private float lastFiredTime;
     public GameObject projectilePrefab;
+    public float damage;
     void Update()
     {
+        if(target == null)
+        {
+            AcquireTarget();
+        }
+        
 
-        AcquireTarget();
-
-
+        
         if (target != null)
         {
             Traverse();
 
+            //Reminder to add a timer here for if a target is out of sight for too long to pick another.
             if (HasLineOfSight(firingPoints[0]))  //I would use one of the middle guns but I don't want to adjust this for single use guns. Wont matter much anyway.
             {
                 Shoot();
                 onFire.Invoke();
             }
-            
         }
     }
 
 
-    void AcquireTarget()
+    void AcquireTarget() //Auto Target aquisition
     {
         Collider[] targetsInRange = Physics.OverlapSphere(transform.position, range, targetLayer);
 
         if (targetsInRange.Length > 0)
         {
-            
+
             float closestDistanceSqr = Mathf.Infinity;
             Transform closestTarget = null;
 
@@ -68,11 +70,13 @@ public class TurretController : MonoBehaviour
                 }
             }
 
-            target = closestTarget;
+            UnitHealthManager targetHealth = closestTarget.root.GetComponent<UnitHealthManager>();
+            int rand = Random.Range(0, targetHealth.hardpoints.Count);
+            target = targetHealth.hardpoints[rand].gameObject.transform;
         }
         else
         {
-            target = null;  
+            target = null;
         }
     }
     void Traverse()
@@ -114,26 +118,26 @@ public class TurretController : MonoBehaviour
     {
         Vector3 direction = (target.position - firingPoint.position).normalized;
         RaycastHit hit;
-
+        //Debug.DrawRay(firingPoint.position, direction, Color.red);
         if (Physics.Raycast(firingPoint.position, direction, out hit, range))
         {
-            return hit.transform == target; 
+            Debug.Log("LOS Made it.");
+            return hit.transform == target || ((1 << hit.transform.gameObject.layer) & targetLayer) != 0; //IF we atleast hit something of the correct layer, fire anyway.
         }
-
         return false;
     }
     void FireProjectile(Transform firingPoint)
     {
         if (target == null) return;
-        
+
         Vector3 direction = (target.position - firingPoint.position).normalized;
-        GameObject projectile = Instantiate(projectilePrefab, firingPoint.position, firingPoint.parent.parent.rotation);
+        GameObject temp = Instantiate(projectilePrefab, firingPoint.position, firingPoint.parent.parent.rotation);
+        temp.GetComponent<Laser>().damage = damage;
 
-
-        Rigidbody rb = projectile.GetComponent<Rigidbody>();
+        Rigidbody rb = temp.GetComponent<Rigidbody>();
         if (rb != null)
         {
-            rb.linearVelocity = direction * 20f;  
+            rb.linearVelocity = direction * 20f;
         }
     }
 }

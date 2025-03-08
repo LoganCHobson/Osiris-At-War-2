@@ -2,17 +2,34 @@ using UnityEngine;
 
 public class Laser : MonoBehaviour
 {
-    public LayerMask layerMask;
+    public int layerMask;
+
+    public float damage;
     private void OnTriggerEnter(Collider other)
     {
         if (other.gameObject.layer == layerMask)
         {
+            if(other.gameObject.TryGetComponent(out HardpointHealth health))
+            {
+                health.DealDamage(damage);
+            }
+            else
+            {
+                other.transform.root.gameObject.GetComponent<UnitHealthManager>().DealRandomDamage(damage);
+            }
+           
             Debug.Log("Hit target");
             Destroy(gameObject);
         }
-        Debug.Log("Missed!");
+        else
+        {
+           
+            Debug.Log("Hit "+ other.gameObject.name + "Layer did not match. Found " + other.gameObject.layer + ", Expected " + layerMask);
+            Debug.Log("Missed!");
 
-        Destroy(gameObject);
+            Destroy(gameObject);
+        }
+       
     }
 
 
