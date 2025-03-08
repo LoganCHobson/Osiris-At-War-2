@@ -21,7 +21,6 @@ namespace SolarStudios
         [HideInInspector]
         public IUnitState currentState; //DONT TOUCH 
 
-        public bool isSelected = false;
 
         private void Start()
         {

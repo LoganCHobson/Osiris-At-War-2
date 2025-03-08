@@ -36,14 +36,20 @@ public class PlayerSpaceManager : MonoBehaviour
                 {
                     if (!selectedUnits.Contains(unit))
                     {
+                        unit.ToggleSelect(true);
                         selectedUnits.Add(unit);
                         Debug.Log("Unit Selected");
                     }
                 }
                 else //Single selection
                 {
+                    foreach(PlayerUnit playerUnit in selectedUnits)
+                    {
+                        playerUnit.ToggleSelect(false);
+                    }
                     selectedUnits.Clear();
                     selectedUnits.Add(unit);
+                    unit.ToggleSelect(true);
                     Debug.Log("Single Unit Selected");
                 }
             }
@@ -61,7 +67,7 @@ public class PlayerSpaceManager : MonoBehaviour
                 }
                 else
                 {
-                    foreach (PlayerUnit unit in selectedUnits) //Single selection.
+                    foreach (PlayerUnit unit in selectedUnits) //Single location selection.
                     {
                         unit.agent.isStopped = true;
                         unit.moveState.destinations.Clear();
@@ -76,6 +82,10 @@ public class PlayerSpaceManager : MonoBehaviour
         }
         else if (Input.GetMouseButtonDown(1)) // Clear selection
         {
+            foreach(PlayerUnit unit in selectedUnits)
+            {
+                unit.ToggleSelect(false);
+            }
             selectedUnits.Clear();
         }
     }
@@ -84,6 +94,7 @@ public class PlayerSpaceManager : MonoBehaviour
     {
         if(!selectedUnits.Contains(unit))
         {
+            unit.ToggleSelect(true);
             selectedUnits.Add(unit);
             Debug.Log("Added Unit");
         }
