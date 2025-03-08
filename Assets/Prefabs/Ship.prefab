@@ -689,6 +689,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: Turret
       objectReference: {fileID: 0}
+    - target: {fileID: 6128535588018095115, guid: 3fca6d403a2e4bd4b8640503934d2dbd, type: 3}
+      propertyPath: maxElevationAngle
+      value: 45
+      objectReference: {fileID: 0}
+    - target: {fileID: 6128535588018095115, guid: 3fca6d403a2e4bd4b8640503934d2dbd, type: 3}
+      propertyPath: minElevationAngle
+      value: -10
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

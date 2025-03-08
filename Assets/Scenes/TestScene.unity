@@ -210,6 +210,14 @@ PrefabInstance:
       propertyPath: target
       value: 
       objectReference: {fileID: 2050550726}
+    - target: {fileID: 4392439280398214208, guid: b9624d02c42c41a4ebb46c3aa99eec09, type: 3}
+      propertyPath: maxElevationAngle
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4392439280398214208, guid: b9624d02c42c41a4ebb46c3aa99eec09, type: 3}
+      propertyPath: minElevationAngle
+      value: -45
+      objectReference: {fileID: 0}
     - target: {fileID: 7127551319354705805, guid: b9624d02c42c41a4ebb46c3aa99eec09, type: 3}
       propertyPath: m_LocalPosition.x
       value: -5.5326896
@@ -580,6 +588,14 @@ PrefabInstance:
       propertyPath: target
       value: 
       objectReference: {fileID: 2050550726}
+    - target: {fileID: 4392439280398214208, guid: b9624d02c42c41a4ebb46c3aa99eec09, type: 3}
+      propertyPath: maxElevationAngle
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4392439280398214208, guid: b9624d02c42c41a4ebb46c3aa99eec09, type: 3}
+      propertyPath: minElevationAngle
+      value: -45
+      objectReference: {fileID: 0}
     - target: {fileID: 7127551319354705805, guid: b9624d02c42c41a4ebb46c3aa99eec09, type: 3}
       propertyPath: m_LocalPosition.x
       value: 5.8528705
@@ -918,6 +934,14 @@ PrefabInstance:
       propertyPath: target
       value: 
       objectReference: {fileID: 2050550726}
+    - target: {fileID: 4392439280398214208, guid: b9624d02c42c41a4ebb46c3aa99eec09, type: 3}
+      propertyPath: maxElevationAngle
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4392439280398214208, guid: b9624d02c42c41a4ebb46c3aa99eec09, type: 3}
+      propertyPath: minElevationAngle
+      value: -45
+      objectReference: {fileID: 0}
     - target: {fileID: 7127551319354705805, guid: b9624d02c42c41a4ebb46c3aa99eec09, type: 3}
       propertyPath: m_LocalPosition.x
       value: 13.435783
@@ -1220,7 +1244,7 @@ GameObject:
   - component: {fileID: 2050550725}
   - component: {fileID: 2050550724}
   - component: {fileID: 2050550723}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Target
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1329,16 +1353,12 @@ PrefabInstance:
       value: Ship
       objectReference: {fileID: 0}
     - target: {fileID: 4392439280398214208, guid: b9624d02c42c41a4ebb46c3aa99eec09, type: 3}
-      propertyPath: target
-      value: 
-      objectReference: {fileID: 2050550726}
-    - target: {fileID: 4392439280398214208, guid: b9624d02c42c41a4ebb46c3aa99eec09, type: 3}
       propertyPath: maxElevationAngle
-      value: 45
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 4392439280398214208, guid: b9624d02c42c41a4ebb46c3aa99eec09, type: 3}
       propertyPath: minElevationAngle
-      value: -10
+      value: -45
       objectReference: {fileID: 0}
     - target: {fileID: 7127551319354705805, guid: b9624d02c42c41a4ebb46c3aa99eec09, type: 3}
       propertyPath: m_LocalPosition.x
