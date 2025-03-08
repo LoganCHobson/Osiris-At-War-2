@@ -1,6 +1,5 @@
 using SolarStudios;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class PlayerSpaceManager : MonoBehaviour
@@ -11,6 +10,7 @@ public class PlayerSpaceManager : MonoBehaviour
 
     public LayerMask groundLayer;
     public LayerMask friendlyUnitLayer;
+    public LayerMask enemyUnitLayer;
 
 
 
@@ -23,6 +23,8 @@ public class PlayerSpaceManager : MonoBehaviour
 
     void Update()
     {
+        CursorSelector();
+
         if (Input.GetMouseButtonDown(0))
         {
             RaycastHit hit;
@@ -78,11 +80,34 @@ public class PlayerSpaceManager : MonoBehaviour
         }
         else if (Input.GetMouseButtonDown(1)) // Clear selection
         {
-            foreach(PlayerUnit unit in selectedUnits)
+            foreach (PlayerUnit unit in selectedUnits)
             {
                 unit.ToggleSelect(false);
             }
             selectedUnits.Clear();
+        }
+    }
+
+    private void CursorSelector()
+    {
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        RaycastHit hit;
+
+        if (Physics.Raycast(ray, out hit, Mathf.Infinity, friendlyUnitLayer))
+        {
+            CursorManager.Instance.SetMarkerType(CursorManager.CursorType.Selectable);
+        }
+        else if (Physics.Raycast(ray, out hit, Mathf.Infinity, enemyUnitLayer) && selectedUnits.Count > 0)
+        {
+            CursorManager.Instance.SetMarkerType(CursorManager.CursorType.Attackable);
+        }
+        else if (Physics.Raycast(ray, out hit, Mathf.Infinity, groundLayer) && selectedUnits.Count > 0)
+        {
+            CursorManager.Instance.SetMarkerType(CursorManager.CursorType.Walkable);
+        }
+        else
+        {
+            CursorManager.Instance.SetMarkerType(CursorManager.CursorType.None);
         }
     }
 
@@ -111,7 +136,7 @@ public class PlayerSpaceManager : MonoBehaviour
 
     public void DragSelect(PlayerUnit unit)
     {
-        if(!selectedUnits.Contains(unit))
+        if (!selectedUnits.Contains(unit))
         {
             unit.ToggleSelect(true);
             selectedUnits.Add(unit);

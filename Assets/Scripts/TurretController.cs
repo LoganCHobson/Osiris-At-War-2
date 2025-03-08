@@ -71,8 +71,12 @@ public class TurretController : MonoBehaviour
             }
 
             UnitHealthManager targetHealth = closestTarget.root.GetComponent<UnitHealthManager>();
-            int rand = Random.Range(0, targetHealth.hardpoints.Count);
-            target = targetHealth.hardpoints[rand].gameObject.transform;
+            if(targetHealth.hardpoints.Count > 0)
+            {
+                int rand = Random.Range(0, targetHealth.hardpoints.Count);
+                target = targetHealth.hardpoints[rand].gameObject.transform;
+            }
+           
         }
         else
         {
