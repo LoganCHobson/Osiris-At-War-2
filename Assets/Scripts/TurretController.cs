@@ -36,13 +36,13 @@ public class TurretController : MonoBehaviour
         {
             Traverse();
 
-            Shoot();
+            if (HasLineOfSight(firingPoints[0]))  //I would use one of the middle guns but I don't want to adjust this for single use guns. Wont matter much anyway.
+            {
+                Shoot();
+                onFire.Invoke();
+            }
+            
         }
-    }
-
-    public void Fire()
-    {
-        onFire.Invoke();
     }
 
 
@@ -108,6 +108,19 @@ public class TurretController : MonoBehaviour
                 FireProjectile(firingPoint);
             }
         }
+    }
+
+    bool HasLineOfSight(Transform firingPoint)
+    {
+        Vector3 direction = (target.position - firingPoint.position).normalized;
+        RaycastHit hit;
+
+        if (Physics.Raycast(firingPoint.position, direction, out hit, range))
+        {
+            return hit.transform == target; 
+        }
+
+        return false;
     }
     void FireProjectile(Transform firingPoint)
     {
