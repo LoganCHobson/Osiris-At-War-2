@@ -1,12 +1,10 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class UnitSelectionBox : MonoBehaviour
 {
     Camera cam;
 
-    
+
     public RectTransform boxVisual;
 
     Rect selectionBox;
@@ -37,6 +35,14 @@ public class UnitSelectionBox : MonoBehaviour
         //Dragging
         if (Input.GetMouseButton(0))
         {
+
+            if (boxVisual.rect.width > 0.1 || boxVisual.rect.height > 0.1)
+            {
+                spaceManager.DeselectAllUnits();
+
+                SelectUnits();
+            }
+
             endPosition = Input.mousePosition;
             DrawVisual();
             DrawSelection();

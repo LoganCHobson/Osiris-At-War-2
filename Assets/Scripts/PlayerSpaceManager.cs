@@ -1,5 +1,6 @@
 using SolarStudios;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class PlayerSpaceManager : MonoBehaviour
@@ -36,19 +37,14 @@ public class PlayerSpaceManager : MonoBehaviour
                 {
                     if (!selectedUnits.Contains(unit))
                     {
-                        unit.ToggleSelect(true);
-                        selectedUnits.Add(unit);
+                        SelectUnit(unit);
                         Debug.Log("Unit Selected");
                     }
                 }
                 else //Single selection
                 {
-                    foreach(PlayerUnit playerUnit in selectedUnits)
-                    {
-                        playerUnit.ToggleSelect(false);
-                    }
-                    selectedUnits.Clear();
-                    selectedUnits.Add(unit);
+                    DeselectAllUnits();
+                    SelectUnit(unit);
                     unit.ToggleSelect(true);
                     Debug.Log("Single Unit Selected");
                 }
@@ -89,6 +85,29 @@ public class PlayerSpaceManager : MonoBehaviour
             selectedUnits.Clear();
         }
     }
+
+    public void DeselectAllUnits()
+    {
+        foreach (PlayerUnit playerUnit in selectedUnits)
+        {
+            playerUnit.ToggleSelect(false);
+        }
+        selectedUnits.Clear();
+    }
+    public void DeselectUnit(PlayerUnit unit)
+    {
+        unit.ToggleSelect(false);
+        selectedUnits.Remove(unit);
+    }
+
+    public void SelectUnit(PlayerUnit unit)
+    {
+        selectedUnits.Add(unit);
+        unit.ToggleSelect(true);
+    }
+
+
+
 
     public void DragSelect(PlayerUnit unit)
     {
