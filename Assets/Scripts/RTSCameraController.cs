@@ -37,6 +37,13 @@ public class RTSCameraController : MonoBehaviour
     public Texture2D cursorArrowRight;
 
     CursorArrow currentCursor = CursorArrow.DEFAULT;
+
+    [Header("Zoom")]
+    [SerializeField] float zoomSpeed = 4f;
+    [SerializeField] float minZoom = 10f;
+    [SerializeField] float maxZoom = 50f;
+    float targetZoom;
+
     enum CursorArrow
     {
         UP,
@@ -53,6 +60,8 @@ public class RTSCameraController : MonoBehaviour
         newPosition = transform.position;
 
         movementSpeed = normalSpeed;
+
+        targetZoom = cameraTransform.localPosition.y;
     }
 
     private void Update()
@@ -66,6 +75,7 @@ public class RTSCameraController : MonoBehaviour
         else
         {
             HandleCameraMovement();
+            HandleZoom();
         }
 
         if (Input.GetKeyDown(KeyCode.Escape))
@@ -220,5 +230,15 @@ public class RTSCameraController : MonoBehaviour
                 newPosition = transform.position + dragStartPosition - dragCurrentPosition;
             }
         }
+    }
+
+    void HandleZoom()
+    {
+        float scrollInput = Input.GetAxis("Mouse ScrollWheel");
+        targetZoom -= scrollInput * zoomSpeed;
+        targetZoom = Mathf.Clamp(targetZoom, minZoom, maxZoom);
+
+        Vector3 zoomVector = new Vector3(cameraTransform.localPosition.x, targetZoom, cameraTransform.localPosition.z);
+        cameraTransform.localPosition = Vector3.Lerp(cameraTransform.localPosition, zoomVector, Time.deltaTime * zoomSpeed);
     }
 }

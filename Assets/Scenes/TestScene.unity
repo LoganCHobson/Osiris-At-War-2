@@ -991,6 +991,9 @@ MonoBehaviour:
   cursorArrowDown: {fileID: 2800000, guid: 17fafc9ab021d6547aab1b7cd95eba22, type: 3}
   cursorArrowLeft: {fileID: 2800000, guid: cf000c3efeb66ba4195b5b919a320fb0, type: 3}
   cursorArrowRight: {fileID: 2800000, guid: 783584260d4822641a0d0207575b0a14, type: 3}
+  zoomSpeed: 8
+  minZoom: 5
+  maxZoom: 50
 --- !u!1 &1975558019
 GameObject:
   m_ObjectHideFlags: 0
