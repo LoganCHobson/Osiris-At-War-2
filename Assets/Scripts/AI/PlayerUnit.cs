@@ -17,10 +17,14 @@ public class PlayerUnit : MonoBehaviour
 
     public bool isSelected = false;
 
-
+    public bool testing = false;
     void Start()
     {
-        GameManager.Instance.allFriendlyUnits.Add(this);
+        if(gameObject.layer == 7 || testing == true)
+        {
+            GameManager.Instance.allFriendlyUnits.Add(this);
+        }
+        
         agent = GetComponent<NavMeshAgent>();
         moveState = GetComponentInChildren<PlayerUnitMoveState>();
         stateMachine = GetComponentInChildren<PlayerUnitStateMachine>();

@@ -36,7 +36,7 @@ public class UnitSelectionBox : MonoBehaviour
         if (Input.GetMouseButton(0))
         {
 
-            if (boxVisual.rect.width > 0.1 || boxVisual.rect.height > 0.1)
+            if (boxVisual.rect.width > 1 || boxVisual.rect.height > 1)
             {
                 spaceManager.DeselectAllUnits();
 
@@ -108,10 +108,14 @@ public class UnitSelectionBox : MonoBehaviour
     {
         foreach (PlayerUnit unit in GameManager.Instance.allFriendlyUnits)
         {
-            if (selectionBox.Contains(cam.WorldToScreenPoint(unit.transform.position)))
+            if(unit != null)
             {
-                spaceManager.DragSelect(unit);
+                if (selectionBox.Contains(cam.WorldToScreenPoint(unit.transform.position)))
+                {
+                    spaceManager.DragSelect(unit);
+                }
             }
+            
         }
     }
 }

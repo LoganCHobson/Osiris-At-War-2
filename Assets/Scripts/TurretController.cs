@@ -25,6 +25,8 @@ public class TurretController : MonoBehaviour
     private float lastFiredTime;
     public GameObject projectilePrefab;
     public float damage;
+    private float timeOutOfLOS = 0f; 
+    public float maxTimeWithoutLOS = 3f;
     void Update()
     {
         if(target == null)
@@ -41,8 +43,19 @@ public class TurretController : MonoBehaviour
             //Reminder to add a timer here for if a target is out of sight for too long to pick another.
             if (HasLineOfSight(firingPoints[0]))  //I would use one of the middle guns but I don't want to adjust this for single use guns. Wont matter much anyway.
             {
+                timeOutOfLOS = 0f;
                 Shoot();
                 onFire.Invoke();
+            }
+            else
+            {
+                timeOutOfLOS += Time.deltaTime; 
+
+                if (timeOutOfLOS >= maxTimeWithoutLOS)
+                {
+                    target = null;
+                    timeOutOfLOS = 0f;  
+                }
             }
         }
     }
