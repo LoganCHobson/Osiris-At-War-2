@@ -1069,7 +1069,7 @@ MonoBehaviour:
   target: {fileID: 0}
   fireRate: 1
   projectilePrefab: {fileID: 4029229886622301429, guid: 12ab0677751a6fb428ccaeb66fc2f058, type: 3}
-  damage: 10
+  damage: 5
   maxTimeWithoutLOS: 1
 --- !u!114 &7131148162251498535
 MonoBehaviour:
