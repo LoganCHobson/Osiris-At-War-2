@@ -7,7 +7,6 @@ public class HardpointHealth : MonoBehaviour
     public float currentHealth;
 
     private UnitHealthManager healthManager;
-
     public UnityEvent dealDamage; //May not actually need this.
     public UnityEvent die;
     private void Start()
@@ -25,6 +24,7 @@ public class HardpointHealth : MonoBehaviour
         }
         else
         {
+            
             die.Invoke();
             healthManager.HardpointDeath(this);
         }

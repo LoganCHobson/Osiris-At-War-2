@@ -27,8 +27,10 @@ public class TurretController : MonoBehaviour
     public float damage;
     private float timeOutOfLOS = 0f; 
     public float maxTimeWithoutLOS = 3f;
+
     void Update()
     {
+
         if(target == null)
         {
             AcquireTarget();

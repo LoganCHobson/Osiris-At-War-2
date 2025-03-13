@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class UnitHealthManager : MonoBehaviour
 {
@@ -8,6 +9,9 @@ public class UnitHealthManager : MonoBehaviour
 
     public List<HardpointHealth> hardpoints = new List<HardpointHealth>();
 
+    public UnityEvent onDie;
+
+    private bool dead;
 
     private void Start()
     {
@@ -41,8 +45,9 @@ public class UnitHealthManager : MonoBehaviour
 
     public void HardpointDeath(HardpointHealth hardpoint)
     {
+        SubtractHealth(hardpoint.currentHealth, hardpoint);
         hardpoints.Remove(hardpoint);
-        Destroy(hardpoint.gameObject);
+        //Destroy(hardpoint.gameObject);
     }
 
     public void DealRandomDamage(float damage) //Just to ensure the game doesn't go on FOREVER.
@@ -57,9 +62,11 @@ public class UnitHealthManager : MonoBehaviour
 
     private void Update()
     {
-        if (hardpoints.Count <= 0)
+        if (hardpoints.Count <= 0 && !dead)
         {
-            Destroy(gameObject);
+            dead = true;
+            onDie.Invoke();
+            Destroy(gameObject, 5);
         }
     }
 }
