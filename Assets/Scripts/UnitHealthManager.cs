@@ -15,14 +15,8 @@ public class UnitHealthManager : MonoBehaviour
 
     private void Start()
     {
-        foreach (Transform child in transform)
-        {
-            if (child.TryGetComponent(out HardpointHealth health))
-            {
-                hardpoints.Add(health);
-            }
-        }
-        if(hardpoints.Count > 0)
+        GetHardpoints(transform);
+        if (hardpoints.Count > 0)
         {
             foreach (HardpointHealth health in hardpoints)
             {
@@ -67,6 +61,18 @@ public class UnitHealthManager : MonoBehaviour
             dead = true;
             onDie.Invoke();
             Destroy(gameObject, 5);
+        }
+    }
+
+    void GetHardpoints(Transform parent)
+    {
+        foreach (Transform child in parent)
+        {
+            if (child.TryGetComponent(out HardpointHealth health))
+            {
+                hardpoints.Add(health);
+            }
+            GetHardpoints(child);
         }
     }
 }
