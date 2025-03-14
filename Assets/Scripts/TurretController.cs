@@ -47,7 +47,7 @@ public class TurretController : MonoBehaviour
             {
                 timeOutOfLOS = 0f;
                 Shoot();
-                onFire.Invoke();
+                
             }
             else
             {
@@ -124,6 +124,7 @@ public class TurretController : MonoBehaviour
     {
         if (Time.time - lastFiredTime >= fireRate)
         {
+            onFire.Invoke();
             lastFiredTime = Time.time;
 
             foreach (Transform firingPoint in firingPoints)
