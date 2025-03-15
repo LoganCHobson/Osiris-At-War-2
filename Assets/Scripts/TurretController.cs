@@ -85,13 +85,8 @@ public class TurretController : MonoBehaviour
                 }
             }
 
-            UnitHealthManager targetHealth = closestTarget.root.GetComponent<UnitHealthManager>();
-            if(targetHealth.hardpoints.Count > 0)
-            {
-                int rand = Random.Range(0, targetHealth.hardpoints.Count);
-                target = targetHealth.hardpoints[rand].gameObject.transform;
-            }
-           
+            HardpointManager hardpointManager = closestTarget.root.GetComponent<HardpointManager>();
+            target = hardpointManager.GetRandomHardpoint();
         }
         else
         {
@@ -159,5 +154,10 @@ public class TurretController : MonoBehaviour
         {
             rb.linearVelocity = direction * 20f;
         }
+    }
+
+    public void AssignTurretTarget(Transform _target)
+    {
+        target = _target;
     }
 }

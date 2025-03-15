@@ -7,18 +7,19 @@ public class UnitHealthManager : MonoBehaviour
     public float maxHealth;
     public float currentHealth;
 
-    public List<HardpointHealth> hardpoints = new List<HardpointHealth>();
-
+    //private List<HardpointHealth> hardpoints = new List<HardpointHealth>();
+    private HardpointManager hardpointManager;
     public UnityEvent onDie;
 
     private bool dead;
 
     private void Start()
     {
-        GetHardpoints(transform);
-        if (hardpoints.Count > 0)
+        hardpointManager = GetComponent<HardpointManager>();
+        
+        if (hardpointManager.hardpoints.Count > 0)
         {
-            foreach (HardpointHealth health in hardpoints)
+            foreach (HardpointHealth health in hardpointManager.hardpoints)
             {
                 maxHealth += health.maxHealth; //Our maximum health is represented by all of the hardpoints.
             }
@@ -40,39 +41,27 @@ public class UnitHealthManager : MonoBehaviour
     public void HardpointDeath(HardpointHealth hardpoint)
     {
         SubtractHealth(hardpoint.currentHealth, hardpoint);
-        hardpoints.Remove(hardpoint);
+        hardpointManager.hardpoints.Remove(hardpoint);
         //Destroy(hardpoint.gameObject);
     }
 
     public void DealRandomDamage(float damage) //Just to ensure the game doesn't go on FOREVER.
     {
-        if (hardpoints.Count > 0)
+        if (hardpointManager.hardpoints.Count > 0)
         {
-            int rand = Random.Range(0, hardpoints.Count);
+            int rand = Random.Range(0, hardpointManager.hardpoints.Count);
 
-            hardpoints[rand].DealDamage(damage);
+            hardpointManager.hardpoints[rand].DealDamage(damage);
         }
     }
 
     private void Update()
     {
-        if (hardpoints.Count <= 0 && !dead)
+        if (hardpointManager.hardpoints.Count <= 0 && !dead)
         {
             dead = true;
             onDie.Invoke();
             Destroy(gameObject, 5);
-        }
-    }
-
-    void GetHardpoints(Transform parent)
-    {
-        foreach (Transform child in parent)
-        {
-            if (child.TryGetComponent(out HardpointHealth health))
-            {
-                hardpoints.Add(health);
-            }
-            GetHardpoints(child);
         }
     }
 }

@@ -1,5 +1,6 @@
 using SolarStudios;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class PlayerSpaceManager : MonoBehaviour
@@ -30,7 +31,11 @@ public class PlayerSpaceManager : MonoBehaviour
             RaycastHit hit;
             Ray ray = cam.ScreenPointToRay(Input.mousePosition);
 
-            if (Physics.Raycast(ray, out hit, Mathf.Infinity, friendlyUnitLayer))
+            if (Physics.Raycast(ray, out hit, Mathf.Infinity, enemyUnitLayer))
+            {
+                TargetSelection(hit);
+            }
+           else if (Physics.Raycast(ray, out hit, Mathf.Infinity, friendlyUnitLayer))
             {
                 PlayerSelection(hit);
             }
@@ -38,15 +43,7 @@ public class PlayerSpaceManager : MonoBehaviour
             {
                 PlayerLocation(hit);
             }
-            else if(Physics.Raycast(ray, out hit, Mathf.Infinity, enemyUnitLayer))
-            {
-                if(hit.collider.gameObject.CompareTag("Hardpoint"))
-                {
-
-                }
-
-               // GetComponent<HardpointManager>().
-            }
+            
         }
         else if (Input.GetMouseButtonDown(1)) // Clear selection
         {
@@ -59,6 +56,24 @@ public class PlayerSpaceManager : MonoBehaviour
 
 
 
+    }
+
+    private void TargetSelection(RaycastHit hit)
+    {
+        if (hit.collider.gameObject.CompareTag("Hardpoint"))
+        {
+            foreach (PlayerUnit unit in selectedUnits)
+            {
+                unit.gameObject.GetComponent<HardpointManager>().AssignTarget(hit.collider.transform);
+            }
+        }
+        else
+        {
+            foreach (PlayerUnit unit in selectedUnits)
+            {
+                unit.gameObject.GetComponent<HardpointManager>().AssignTarget(hit.collider.gameObject.GetComponentInParent<HardpointManager>().GetRandomHardpoint());
+            }
+        }
     }
 
     private void PlayerSelection(RaycastHit hit)

@@ -19676,6 +19676,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   destinations: []
+  tiltMultiplier: 0
+  maxTilt: 0
+  gfx: {fileID: 0}
 --- !u!114 &4822391949555386410
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -29529,6 +29532,7 @@ GameObject:
   - component: {fileID: 2983183608267956601}
   - component: {fileID: 2686909560302168670}
   - component: {fileID: 4454857181108901603}
+  - component: {fileID: 1435956583415628559}
   m_Layer: 8
   m_Name: ToOShipA Enemy
   m_TagString: Untagged
@@ -29653,7 +29657,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 0
   currentHealth: 0
-  hardpoints: []
   onDie:
     m_PersistentCalls:
       m_Calls:
@@ -29693,6 +29696,19 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+--- !u!114 &1435956583415628559
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8546857973850918022}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0beb5c20acf2634ebfc64d1a32e3c07, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hardpoints: []
 --- !u!1001 &450515198756599788
 PrefabInstance:
   m_ObjectHideFlags: 0
