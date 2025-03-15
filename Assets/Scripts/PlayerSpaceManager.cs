@@ -32,50 +32,20 @@ public class PlayerSpaceManager : MonoBehaviour
 
             if (Physics.Raycast(ray, out hit, Mathf.Infinity, friendlyUnitLayer))
             {
-                PlayerUnit unit = hit.collider.GetComponentInParent<PlayerUnit>();
-                if (unit == null) return;
-
-                if (Input.GetKey(KeyCode.LeftShift)) //Multi selection
-                {
-                    if (!selectedUnits.Contains(unit))
-                    {
-                        SelectUnit(unit);
-                        Debug.Log("Unit Selected");
-                    }
-                }
-                else //Single selection
-                {
-                    DeselectAllUnits();
-                    SelectUnit(unit);
-                    unit.ToggleSelect(true);
-                    Debug.Log("Single Unit Selected");
-                }
+                PlayerSelection(hit);
             }
             else if (Physics.Raycast(ray, out hit, Mathf.Infinity, groundLayer) && selectedUnits.Count > 0) //Location selection
             {
-                if (Input.GetKey(KeyCode.LeftShift)) //Multi selection
+                PlayerLocation(hit);
+            }
+            else if(Physics.Raycast(ray, out hit, Mathf.Infinity, enemyUnitLayer))
+            {
+                if(hit.collider.gameObject.CompareTag("Hardpoint"))
                 {
-                    foreach (PlayerUnit unit in selectedUnits)
-                    {
-                        unit.moveState.destinations.Add(hit.point);
 
-                        unit.stateMachine.SetState(unit.GetComponentInChildren<PlayerUnitMoveState>());
-                    }
-                    Debug.Log("Location Selected");
-                }
-                else
-                {
-                    foreach (PlayerUnit unit in selectedUnits) //Single location selection.
-                    {
-                        unit.agent.isStopped = true;
-                        unit.moveState.destinations.Clear();
-                        unit.moveState.destinations.Add(hit.point);
-                        unit.agent.isStopped = false;
-                        unit.stateMachine.SetState(unit.GetComponentInChildren<PlayerUnitMoveState>());
-                    }
-                    Debug.Log("Location Selected");
                 }
 
+               // GetComponent<HardpointManager>().
             }
         }
         else if (Input.GetMouseButtonDown(1)) // Clear selection
@@ -86,7 +56,65 @@ public class PlayerSpaceManager : MonoBehaviour
             }
             selectedUnits.Clear();
         }
+
+
+
     }
+
+    private void PlayerSelection(RaycastHit hit)
+    {
+        PlayerUnit unit = hit.collider.GetComponentInParent<PlayerUnit>();
+        if (unit == null) return;
+
+        if (Input.GetKey(KeyCode.LeftShift)) //Multi selection
+        {
+            if (!selectedUnits.Contains(unit))
+            {
+                SelectUnit(unit);
+                Debug.Log("Unit Selected");
+            }
+        }
+        else //Single selection
+        {
+            DeselectAllUnits();
+            SelectUnit(unit);
+            unit.ToggleSelect(true);
+            Debug.Log("Single Unit Selected");
+        }
+    }
+
+    private void PlayerLocation(RaycastHit hit)
+    {
+        if (Input.GetKey(KeyCode.LeftShift)) //Multi selection
+        {
+            foreach (PlayerUnit unit in selectedUnits)
+            {
+                unit.moveState.destinations.Add(hit.point);
+
+                if ((Object)unit.stateMachine.currentState != unit.moveState)
+                {
+                    unit.stateMachine.SetState(unit.moveState);
+                }
+            }
+            Debug.Log("Location Selected");
+        }
+        else
+        {
+            foreach (PlayerUnit unit in selectedUnits) //Single location selection.
+            {
+                unit.agent.isStopped = true;
+                unit.moveState.destinations.Clear();
+                unit.moveState.destinations.Add(hit.point);
+                unit.agent.isStopped = false;
+                if ((Object)unit.stateMachine.currentState != unit.moveState)
+                {
+                    unit.stateMachine.SetState(unit.moveState);
+                }
+            }
+            Debug.Log("Location Selected");
+        }
+    }
+
 
     private void CursorSelector()
     {
@@ -130,9 +158,6 @@ public class PlayerSpaceManager : MonoBehaviour
         selectedUnits.Add(unit);
         unit.ToggleSelect(true);
     }
-
-
-
 
     public void DragSelect(PlayerUnit unit)
     {

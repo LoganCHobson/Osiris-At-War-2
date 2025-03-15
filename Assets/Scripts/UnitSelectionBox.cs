@@ -38,7 +38,7 @@ public class UnitSelectionBox : MonoBehaviour
 
             if (boxVisual.rect.width > 1 || boxVisual.rect.height > 1)
             {
-                spaceManager.DeselectAllUnits();
+               //spaceManager.DeselectAllUnits();
 
                 SelectUnits();
             }

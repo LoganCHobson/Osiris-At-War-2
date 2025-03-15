@@ -27,6 +27,38 @@ namespace SolarStudios
         public void Run() // Runs every frame
         {
 
+
+            if (destinations.Count == 0)
+            {
+                stateMachine.SetState(agent.GetComponentInChildren<PlayerUnitIdleState>());
+                return;
+            }
+
+
+
+            agent.SetDestination(destinations[0]);
+
+            if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
+            {
+                destinations.RemoveAt(0);
+            }
+
+
+
+            Tilt();
+
+
+
+            lastRotation = agent.transform.rotation;
+        }
+
+        public void Exit() // Runs when we exit the state
+        {
+        }
+
+
+        public void Tilt()
+        {
             float turnAmount = Vector3.SignedAngle(lastRotation * Vector3.forward, agent.transform.forward, Vector3.up);
 
 
@@ -42,28 +74,8 @@ namespace SolarStudios
             }
 
             gfx.transform.localRotation = Quaternion.Euler(0, 0, currentTilt);
-
-            if (destinations.Count == 0)
-            {
-                stateMachine.SetState(agent.GetComponentInChildren<PlayerUnitIdleState>());
-                return;
-            }
-
-            if (destinations.Count > 0)
-            {
-                agent.SetDestination(destinations[0]);
-
-                if (Vector3.Distance(agent.transform.position, destinations[0]) <= agent.stoppingDistance)
-                {
-                    destinations.RemoveAt(0);
-                }
-            }
-
-            lastRotation = agent.transform.rotation;
         }
 
-        public void Exit() // Runs when we exit the state
-        {
-        }
+
     }
 }

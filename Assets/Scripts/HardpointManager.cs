@@ -1,8 +1,11 @@
+using NUnit.Framework;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class HardpointManager : MonoBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    public List<HardpointHealth> hardpoints = new List<HardpointHealth>();
+    
     void Start()
     {
         
@@ -12,5 +15,17 @@ public class HardpointManager : MonoBehaviour
     void Update()
     {
         
+    }
+
+    void GetHardpoints(Transform parent)
+    {
+        foreach (Transform child in parent)
+        {
+            if (child.TryGetComponent(out HardpointHealth health))
+            {
+                hardpoints.Add(health);
+            }
+            GetHardpoints(child);
+        }
     }
 }
