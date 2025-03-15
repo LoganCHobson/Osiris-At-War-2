@@ -6,6 +6,7 @@ TagManager:
   tags:
   - FxTemporaire
   - Hardpoint
+  - DropZone
   layers:
   - Default
   - TransparentFX
