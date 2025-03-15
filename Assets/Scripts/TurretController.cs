@@ -1,4 +1,6 @@
+using SolarStudios;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -28,21 +30,27 @@ public class TurretController : MonoBehaviour
     private float timeOutOfLOS = 0f; 
     public float maxTimeWithoutLOS = 3f;
 
+
+    private Collider[] targetsInRange;
+        
     void Update()
     {
+        targetsInRange = Physics.OverlapSphere(transform.position, range, targetLayer); //Constantly report valid targets.
 
-        if(target == null)
+        if (target == null)
         {
             AcquireTarget();
         }
         
-
+        
         
         if (target != null)
         {
+           
+
             Traverse();
 
-            //Reminder to add a timer here for if a target is out of sight for too long to pick another.
+            
             if (HasLineOfSight(firingPoints[0]))  //I would use one of the middle guns but I don't want to adjust this for single use guns. Wont matter much anyway.
             {
                 timeOutOfLOS = 0f;
@@ -65,7 +73,6 @@ public class TurretController : MonoBehaviour
 
     void AcquireTarget() //Auto Target aquisition
     {
-        Collider[] targetsInRange = Physics.OverlapSphere(transform.position, range, targetLayer);
 
         if (targetsInRange.Length > 0)
         {

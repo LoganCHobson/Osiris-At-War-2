@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using static UnityEngine.GraphicsBuffer;
 
 public class HardpointManager : MonoBehaviour
 {
@@ -56,5 +55,21 @@ public class HardpointManager : MonoBehaviour
         }
     }
 
-    
+    public List<T> GetSpecificHardpoints<T>() where T : Component //This is neat. It will allow us to pass in whatever hardpoint we want and return out the ones it finds.
+    {
+        List<T> specificHardpoints = new List<T>();
+
+        foreach (HardpointHealth hardpoint in hardpoints)
+        {
+            T component = hardpoint.gameObject.GetComponent<T>();
+            if (component != null)
+            {
+                specificHardpoints.Add(component);
+            }
+        }
+
+        return specificHardpoints;
+    }
+
+
 }

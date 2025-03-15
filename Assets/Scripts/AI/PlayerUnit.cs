@@ -1,7 +1,9 @@
 using SolarStudios;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Events;
+using static UnityEngine.GraphicsBuffer;
 
 public class PlayerUnit : MonoBehaviour
 {
@@ -18,8 +20,12 @@ public class PlayerUnit : MonoBehaviour
     public bool isSelected = false;
 
     public bool testing = false;
+
+    public float maxRange;
     void Start()
     {
+        GetMaxRange();
+
         if(gameObject.layer == 7 || testing == true)
         {
             GameManager.Instance.allFriendlyUnits.Add(this);
@@ -42,6 +48,28 @@ public class PlayerUnit : MonoBehaviour
         }
     }
 
+    public void GetMaxRange()
+    {
+        float largestRange = 0f;
+        HardpointManager hardpointManager = GetComponent<HardpointManager>();
+        List<TurretController> turrets = hardpointManager.GetSpecificHardpoints<TurretController>();
+
+        if (turrets.Count > 0)
+        {
+            foreach(TurretController turret in turrets)
+            {
+                float turretRange = turret.range;  
+
+                
+                if (turretRange > largestRange)
+                {
+                    largestRange = turretRange;
+                   
+                }
+            }
+            maxRange = largestRange;
+        }
+    }
 
 
 }

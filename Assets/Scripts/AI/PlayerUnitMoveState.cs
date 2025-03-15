@@ -76,6 +76,33 @@ namespace SolarStudios
             gfx.transform.localRotation = Quaternion.Euler(0, 0, currentTilt);
         }
 
+        public void AddDestination(Vector3 destination)
+        {
+            destinations.Add(destination);
+        }
 
+        public void ClearDestinations()
+        {
+            destinations.Clear();
+        }
+
+        public void MoveWithinRangeOfTarget(Vector3 target)
+        {
+            
+
+            PlayerUnit playerUnit = GetComponentInParent<PlayerUnit>();
+
+            float distanceToTarget = Vector3.Distance(transform.position, target);
+
+            if (distanceToTarget > playerUnit.maxRange)
+            {
+                Vector3 directionToTarget = (target - transform.position).normalized;
+
+                Vector3 targetPosition = target - directionToTarget * playerUnit.maxRange;
+
+                playerUnit.gameObject.GetComponentInChildren<PlayerUnitMoveState>().AddDestination(targetPosition); //Jank I know. It'l be fine. it doesn't run that often.
+            }
+
+        }
     }
 }

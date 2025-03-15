@@ -1,6 +1,4 @@
-using SolarStudios;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class PlayerSpaceManager : MonoBehaviour
@@ -35,7 +33,7 @@ public class PlayerSpaceManager : MonoBehaviour
             {
                 TargetSelection(hit);
             }
-           else if (Physics.Raycast(ray, out hit, Mathf.Infinity, friendlyUnitLayer))
+            else if (Physics.Raycast(ray, out hit, Mathf.Infinity, friendlyUnitLayer))
             {
                 PlayerSelection(hit);
             }
@@ -43,7 +41,7 @@ public class PlayerSpaceManager : MonoBehaviour
             {
                 PlayerLocation(hit);
             }
-            
+
         }
         else if (Input.GetMouseButtonDown(1)) // Clear selection
         {
@@ -53,9 +51,6 @@ public class PlayerSpaceManager : MonoBehaviour
             }
             selectedUnits.Clear();
         }
-
-
-
     }
 
     private void TargetSelection(RaycastHit hit)
@@ -65,6 +60,15 @@ public class PlayerSpaceManager : MonoBehaviour
             foreach (PlayerUnit unit in selectedUnits)
             {
                 unit.gameObject.GetComponent<HardpointManager>().AssignTarget(hit.collider.transform);
+                unit.agent.isStopped = true;
+                unit.moveState.ClearDestinations();
+                unit.moveState.MoveWithinRangeOfTarget(hit.point);
+                unit.agent.isStopped = false;
+
+                if ((Object)unit.stateMachine.currentState != unit.moveState)
+                {
+                    unit.stateMachine.SetState(unit.moveState);
+                }
             }
         }
         else
@@ -72,8 +76,18 @@ public class PlayerSpaceManager : MonoBehaviour
             foreach (PlayerUnit unit in selectedUnits)
             {
                 unit.gameObject.GetComponent<HardpointManager>().AssignTarget(hit.collider.gameObject.GetComponentInParent<HardpointManager>().GetRandomHardpoint());
+                unit.agent.isStopped = true;
+                unit.moveState.ClearDestinations();
+                unit.moveState.MoveWithinRangeOfTarget(hit.point);
+                unit.agent.isStopped = false;
+                if ((Object)unit.stateMachine.currentState != unit.moveState)
+                {
+                    unit.stateMachine.SetState(unit.moveState);
+                }
             }
         }
+
+
     }
 
     private void PlayerSelection(RaycastHit hit)
@@ -104,7 +118,7 @@ public class PlayerSpaceManager : MonoBehaviour
         {
             foreach (PlayerUnit unit in selectedUnits)
             {
-                unit.moveState.destinations.Add(hit.point);
+                unit.moveState.AddDestination(hit.point);
 
                 if ((Object)unit.stateMachine.currentState != unit.moveState)
                 {
@@ -118,8 +132,8 @@ public class PlayerSpaceManager : MonoBehaviour
             foreach (PlayerUnit unit in selectedUnits) //Single location selection.
             {
                 unit.agent.isStopped = true;
-                unit.moveState.destinations.Clear();
-                unit.moveState.destinations.Add(hit.point);
+                unit.moveState.ClearDestinations();
+                unit.moveState.AddDestination(hit.point);
                 unit.agent.isStopped = false;
                 if ((Object)unit.stateMachine.currentState != unit.moveState)
                 {
@@ -183,5 +197,6 @@ public class PlayerSpaceManager : MonoBehaviour
             Debug.Log("Added Unit");
         }
     }
+
 
 }
