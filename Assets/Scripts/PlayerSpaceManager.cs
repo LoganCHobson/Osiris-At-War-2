@@ -11,7 +11,7 @@ public class PlayerSpaceManager : MonoBehaviour
     public LayerMask friendlyUnitLayer;
     public LayerMask enemyUnitLayer;
 
-
+    public Animator selectionAnim;
 
     public List<PlayerUnit> selectedUnits = new List<PlayerUnit>();
     void Start()
@@ -125,6 +125,9 @@ public class PlayerSpaceManager : MonoBehaviour
                     unit.stateMachine.SetState(unit.moveState);
                 }
             }
+            //selectionAnim.gameObject.SetActive(true);
+            selectionAnim.gameObject.transform.position = new Vector3(0f, selectedUnits[0].agent.baseOffset, 0f) + hit.point;
+            selectionAnim.Play("GroundMarker");
             Debug.Log("Location Selected");
         }
         else
@@ -140,6 +143,8 @@ public class PlayerSpaceManager : MonoBehaviour
                     unit.stateMachine.SetState(unit.moveState);
                 }
             }
+            selectionAnim.gameObject.transform.localPosition = hit.point;
+            selectionAnim.Play("GroundMarker");
             Debug.Log("Location Selected");
         }
     }
