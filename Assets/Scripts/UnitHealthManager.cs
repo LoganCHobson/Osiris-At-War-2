@@ -1,6 +1,6 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.EventSystems;
 
 public class UnitHealthManager : MonoBehaviour
 {
@@ -16,7 +16,7 @@ public class UnitHealthManager : MonoBehaviour
     private void Start()
     {
         hardpointManager = GetComponent<HardpointManager>();
-        
+
         if (hardpointManager.hardpoints.Count > 0)
         {
             foreach (HardpointHealth health in hardpointManager.hardpoints)
@@ -28,7 +28,7 @@ public class UnitHealthManager : MonoBehaviour
         {
             Debug.LogError("Could not find hardpoints");
         }
-        
+
 
         currentHealth = maxHealth;
     }
@@ -64,4 +64,7 @@ public class UnitHealthManager : MonoBehaviour
             Destroy(gameObject, 5);
         }
     }
+
+   
+
 }
