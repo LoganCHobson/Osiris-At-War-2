@@ -14,6 +14,9 @@ public class PlayerSpaceManager : MonoBehaviour
     public Animator selectionAnim;
 
     public List<PlayerUnit> selectedUnits = new List<PlayerUnit>();
+
+    private HardpointManager lastHighlight;
+
     void Start()
     {
         cam = Camera.main;
@@ -22,6 +25,7 @@ public class PlayerSpaceManager : MonoBehaviour
 
     void Update()
     {
+        ShipHeathHighlighter();
         CursorSelector();
 
         if (Input.GetMouseButtonDown(0))
@@ -45,11 +49,7 @@ public class PlayerSpaceManager : MonoBehaviour
         }
         else if (Input.GetMouseButtonDown(1)) // Clear selection
         {
-            foreach (PlayerUnit unit in selectedUnits)
-            {
-                unit.ToggleSelect(false);
-            }
-            selectedUnits.Clear();
+           DeselectAllUnits();
         }
     }
 
@@ -126,7 +126,8 @@ public class PlayerSpaceManager : MonoBehaviour
                 }
             }
             //selectionAnim.gameObject.SetActive(true);
-            selectionAnim.gameObject.transform.position = new Vector3(0f, selectedUnits[0].agent.baseOffset, 0f) + hit.point;
+            selectionAnim.gameObject.transform.localPosition = hit.point;
+            //selectionAnim.gameObject.transform.position = new Vector3(0f, selectedUnits[0].agent.baseOffset, 0f) + hit.point;
             selectionAnim.Play("GroundMarker");
             Debug.Log("Location Selected");
         }
@@ -149,6 +150,45 @@ public class PlayerSpaceManager : MonoBehaviour
         }
     }
 
+    private void ShipHeathHighlighter()
+    {
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        RaycastHit hit;
+
+         
+        if (Physics.Raycast(ray, out hit, Mathf.Infinity, friendlyUnitLayer))
+        {
+            Debug.Log("Friend");
+            if(hit.collider.gameObject.transform.root.TryGetComponent(out HardpointManager manager))
+            {
+                Debug.Log("Turned on");
+                lastHighlight = manager;
+                manager.ToggleHighlight(true);
+            }
+        }
+        else if(Physics.Raycast(ray, out hit, Mathf.Infinity, enemyUnitLayer))
+        {
+            Debug.Log("Foe");
+            if (hit.collider.gameObject.transform.root.TryGetComponent(out HardpointManager manager))
+            {
+                Debug.Log("Turned on");
+                lastHighlight = manager;
+                manager.ToggleHighlight(true);
+            }
+        }
+        else
+        {
+            Debug.Log("Else");
+            if (lastHighlight != null && !lastHighlight.gameObject.GetComponent<PlayerUnit>().isSelected)
+            {
+                Debug.Log("Turned off");
+                lastHighlight.ToggleHighlight(false);
+
+                lastHighlight = null;
+            }
+            
+        }
+    }
 
     private void CursorSelector()
     {
@@ -175,20 +215,25 @@ public class PlayerSpaceManager : MonoBehaviour
 
     public void DeselectAllUnits()
     {
-        foreach (PlayerUnit playerUnit in selectedUnits)
+        foreach (PlayerUnit unit in selectedUnits)
         {
-            playerUnit.ToggleSelect(false);
+            unit.gameObject.GetComponent<HardpointManager>().ToggleHighlight(false);
+            unit.isSelected = false;
+            unit.ToggleSelect(false);
         }
         selectedUnits.Clear();
     }
     public void DeselectUnit(PlayerUnit unit)
     {
+        unit.gameObject.GetComponent<HardpointManager>().ToggleHighlight(false);
+        unit.isSelected = false;
         unit.ToggleSelect(false);
         selectedUnits.Remove(unit);
     }
 
     public void SelectUnit(PlayerUnit unit)
     {
+        unit.isSelected = true;
         selectedUnits.Add(unit);
         unit.ToggleSelect(true);
     }
@@ -197,6 +242,7 @@ public class PlayerSpaceManager : MonoBehaviour
     {
         if (!selectedUnits.Contains(unit))
         {
+            unit.isSelected = true;
             unit.ToggleSelect(true);
             selectedUnits.Add(unit);
             Debug.Log("Added Unit");

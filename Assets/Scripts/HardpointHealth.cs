@@ -3,7 +3,7 @@ using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class HardpointHealth : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+public class HardpointHealth : MonoBehaviour
 {
     public float maxHealth;
     public float currentHealth;
@@ -61,18 +61,11 @@ public class HardpointHealth : MonoBehaviour, IPointerEnterHandler, IPointerExit
 
     public void ToggleVisual(bool value)
     {
-        healthVisual.enabled = value;
+        if(healthVisual.enabled != value)
+        {
+            healthVisual.enabled = value;
+        }
+        
     }
-
-    public void OnPointerEnter(PointerEventData eventData)
-    {
-        ToggleVisual(true);
-    }
-
-    public void OnPointerExit(PointerEventData eventData)
-    {
-        ToggleVisual(false);
-    }
-
 
 }

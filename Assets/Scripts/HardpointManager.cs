@@ -71,5 +71,13 @@ public class HardpointManager : MonoBehaviour
         return specificHardpoints;
     }
 
+    public void ToggleHighlight(bool value)
+    {
+        foreach (HardpointHealth hardpointHealth in hardpoints)
+        {
+            hardpointHealth.ToggleVisual(value);
+        }
+    }
+
 
 }
