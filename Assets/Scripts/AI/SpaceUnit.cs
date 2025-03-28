@@ -5,7 +5,7 @@ using UnityEngine.AI;
 using UnityEngine.Events;
 using static UnityEngine.GraphicsBuffer;
 
-public class PlayerUnit : MonoBehaviour
+public class SpaceUnit : MonoBehaviour
 {
     [HideInInspector]
     public NavMeshAgent agent;

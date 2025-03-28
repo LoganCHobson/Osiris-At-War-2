@@ -90,7 +90,7 @@ namespace SolarStudios
         {
             
 
-            PlayerUnit playerUnit = GetComponentInParent<PlayerUnit>();
+            SpaceUnit playerUnit = GetComponentInParent<SpaceUnit>();
 
             float distanceToTarget = Vector3.Distance(transform.position, target);
 

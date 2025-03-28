@@ -106,7 +106,7 @@ public class UnitSelectionBox : MonoBehaviour
 
     void SelectUnits()
     {
-        foreach (PlayerUnit unit in GameManager.Instance.allFriendlyUnits)
+        foreach (SpaceUnit unit in GameManager.Instance.allFriendlyUnits)
         {
             if(unit != null)
             {

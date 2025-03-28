@@ -15,7 +15,7 @@ public class PlayerSpaceManager : MonoBehaviour
 
     public Animator selectionAnim;
 
-    public List<PlayerUnit> selectedUnits = new List<PlayerUnit>();
+    public List<SpaceUnit> selectedUnits = new List<SpaceUnit>();
 
     private HardpointManager lastHighlight;
 
@@ -66,7 +66,7 @@ public class PlayerSpaceManager : MonoBehaviour
         {
             Debug.Log("UI TARGET");
             Transform targetTransform = hit.transform.parent.parent;
-            foreach (PlayerUnit unit in selectedUnits)
+            foreach (SpaceUnit unit in selectedUnits)
             {
                 unit.gameObject.GetComponent<HardpointManager>().AssignTarget(targetTransform);
                 unit.agent.isStopped = true;
@@ -83,7 +83,7 @@ public class PlayerSpaceManager : MonoBehaviour
         else if (hit.collider.gameObject.CompareTag("Hardpoint"))
         {
             Debug.Log("MESH TARGET");
-            foreach (PlayerUnit unit in selectedUnits)
+            foreach (SpaceUnit unit in selectedUnits)
             {
                 unit.gameObject.GetComponent<HardpointManager>().AssignTarget(hit.collider.transform);
                 unit.agent.isStopped = true;
@@ -100,7 +100,7 @@ public class PlayerSpaceManager : MonoBehaviour
         else
         {
             Debug.Log("RANDOM TARGET");
-            foreach (PlayerUnit unit in selectedUnits)
+            foreach (SpaceUnit unit in selectedUnits)
             {
                 unit.gameObject.GetComponent<HardpointManager>().AssignTarget(hit.collider.gameObject.GetComponentInParent<HardpointManager>().GetRandomHardpoint());
                 unit.agent.isStopped = true;
@@ -119,7 +119,7 @@ public class PlayerSpaceManager : MonoBehaviour
 
     private void PlayerSelection(RaycastHit hit)
     {
-        PlayerUnit unit = hit.collider.GetComponentInParent<PlayerUnit>();
+        SpaceUnit unit = hit.collider.GetComponentInParent<SpaceUnit>();
         if (unit == null) return;
 
         if (Input.GetKey(KeyCode.LeftShift)) //Multi selection
@@ -143,7 +143,7 @@ public class PlayerSpaceManager : MonoBehaviour
     {
         if (Input.GetKey(KeyCode.LeftShift)) //Multi selection
         {
-            foreach (PlayerUnit unit in selectedUnits)
+            foreach (SpaceUnit unit in selectedUnits)
             {
                 unit.moveState.AddDestination(hit.point);
 
@@ -160,7 +160,7 @@ public class PlayerSpaceManager : MonoBehaviour
         }
         else
         {
-            foreach (PlayerUnit unit in selectedUnits) //Single location selection.
+            foreach (SpaceUnit unit in selectedUnits) //Single location selection.
             {
                 unit.agent.isStopped = true;
                 unit.moveState.ClearDestinations();
@@ -207,7 +207,7 @@ public class PlayerSpaceManager : MonoBehaviour
         else
         {
             Debug.Log("Else");
-            if (lastHighlight != null && !lastHighlight.gameObject.GetComponent<PlayerUnit>().isSelected)
+            if (lastHighlight != null && !lastHighlight.gameObject.GetComponent<SpaceUnit>().isSelected)
             {
                 Debug.Log("Turned off");
                 lastHighlight.ToggleHighlight(false);
@@ -243,7 +243,7 @@ public class PlayerSpaceManager : MonoBehaviour
 
     public void DeselectAllUnits()
     {
-        foreach (PlayerUnit unit in selectedUnits)
+        foreach (SpaceUnit unit in selectedUnits)
         {
             unit.gameObject.GetComponent<HardpointManager>().ToggleHighlight(false);
             unit.isSelected = false;
@@ -251,7 +251,7 @@ public class PlayerSpaceManager : MonoBehaviour
         }
         selectedUnits.Clear();
     }
-    public void DeselectUnit(PlayerUnit unit)
+    public void DeselectUnit(SpaceUnit unit)
     {
         unit.gameObject.GetComponent<HardpointManager>().ToggleHighlight(false);
         unit.isSelected = false;
@@ -259,14 +259,14 @@ public class PlayerSpaceManager : MonoBehaviour
         selectedUnits.Remove(unit);
     }
 
-    public void SelectUnit(PlayerUnit unit)
+    public void SelectUnit(SpaceUnit unit)
     {
         unit.isSelected = true;
         selectedUnits.Add(unit);
         unit.ToggleSelect(true);
     }
 
-    public void DragSelect(PlayerUnit unit)
+    public void DragSelect(SpaceUnit unit)
     {
         if (!selectedUnits.Contains(unit))
         {
