@@ -6,17 +6,22 @@ public class HardpointManager : MonoBehaviour
     public List<HardpointHealth> hardpoints = new List<HardpointHealth>();
 
     private UnitHealthManager unitHealthManager;
+
+    private void Awake()
+    {
+        GetHardpoints(transform);
+        if (hardpoints.Count > 0)
+        {
+            foreach (HardpointHealth health in hardpoints)
+            {
+                health.gameObject.GetComponentInChildren<Canvas>().worldCamera = Camera.main;
+            }
+        }
+    }
     void Start()
     {
         unitHealthManager = GetComponent<UnitHealthManager>();
-        GetHardpoints(transform);
-        if(hardpoints.Count > 0 )
-        {
-            foreach( HardpointHealth health in hardpoints )
-            {
-                health.gameObject.GetComponentInChildren<Canvas>().worldCamera = Camera.main; 
-            }
-        }
+        
     }
 
     

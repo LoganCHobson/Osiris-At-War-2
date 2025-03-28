@@ -37,12 +37,18 @@ public class PlayerSpaceManager : MonoBehaviour
 
             if (Physics.Raycast(ray, out hit, Mathf.Infinity, uiLayer))
             {
-                Debug.Log("UI HIT: " + hit.transform.gameObject + " On Layer " + hit.transform.gameObject.layer);
-                TargetSelection(hit);
+                if (selectedUnits.Count > 0)
+                {
+                    Debug.Log("UI HIT: " + hit.transform.gameObject + " On Layer " + hit.transform.gameObject.layer);
+                    TargetSelection(hit);
+                }
             }
             else if (Physics.Raycast(ray, out hit, Mathf.Infinity, enemyUnitLayer))
             {
-                TargetSelection(hit);
+                if (selectedUnits.Count > 0)
+                {
+                    TargetSelection(hit);
+                }
             }
             else if (Physics.Raycast(ray, out hit, Mathf.Infinity, friendlyUnitLayer))
             {

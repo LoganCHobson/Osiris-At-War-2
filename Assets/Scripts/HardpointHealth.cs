@@ -22,6 +22,7 @@ public class HardpointHealth : MonoBehaviour, IPointerEnterHandler, IPointerExit
     private Color red = new Color(1f, 0f, 0f); // Red
     private void Start()
     {
+        healthVisual.color = green;
         currentHealth = maxHealth;
         healthManager = GetComponentInParent<UnitHealthManager>();
     }

@@ -69,7 +69,7 @@ public class UnitHealthManager : MonoBehaviour
 
         if(healthSlider.gameObject.activeInHierarchy)
         {
-            healthSlider.gameObject.transform.LookAt(Camera.main.transform);
+            healthSlider.gameObject.transform.parent.LookAt(Camera.main.transform);
         }
     }
 
