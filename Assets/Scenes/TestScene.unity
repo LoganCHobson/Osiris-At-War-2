@@ -232,6 +232,9 @@ MonoBehaviour:
   enemyUnitLayer:
     serializedVersion: 2
     m_Bits: 256
+  uiLayer:
+    serializedVersion: 2
+    m_Bits: 32
   selectionAnim: {fileID: 325760938}
   selectedUnits: []
 --- !u!4 &210036931

@@ -5,16 +5,21 @@ public class HardpointManager : MonoBehaviour
 {
     public List<HardpointHealth> hardpoints = new List<HardpointHealth>();
 
+    private UnitHealthManager unitHealthManager;
     void Start()
     {
+        unitHealthManager = GetComponent<UnitHealthManager>();
         GetHardpoints(transform);
+        if(hardpoints.Count > 0 )
+        {
+            foreach( HardpointHealth health in hardpoints )
+            {
+                health.gameObject.GetComponentInChildren<Canvas>().worldCamera = Camera.main; 
+            }
+        }
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-
-    }
+    
 
     public void GetHardpoints(Transform parent)
     {
@@ -42,6 +47,7 @@ public class HardpointManager : MonoBehaviour
 
     public void AssignTarget(Transform target)
     {
+        Debug.Log("Target Assigned: " + target.gameObject.name);
         foreach (HardpointHealth health in hardpoints)
         {
             if(health.gameObject.TryGetComponent(out TurretController turret))
@@ -73,6 +79,7 @@ public class HardpointManager : MonoBehaviour
 
     public void ToggleHighlight(bool value)
     {
+        unitHealthManager.healthSlider.gameObject.SetActive(value);
         foreach (HardpointHealth hardpointHealth in hardpoints)
         {
             hardpointHealth.ToggleVisual(value);

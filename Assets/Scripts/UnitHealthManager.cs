@@ -1,12 +1,12 @@
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 public class UnitHealthManager : MonoBehaviour
 {
     public float maxHealth;
     public float currentHealth;
-
+    public Slider healthSlider;
     //private List<HardpointHealth> hardpoints = new List<HardpointHealth>();
     private HardpointManager hardpointManager;
     public UnityEvent onDie;
@@ -23,6 +23,8 @@ public class UnitHealthManager : MonoBehaviour
             {
                 maxHealth += health.maxHealth; //Our maximum health is represented by all of the hardpoints.
             }
+            healthSlider.maxValue = maxHealth;
+            healthSlider.value = maxHealth;
         }
         else
         {
@@ -36,6 +38,7 @@ public class UnitHealthManager : MonoBehaviour
     {
         hardpoint.currentHealth -= value;
         currentHealth -= value;
+        healthSlider.value = currentHealth;
     }
 
     public void HardpointDeath(HardpointHealth hardpoint)
@@ -62,6 +65,11 @@ public class UnitHealthManager : MonoBehaviour
             dead = true;
             onDie.Invoke();
             Destroy(gameObject, 5);
+        }
+
+        if(healthSlider.gameObject.activeInHierarchy)
+        {
+            healthSlider.gameObject.transform.LookAt(Camera.main.transform);
         }
     }
 

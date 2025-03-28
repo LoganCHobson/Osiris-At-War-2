@@ -3,11 +3,15 @@ using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class HardpointHealth : MonoBehaviour
+public class HardpointHealth : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
     public float maxHealth;
     public float currentHealth;
     public Image healthVisual;
+    private Vector3 originalScale;
+    public float scaleMultiplier = 1.5f;
+    public float scaleDuration = 0.2f;
+
     private UnitHealthManager healthManager;
     public UnityEvent dealDamage; //May not actually need this.
     public UnityEvent die;
@@ -68,4 +72,19 @@ public class HardpointHealth : MonoBehaviour
         
     }
 
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        if(gameObject.layer == 8)
+        {
+            healthVisual.rectTransform.sizeDelta = new Vector2(15, 15);
+        }
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        if (gameObject.layer == 8)
+        {
+            healthVisual.rectTransform.sizeDelta = new Vector2(10, 10);
+        }
+    }
 }

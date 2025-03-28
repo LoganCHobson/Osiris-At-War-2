@@ -3,11 +3,11 @@ using UnityEngine;
 public class MuzzleLight : MonoBehaviour
 {
     public ParticleSystem part;
-    private Light light;
+    private Light lightComp;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        light = GetComponent<Light>();
+        lightComp = GetComponent<Light>();
     }
 
     // Update is called once per frame
@@ -15,11 +15,11 @@ public class MuzzleLight : MonoBehaviour
     {
         if(part.isPlaying)
         {
-            light.enabled = true;
+            lightComp.enabled = true;
         }
         else
         {
-            light.enabled = false;
+            lightComp.enabled = false;
         }
     }
 }

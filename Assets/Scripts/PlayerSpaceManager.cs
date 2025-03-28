@@ -11,6 +11,8 @@ public class PlayerSpaceManager : MonoBehaviour
     public LayerMask friendlyUnitLayer;
     public LayerMask enemyUnitLayer;
 
+    public LayerMask uiLayer = 5;
+
     public Animator selectionAnim;
 
     public List<PlayerUnit> selectedUnits = new List<PlayerUnit>();
@@ -33,7 +35,12 @@ public class PlayerSpaceManager : MonoBehaviour
             RaycastHit hit;
             Ray ray = cam.ScreenPointToRay(Input.mousePosition);
 
-            if (Physics.Raycast(ray, out hit, Mathf.Infinity, enemyUnitLayer))
+            if (Physics.Raycast(ray, out hit, Mathf.Infinity, uiLayer))
+            {
+                Debug.Log("UI HIT: " + hit.transform.gameObject + " On Layer " + hit.transform.gameObject.layer);
+                TargetSelection(hit);
+            }
+            else if (Physics.Raycast(ray, out hit, Mathf.Infinity, enemyUnitLayer))
             {
                 TargetSelection(hit);
             }
@@ -49,14 +56,33 @@ public class PlayerSpaceManager : MonoBehaviour
         }
         else if (Input.GetMouseButtonDown(1)) // Clear selection
         {
-           DeselectAllUnits();
+            DeselectAllUnits();
         }
     }
 
     private void TargetSelection(RaycastHit hit)
     {
-        if (hit.collider.gameObject.CompareTag("Hardpoint"))
+        if (hit.transform.gameObject.CompareTag("TargetUI"))
         {
+            Debug.Log("UI TARGET");
+            Transform targetTransform = hit.transform.parent.parent;
+            foreach (PlayerUnit unit in selectedUnits)
+            {
+                unit.gameObject.GetComponent<HardpointManager>().AssignTarget(targetTransform);
+                unit.agent.isStopped = true;
+                unit.moveState.ClearDestinations();
+                unit.moveState.MoveWithinRangeOfTarget(hit.point);
+                unit.agent.isStopped = false;
+
+                if ((Object)unit.stateMachine.currentState != unit.moveState)
+                {
+                    unit.stateMachine.SetState(unit.moveState);
+                }
+            }
+        }
+        else if (hit.collider.gameObject.CompareTag("Hardpoint"))
+        {
+            Debug.Log("MESH TARGET");
             foreach (PlayerUnit unit in selectedUnits)
             {
                 unit.gameObject.GetComponent<HardpointManager>().AssignTarget(hit.collider.transform);
@@ -73,6 +99,7 @@ public class PlayerSpaceManager : MonoBehaviour
         }
         else
         {
+            Debug.Log("RANDOM TARGET");
             foreach (PlayerUnit unit in selectedUnits)
             {
                 unit.gameObject.GetComponent<HardpointManager>().AssignTarget(hit.collider.gameObject.GetComponentInParent<HardpointManager>().GetRandomHardpoint());
@@ -155,18 +182,18 @@ public class PlayerSpaceManager : MonoBehaviour
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         RaycastHit hit;
 
-         
+
         if (Physics.Raycast(ray, out hit, Mathf.Infinity, friendlyUnitLayer))
         {
             Debug.Log("Friend");
-            if(hit.collider.gameObject.transform.root.TryGetComponent(out HardpointManager manager))
+            if (hit.collider.gameObject.transform.root.TryGetComponent(out HardpointManager manager))
             {
                 Debug.Log("Turned on");
                 lastHighlight = manager;
                 manager.ToggleHighlight(true);
             }
         }
-        else if(Physics.Raycast(ray, out hit, Mathf.Infinity, enemyUnitLayer))
+        else if (Physics.Raycast(ray, out hit, Mathf.Infinity, enemyUnitLayer))
         {
             Debug.Log("Foe");
             if (hit.collider.gameObject.transform.root.TryGetComponent(out HardpointManager manager))
@@ -175,6 +202,7 @@ public class PlayerSpaceManager : MonoBehaviour
                 lastHighlight = manager;
                 manager.ToggleHighlight(true);
             }
+
         }
         else
         {
@@ -186,7 +214,7 @@ public class PlayerSpaceManager : MonoBehaviour
 
                 lastHighlight = null;
             }
-            
+
         }
     }
 

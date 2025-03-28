@@ -6,6 +6,7 @@ TagManager:
   tags:
   - FxTemporaire
   - Hardpoint
+  - TargetUI
   layers:
   - Default
   - TransparentFX
