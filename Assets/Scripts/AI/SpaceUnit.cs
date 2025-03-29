@@ -28,16 +28,17 @@ public class SpaceUnit : MonoBehaviour
     void Start()
     {
         GetMaxRange();
-
-        if(gameObject.layer == 7 || testing == true)
+        if (shipType != ShipType.Station)
         {
-            GameManager.Instance.allFriendlyUnits.Add(this);
+            if (gameObject.layer == 7 || testing == true)
+            {
+                GameManager.Instance.allFriendlyUnits.Add(this);
+            }
+            else
+            {
+                GameManager.Instance.allEnemyUnits.Add(this);
+            }
         }
-        else
-        {
-            GameManager.Instance.allEnemyUnits.Add(this);
-        }
-        
        if(TryGetComponent(out NavMeshAgent _agent))
         {
             agent = _agent;

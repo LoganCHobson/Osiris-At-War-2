@@ -683,9 +683,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a438edef89ff834c88151a24168e5e8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  prefab: {fileID: 1349032318270045980, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+  prefab: {fileID: 3653413832275497961, guid: e9ef02e392a59ff4bb33c27ab876f27e, type: 3}
   cost: 100
   spawnpoint: {fileID: 7610809858075233178}
+  coolDownTimer: 0
+  coolDownTime: 30
+  cooling: 0
 --- !u!1 &5628091217056402854
 GameObject:
   m_ObjectHideFlags: 0

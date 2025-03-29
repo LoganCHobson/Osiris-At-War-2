@@ -191,20 +191,16 @@ public class PlayerSpaceManager : MonoBehaviour
 
         if (Physics.Raycast(ray, out hit, Mathf.Infinity, friendlyUnitLayer))
         {
-            Debug.Log("Friend");
             if (hit.collider.gameObject.transform.root.TryGetComponent(out HardpointManager manager))
             {
-                Debug.Log("Turned on");
                 lastHighlight = manager;
                 manager.ToggleHighlight(true);
             }
         }
         else if (Physics.Raycast(ray, out hit, Mathf.Infinity, enemyUnitLayer))
         {
-            Debug.Log("Foe");
             if (hit.collider.gameObject.transform.root.TryGetComponent(out HardpointManager manager))
             {
-                Debug.Log("Turned on");
                 lastHighlight = manager;
                 manager.ToggleHighlight(true);
             }
@@ -212,10 +208,8 @@ public class PlayerSpaceManager : MonoBehaviour
         }
         else
         {
-            Debug.Log("Else");
             if (lastHighlight != null && !lastHighlight.gameObject.GetComponent<SpaceUnit>().isSelected)
             {
-                Debug.Log("Turned off");
                 lastHighlight.ToggleHighlight(false);
 
                 lastHighlight = null;
@@ -279,7 +273,6 @@ public class PlayerSpaceManager : MonoBehaviour
             unit.isSelected = true;
             unit.ToggleSelect(true);
             selectedUnits.Add(unit);
-            Debug.Log("Added Unit");
         }
     }
 

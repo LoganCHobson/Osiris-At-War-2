@@ -4,7 +4,7 @@ using UnityEngine.UI;
 public class AstroidMiner : MonoBehaviour
 {
     public int team = -1;
-    private GameManager gameManager;
+
 
     public Slider progressSlider;
     public Image image;
@@ -14,16 +14,17 @@ public class AstroidMiner : MonoBehaviour
 
     public float capturePercentage = 0f;
 
+    public bool captureable;
     void Start()
     {
-        gameManager = GameManager.Instance;
+        GameManager.Instance.allAstroidMiners.Add(this);
     }
 
     void Update()
     {
-        
+
         AddCash();
-        
+
 
         if (progressSlider.gameObject.activeInHierarchy)
         {
@@ -36,44 +37,84 @@ public class AstroidMiner : MonoBehaviour
     {
         if (team == LayerMask.NameToLayer("FriendlyUnit"))
         {
-            gameManager.playerCash += Time.deltaTime;
-            
+            GameManager.Instance.playerCash += Time.deltaTime;
+
         }
         else if (team == LayerMask.NameToLayer("EnemyUnit"))
         {
-            gameManager.enemyCash += Time.deltaTime;
+            GameManager.Instance.enemyCash += Time.deltaTime;
         }
 
     }
 
+
+    public void OnTriggerEnter(Collider other)
+    {
+        
+    }
+
+
     private void OnTriggerStay(Collider other)
     {
-       
         int otherTeam = other.gameObject.layer;
 
-        if (otherTeam != team)
+        if (otherTeam == other.gameObject.layer)
         {
+            captureable = false;
+        }
+        else
+        {
+            captureable = true;
+        }
 
-            capturePercentage = Mathf.Clamp(capturePercentage + Time.deltaTime, 0f, 100f);
-            progressSlider.value = capturePercentage;
+        if (captureable)
+        {
             
-            if (capturePercentage >= 100f)
+
+            if (otherTeam != team)
             {
-                team = otherTeam;
-                if (team == LayerMask.NameToLayer("FriendlyUnit"))
+
+                capturePercentage = Mathf.Clamp(capturePercentage + Time.deltaTime, 0f, 100f);
+                progressSlider.value = capturePercentage;
+
+                if (capturePercentage >= 100f)
                 {
-                    
-                    image.color = friendlyColor;
+                    team = otherTeam;
+                    if (team == LayerMask.NameToLayer("FriendlyUnit"))
+                    {
+
+                        image.color = friendlyColor;
+                    }
+                    else if (team == LayerMask.NameToLayer("EnemyUnit"))
+                    {
+                        if (other.gameObject.transform.root.GetComponent<AIUnitBrain>().HasTask())
+                        {
+                            MarkTaskComplete(other.gameObject.transform.root.GetComponent<AIUnitBrain>());
+                        }
+                        image.color = enemyColor;
+                    }
+                    capturePercentage = 0f;
+                    progressSlider.value = progressSlider.maxValue;
                 }
-                else if (team == LayerMask.NameToLayer("EnemyUnit"))
+            }
+
+            if (otherTeam == team && other.gameObject.layer == 8)
+            {
+                if (other.gameObject.transform.root.GetComponent<AIUnitBrain>().HasTask())
                 {
-                    image.color = enemyColor;
+                    MarkTaskComplete(other.gameObject.transform.root.GetComponent<AIUnitBrain>());
                 }
-                capturePercentage = 0f;
-                progressSlider.value = progressSlider.maxValue;
             }
         }
-        
+
+    }
+
+    private void MarkTaskComplete(AIUnitBrain aIUnitBrain)
+    {
+        if (aIUnitBrain.currentTask is CaptureAsteroidTask captureTask)
+        {
+            aIUnitBrain.CompleteTask();
+        }
     }
 
     private void OnTriggerExit(Collider other)
