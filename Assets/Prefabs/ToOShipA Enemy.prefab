@@ -24305,6 +24305,7 @@ MonoBehaviour:
       m_Calls: []
   isSelected: 0
   testing: 0
+  shipType: 1
   maxRange: 0
 --- !u!114 &7521270433268197202
 MonoBehaviour:

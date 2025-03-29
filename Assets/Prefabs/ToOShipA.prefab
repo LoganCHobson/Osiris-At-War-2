@@ -4968,6 +4968,7 @@ MonoBehaviour:
         m_CallState: 2
   isSelected: 0
   testing: 0
+  shipType: 1
   maxRange: 0
 --- !u!114 &4907623263746312637
 MonoBehaviour:

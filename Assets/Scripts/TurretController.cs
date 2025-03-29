@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
+using static SpaceUnit;
 
 public class TurretController : MonoBehaviour
 {
@@ -153,13 +154,47 @@ public class TurretController : MonoBehaviour
         if (target == null) return;
 
         Vector3 direction = (target.position - firingPoint.position).normalized;
+        float accuracyMultiplier = GetAccuracyMultiplier(target);
+        Vector3 inaccuracyOffset = Random.insideUnitSphere * accuracyMultiplier;
+        Vector3 finalDirection = (direction + inaccuracyOffset).normalized;
+
         GameObject temp = Instantiate(projectilePrefab, firingPoint.position, firingPoint.parent.parent.rotation);
         temp.GetComponent<Laser>().damage = damage;
 
         Rigidbody rb = temp.GetComponent<Rigidbody>();
         if (rb != null)
         {
-            rb.linearVelocity = direction * 20f;
+            rb.linearVelocity = finalDirection * 20f;
+        }
+    }
+
+    float GetAccuracyMultiplier(Transform target)
+    {
+        
+        float distance = Vector3.Distance(transform.position, target.position);
+
+        
+        float baseAccuracy = 0.02f; 
+        float rangeFalloff = distance / range * 0.1f; 
+
+        
+        ShipType targetType = target.GetComponentInParent<SpaceUnit>().shipType;
+
+        switch (targetType)
+        {
+            case ShipType.Station:
+            case ShipType.Battleship:
+                return baseAccuracy * 0.5f; 
+            case ShipType.Carrier:
+            case ShipType.Cruiser:
+                return baseAccuracy;
+            case ShipType.Destroyer:
+            case ShipType.Corvette:
+                return baseAccuracy * 1.5f; 
+            case ShipType.Fighter:
+                return baseAccuracy * 3f + rangeFalloff;
+            default:
+                return baseAccuracy;
         }
     }
 

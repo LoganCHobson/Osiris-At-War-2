@@ -7,6 +7,7 @@ using static UnityEngine.GraphicsBuffer;
 
 public class SpaceUnit : MonoBehaviour
 {
+    
     [HideInInspector]
     public NavMeshAgent agent;
     [HideInInspector]
@@ -20,6 +21,8 @@ public class SpaceUnit : MonoBehaviour
     public bool isSelected = false;
 
     public bool testing = false;
+
+    public ShipType shipType;
 
     public float maxRange;
     void Start()
@@ -73,3 +76,5 @@ public class SpaceUnit : MonoBehaviour
 
 
 }
+
+public enum ShipType { Station, Battleship, Carrier, Cruiser, Destroyer, Corvette, Fighter }
