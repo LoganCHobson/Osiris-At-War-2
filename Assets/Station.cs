@@ -16,7 +16,10 @@ public class StationController : MonoBehaviour
         unit = GetComponentInParent<SpaceUnit>();
     }
 
-
+    private void Update()
+    {
+        GameManager.Instance.playerCash += Time.deltaTime; //Stations should have passive income as well to prevent soft lock.
+    }
     public void MakeShip()
     {
         GameObject temp = Instantiate(prefab, spawnpoint);
