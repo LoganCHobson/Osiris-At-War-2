@@ -97,7 +97,7 @@ MonoBehaviour:
     m_HSlider: 0
     m_VSlider: 0
     m_IgnoreScrollWheelUntilClicked: 0
-    m_EnableMouseInput: 0
+    m_EnableMouseInput: 1
     m_EnableSliderZoomHorizontal: 0
     m_EnableSliderZoomVertical: 0
     m_UniformScale: 1
@@ -745,9 +745,9 @@ MonoBehaviour:
   m_AudioPlay: 0
   m_DebugDrawModesUseInteractiveLightBakingData: 0
   m_Position:
-    m_Target: {x: 1.1859078, y: 1.6789999, z: -0.8721113}
+    m_Target: {x: -101.62455, y: 28.01155, z: 1236.4181}
     speed: 2
-    m_Value: {x: 1.1859078, y: 1.6789999, z: -0.8721113}
+    m_Value: {x: -101.62455, y: 28.01155, z: 1236.4181}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -793,13 +793,13 @@ MonoBehaviour:
     m_GridAxis: 1
     m_gridOpacity: 0.5
   m_Rotation:
-    m_Target: {x: -0.09948286, y: -0.6872546, z: 0.09631584, w: -0.71326286}
+    m_Target: {x: 0.025501953, y: -0.4086474, z: 0.0113165155, w: 0.9124375}
     speed: 2
-    m_Value: {x: -0.09947111, y: -0.6871734, z: 0.09630446, w: -0.7131786}
+    m_Value: {x: 0.025514903, y: -0.4072145, z: 0.011276484, w: 0.91290647}
   m_Size:
-    m_Target: 6.010552
+    m_Target: 43.656754
     speed: 2
-    m_Value: 6.010552
+    m_Value: 43.656754
   m_Ortho:
     m_Target: 0
     speed: 2
@@ -849,8 +849,8 @@ MonoBehaviour:
     y: 480
     width: 906
     height: 453
-  m_MinSize: {x: 200, y: 200}
-  m_MaxSize: {x: 4000, y: 4000}
+  m_MinSize: {x: 201, y: 226}
+  m_MaxSize: {x: 4001, y: 4026}
   m_ActualView: {fileID: 2}
   m_Panes:
   - {fileID: 2}
@@ -895,7 +895,7 @@ MonoBehaviour:
     m_OverlaysVisible: 1
   m_LockTracker:
     m_IsLocked: 0
-  m_LastSelectedObjectID: 58484
+  m_LastSelectedObjectID: 802660
 --- !u!114 &8
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -961,23 +961,23 @@ MonoBehaviour:
   m_SceneHierarchy:
     m_TreeViewState:
       scrollPos: {x: 0, y: 0}
-      m_SelectedIDs: a472ffff
-      m_LastClickedID: -36188
-      m_ExpandedIDs: de72ffff2873fffff8faffff
+      m_SelectedIDs: 643f0c00
+      m_LastClickedID: 802660
+      m_ExpandedIDs: aecef5ff0e0af6ff0ab2f6ff06eaf6ff08f5f6ff0af7f6ff32f8f6ff48faf6ff64fcf6ffb2fcf6ff54fdf6ff7a31f7ffec3ef7ffee3ef7ff984cf7ffe86df8ff8a85f8ff8c85f8ff4a8af8ff9090f8ff98d1f8ff302cf9ff3a2cf9ff3e2cf9ff982cf9fffa62f9ff6a65f9ffdc66f9ff3267f9ff047ef9ffd07ef9fff8fafffff4ffffff74a60100823e0c00943e0c00b43e0c00
       m_RenameOverlay:
         m_UserAcceptedRename: 0
-        m_Name: 
-        m_OriginalName: 
+        m_Name: ToOShipA (1)
+        m_OriginalName: ToOShipA (1)
         m_EditFieldRect:
           serializedVersion: 2
           x: 0
           y: 0
           width: 0
           height: 0
-        m_UserData: 0
+        m_UserData: -667034
         m_IsWaitingForDelay: 0
         m_IsRenaming: 0
-        m_OriginalEventType: 11
+        m_OriginalEventType: 0
         m_IsRenamingFilename: 0
         m_TrimLeadingAndTrailingWhitespace: 0
         m_ClientGUIView: {fileID: 8}
@@ -1051,7 +1051,7 @@ MonoBehaviour:
     m_ContainerData: []
     m_OverlaysVisible: 1
   m_SearchFilter:
-    m_NameFilter: 
+    m_NameFilter: main
     m_ClassNames: []
     m_AssetLabels: []
     m_AssetBundleNames: []
@@ -1061,26 +1061,26 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets/Scripts
+    - Assets/Art/Models
     m_Globs: []
     m_ProductIds: 
     m_AnyWithAssetOrigin: 0
-    m_OriginalText: 
+    m_OriginalText: main
     m_ImportLogFlags: 0
     m_FilterByTypeIntersection: 0
   m_ViewMode: 1
   m_StartGridSize: 64
   m_LastFolders:
-  - Assets/Scripts
+  - Assets/Art/Models
   m_LastFoldersGridSize: -1
   m_LastProjectPath: D:\GameDev\UnityProjects\Osiris At War 2
   m_LockTracker:
     m_IsLocked: 0
   m_FolderTreeState:
     scrollPos: {x: 0, y: 0}
-    m_SelectedIDs: 84e20000
-    m_LastClickedID: 57988
-    m_ExpandedIDs: 000000007ae000007ce000007ee0000080e0000082e0000084e0000086e0000000ca9a3b
+    m_SelectedIDs: 12b60100
+    m_LastClickedID: 112146
+    m_ExpandedIDs: 000000007ae000007ce000007ee0000080e0000082e0000084e0000086e0000074e2000084e2000000ca9a3b
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -1135,9 +1135,9 @@ MonoBehaviour:
       m_Icon: {fileID: 0}
       m_ResourceFile: 
   m_ListAreaState:
-    m_SelectedInstanceIDs: a472ffff
-    m_LastClickedInstanceID: -36188
-    m_HadKeyboardFocusLastEvent: 0
+    m_SelectedInstanceIDs: 643f0c00
+    m_LastClickedInstanceID: 802660
+    m_HadKeyboardFocusLastEvent: 1
     m_ExpandedInstanceIDs: 
     m_RenameOverlay:
       m_UserAcceptedRename: 0
@@ -1163,7 +1163,7 @@ MonoBehaviour:
       m_Icon: {fileID: 0}
       m_ResourceFile: 
     m_NewAssetIndexInList: -1
-    m_ScrollPosition: {x: 0, y: 370}
+    m_ScrollPosition: {x: 0, y: 0}
     m_GridSize: 64
   m_SkipHiddenPackages: 0
   m_DirectoriesAreaWidth: 191.79999
@@ -1186,8 +1186,8 @@ MonoBehaviour:
     y: 0
     width: 432
     height: 933
-  m_MinSize: {x: 276, y: 76}
-  m_MaxSize: {x: 4001, y: 4026}
+  m_MinSize: {x: 275, y: 50}
+  m_MaxSize: {x: 4000, y: 4000}
   m_ActualView: {fileID: 13}
   m_Panes:
   - {fileID: 13}
@@ -1236,7 +1236,7 @@ MonoBehaviour:
     m_ControlHash: -371814159
     m_PrefName: Preview_InspectorPreview
   m_LastInspectedObjectInstanceID: -1
-  m_LastVerticalScrollValue: 686
+  m_LastVerticalScrollValue: 0
   m_GlobalObjectId: 
   m_InspectorMode: 0
   m_LockTracker:

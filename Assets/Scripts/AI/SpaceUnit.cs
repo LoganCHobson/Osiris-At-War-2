@@ -33,10 +33,29 @@ public class SpaceUnit : MonoBehaviour
         {
             GameManager.Instance.allFriendlyUnits.Add(this);
         }
+        else
+        {
+            GameManager.Instance.allEnemyUnits.Add(this);
+        }
         
-        agent = GetComponent<NavMeshAgent>();
-        moveState = GetComponentInChildren<PlayerUnitMoveState>();
-        stateMachine = GetComponentInChildren<PlayerUnitStateMachine>();
+       if(TryGetComponent(out NavMeshAgent _agent))
+        {
+            agent = _agent;
+        }
+        else
+        {
+            Debug.LogWarning(gameObject.name + " Does not have a navmesh agent. Was that intended?");
+        }
+
+        if(GetComponentInChildren<PlayerUnitStateMachine>())
+        {
+            moveState = GetComponentInChildren<PlayerUnitMoveState>();
+            stateMachine = GetComponentInChildren<PlayerUnitStateMachine>();
+        }
+        else
+        {
+            Debug.LogWarning(gameObject.name + " Does not have a statemachine. Was that intended?");
+        }
     }
 
     public void ToggleSelect(bool isSelected)
