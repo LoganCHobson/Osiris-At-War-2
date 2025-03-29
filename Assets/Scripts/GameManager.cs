@@ -6,6 +6,9 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
 
+    public List<SpaceUnit> allEnemyUnits = new List<SpaceUnit>();
+    public float enemyCash = 0f;
+    public float playerCash = 0f;    
     public List<SpaceUnit> allFriendlyUnits = new List<SpaceUnit>();
     private void Awake()
     {
@@ -18,6 +21,13 @@ public class GameManager : MonoBehaviour
         {
             Destroy(gameObject);
         }
+
+    }
+
+    
+
+    public void EndGame()
+    {
 
     }
 }
