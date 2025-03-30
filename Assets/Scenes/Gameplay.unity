@@ -336,6 +336,38 @@ PrefabInstance:
       propertyPath: m_Name
       value: ToOShipA (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 4907623263746312637, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.size
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4907623263746312637, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[3].m_Mode
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4907623263746312637, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[3].m_Target
+      value: 
+      objectReference: {fileID: 1345970853}
+    - target: {fileID: 4907623263746312637, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[3].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4907623263746312637, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[3].m_MethodName
+      value: RemoveFriendly
+      objectReference: {fileID: 0}
+    - target: {fileID: 4907623263746312637, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[3].m_TargetAssemblyTypeName
+      value: GameManager, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 4907623263746312637, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[3].m_Arguments.m_ObjectArgument
+      value: 
+      objectReference: {fileID: 95613503}
+    - target: {fileID: 4907623263746312637, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[3].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: SpaceUnit, Assembly-CSharp
+      objectReference: {fileID: 0}
     - target: {fileID: 5121363685595423591, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
       propertyPath: m_LocalPosition.x
       value: 175.64188
@@ -385,6 +417,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+--- !u!114 &95613503 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4504919472738613192, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+  m_PrefabInstance: {fileID: 95613502}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9dd9c630a00404a448b2cdf2937f07af, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &136040073
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -437,11 +480,54 @@ PrefabInstance:
       propertyPath: m_Name
       value: ToOShipA Enemy
       objectReference: {fileID: 0}
+    - target: {fileID: 7672111596895754725, guid: e9ef02e392a59ff4bb33c27ab876f27e, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.size
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 7672111596895754725, guid: e9ef02e392a59ff4bb33c27ab876f27e, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[4].m_Mode
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7672111596895754725, guid: e9ef02e392a59ff4bb33c27ab876f27e, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[4].m_Target
+      value: 
+      objectReference: {fileID: 1345970853}
+    - target: {fileID: 7672111596895754725, guid: e9ef02e392a59ff4bb33c27ab876f27e, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[4].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7672111596895754725, guid: e9ef02e392a59ff4bb33c27ab876f27e, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[4].m_MethodName
+      value: RemoveEnemy
+      objectReference: {fileID: 0}
+    - target: {fileID: 7672111596895754725, guid: e9ef02e392a59ff4bb33c27ab876f27e, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[4].m_TargetAssemblyTypeName
+      value: GameManager, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 7672111596895754725, guid: e9ef02e392a59ff4bb33c27ab876f27e, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[4].m_Arguments.m_ObjectArgument
+      value: 
+      objectReference: {fileID: 136040074}
+    - target: {fileID: 7672111596895754725, guid: e9ef02e392a59ff4bb33c27ab876f27e, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[4].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: SpaceUnit, Assembly-CSharp
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e9ef02e392a59ff4bb33c27ab876f27e, type: 3}
+--- !u!114 &136040074 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 936340755433948303, guid: e9ef02e392a59ff4bb33c27ab876f27e, type: 3}
+  m_PrefabInstance: {fileID: 136040073}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9dd9c630a00404a448b2cdf2937f07af, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &155672362
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -494,11 +580,54 @@ PrefabInstance:
       propertyPath: m_Name
       value: ToOShipA Enemy (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 7672111596895754725, guid: e9ef02e392a59ff4bb33c27ab876f27e, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.size
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 7672111596895754725, guid: e9ef02e392a59ff4bb33c27ab876f27e, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[4].m_Mode
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7672111596895754725, guid: e9ef02e392a59ff4bb33c27ab876f27e, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[4].m_Target
+      value: 
+      objectReference: {fileID: 1345970853}
+    - target: {fileID: 7672111596895754725, guid: e9ef02e392a59ff4bb33c27ab876f27e, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[4].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7672111596895754725, guid: e9ef02e392a59ff4bb33c27ab876f27e, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[4].m_MethodName
+      value: RemoveEnemy
+      objectReference: {fileID: 0}
+    - target: {fileID: 7672111596895754725, guid: e9ef02e392a59ff4bb33c27ab876f27e, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[4].m_TargetAssemblyTypeName
+      value: GameManager, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 7672111596895754725, guid: e9ef02e392a59ff4bb33c27ab876f27e, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[4].m_Arguments.m_ObjectArgument
+      value: 
+      objectReference: {fileID: 155672363}
+    - target: {fileID: 7672111596895754725, guid: e9ef02e392a59ff4bb33c27ab876f27e, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[4].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: SpaceUnit, Assembly-CSharp
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e9ef02e392a59ff4bb33c27ab876f27e, type: 3}
+--- !u!114 &155672363 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 936340755433948303, guid: e9ef02e392a59ff4bb33c27ab876f27e, type: 3}
+  m_PrefabInstance: {fileID: 155672362}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9dd9c630a00404a448b2cdf2937f07af, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &210036929
 GameObject:
   m_ObjectHideFlags: 0
@@ -1064,6 +1193,38 @@ PrefabInstance:
       propertyPath: m_Name
       value: ToOShipA (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 4907623263746312637, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.size
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4907623263746312637, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[3].m_Mode
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4907623263746312637, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[3].m_Target
+      value: 
+      objectReference: {fileID: 1345970853}
+    - target: {fileID: 4907623263746312637, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[3].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4907623263746312637, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[3].m_MethodName
+      value: RemoveFriendly
+      objectReference: {fileID: 0}
+    - target: {fileID: 4907623263746312637, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[3].m_TargetAssemblyTypeName
+      value: GameManager, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 4907623263746312637, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[3].m_Arguments.m_ObjectArgument
+      value: 
+      objectReference: {fileID: 750422749}
+    - target: {fileID: 4907623263746312637, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[3].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: SpaceUnit, Assembly-CSharp
+      objectReference: {fileID: 0}
     - target: {fileID: 5121363685595423591, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
       propertyPath: m_LocalPosition.x
       value: 165.75731
@@ -1113,6 +1274,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+--- !u!114 &750422749 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4504919472738613192, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+  m_PrefabInstance: {fileID: 750422748}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9dd9c630a00404a448b2cdf2937f07af, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &755306848
 GameObject:
   m_ObjectHideFlags: 0
@@ -1604,11 +1776,54 @@ PrefabInstance:
       propertyPath: m_Name
       value: ToOShipA Enemy (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 7672111596895754725, guid: e9ef02e392a59ff4bb33c27ab876f27e, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.size
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 7672111596895754725, guid: e9ef02e392a59ff4bb33c27ab876f27e, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[4].m_Mode
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7672111596895754725, guid: e9ef02e392a59ff4bb33c27ab876f27e, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[4].m_Target
+      value: 
+      objectReference: {fileID: 1345970853}
+    - target: {fileID: 7672111596895754725, guid: e9ef02e392a59ff4bb33c27ab876f27e, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[4].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7672111596895754725, guid: e9ef02e392a59ff4bb33c27ab876f27e, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[4].m_MethodName
+      value: RemoveEnemy
+      objectReference: {fileID: 0}
+    - target: {fileID: 7672111596895754725, guid: e9ef02e392a59ff4bb33c27ab876f27e, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[4].m_TargetAssemblyTypeName
+      value: GameManager, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 7672111596895754725, guid: e9ef02e392a59ff4bb33c27ab876f27e, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[4].m_Arguments.m_ObjectArgument
+      value: 
+      objectReference: {fileID: 1802817594}
+    - target: {fileID: 7672111596895754725, guid: e9ef02e392a59ff4bb33c27ab876f27e, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[4].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: SpaceUnit, Assembly-CSharp
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e9ef02e392a59ff4bb33c27ab876f27e, type: 3}
+--- !u!114 &1802817594 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 936340755433948303, guid: e9ef02e392a59ff4bb33c27ab876f27e, type: 3}
+  m_PrefabInstance: {fileID: 1802817593}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9dd9c630a00404a448b2cdf2937f07af, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &1807843708
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2119,6 +2334,38 @@ PrefabInstance:
       propertyPath: m_Name
       value: ToOShipA
       objectReference: {fileID: 0}
+    - target: {fileID: 4907623263746312637, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.size
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4907623263746312637, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[3].m_Mode
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4907623263746312637, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[3].m_Target
+      value: 
+      objectReference: {fileID: 1345970853}
+    - target: {fileID: 4907623263746312637, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[3].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4907623263746312637, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[3].m_MethodName
+      value: RemoveFriendly
+      objectReference: {fileID: 0}
+    - target: {fileID: 4907623263746312637, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[3].m_TargetAssemblyTypeName
+      value: GameManager, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 4907623263746312637, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[3].m_Arguments.m_ObjectArgument
+      value: 
+      objectReference: {fileID: 7704120674275380905}
+    - target: {fileID: 4907623263746312637, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+      propertyPath: onDie.m_PersistentCalls.m_Calls.Array.data[3].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: SpaceUnit, Assembly-CSharp
+      objectReference: {fileID: 0}
     - target: {fileID: 5121363685595423591, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
       propertyPath: m_LocalPosition.x
       value: 166.4
@@ -2168,6 +2415,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+--- !u!114 &7704120674275380905 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4504919472738613192, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+  m_PrefabInstance: {fileID: 7704120674275380904}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9dd9c630a00404a448b2cdf2937f07af, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &7981818733225196591
 PrefabInstance:
   m_ObjectHideFlags: 0

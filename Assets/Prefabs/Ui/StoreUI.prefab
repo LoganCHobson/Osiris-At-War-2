@@ -463,6 +463,9 @@ MonoBehaviour:
   store: {fileID: 434190334183155011}
   moneyText: {fileID: 6960859906083208694}
   station: {fileID: 0}
+  coolDownTimer: 0
+  coolDownTime: 30
+  cooling: 0
 --- !u!1 &8948307587337628588
 GameObject:
   m_ObjectHideFlags: 0
@@ -631,9 +634,45 @@ PrefabInstance:
       value: ToOShipABuyButton
       objectReference: {fileID: 0}
     - target: {fileID: 5642579285236830235, guid: a598be8e9b704d349a38cdbdbca2d021, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5642579285236830235, guid: a598be8e9b704d349a38cdbdbca2d021, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Mode
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 5642579285236830235, guid: a598be8e9b704d349a38cdbdbca2d021, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 1437038308284857729}
+    - target: {fileID: 5642579285236830235, guid: a598be8e9b704d349a38cdbdbca2d021, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Target
+      value: 
+      objectReference: {fileID: 1437038308284857729}
+    - target: {fileID: 5642579285236830235, guid: a598be8e9b704d349a38cdbdbca2d021, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[2].m_Target
       value: 
       objectReference: {fileID: 1437038308284857729}
+    - target: {fileID: 5642579285236830235, guid: a598be8e9b704d349a38cdbdbca2d021, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: StartCool
+      objectReference: {fileID: 0}
+    - target: {fileID: 5642579285236830235, guid: a598be8e9b704d349a38cdbdbca2d021, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_MethodName
+      value: Buy
+      objectReference: {fileID: 0}
+    - target: {fileID: 5642579285236830235, guid: a598be8e9b704d349a38cdbdbca2d021, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: Store, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 5642579285236830235, guid: a598be8e9b704d349a38cdbdbca2d021, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_TargetAssemblyTypeName
+      value: Store, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 5642579285236830235, guid: a598be8e9b704d349a38cdbdbca2d021, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Arguments.m_FloatArgument
+      value: 100
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

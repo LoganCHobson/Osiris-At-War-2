@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
@@ -29,6 +30,15 @@ public class GameManager : MonoBehaviour
 
     public void EndGame()
     {
+        SceneManager.LoadScene("MainMenu");
+    }
 
+    public void RemoveFriendly(SpaceUnit unit)
+    {
+        allFriendlyUnits.Remove(unit);
+    }
+    public void RemoveEnemy(SpaceUnit unit)
+    {
+        allEnemyUnits.Remove(unit);
     }
 }

@@ -7,9 +7,26 @@ public class AIUnitBrain : MonoBehaviour
     public AITask currentTask;
     private GameObject states;
 
+    private float timer;
+    public float maxWait = 25;
     private void Start()
     {
+        timer = maxWait;
         states = GetComponentInChildren<AIUnitStateMachine>().gameObject;
+    }
+
+    private void Update()
+    {
+        if(currentTask != null)
+        {
+            timer -= Time.deltaTime;
+            if (timer <= 0)
+            {
+                Debug.LogWarning("TASK FAILED TO COMPLETE INTIME. AUTO COMPLETING");
+                CompleteTask();
+                timer = maxWait;
+            }
+        }
     }
     public void AssignTask(AITask task)
     {
