@@ -22,6 +22,8 @@ public class TurretController : MonoBehaviour
 
     [Header("Firing settings")]
     public float range = 50;
+    public float baseAccuracy = 0.02f;
+    public float rangeFallOffValue = 0.1f;
     public LayerMask targetLayer;
     public Transform target;
     public float fireRate = 1f;
@@ -158,6 +160,8 @@ public class TurretController : MonoBehaviour
         Vector3 inaccuracyOffset = Random.insideUnitSphere * accuracyMultiplier;
         Vector3 finalDirection = (direction + inaccuracyOffset).normalized;
 
+        Debug.Log("Direction: " + direction + " Accuracy: " + accuracyMultiplier + " Offset: " + inaccuracyOffset + " Final Direction: " + finalDirection);
+
         GameObject temp = Instantiate(projectilePrefab, firingPoint.position, firingPoint.parent.parent.rotation);
         temp.GetComponent<Laser>().damage = damage;
 
@@ -172,10 +176,8 @@ public class TurretController : MonoBehaviour
     {
         
         float distance = Vector3.Distance(transform.position, target.position);
-
         
-        float baseAccuracy = 0.02f; 
-        float rangeFalloff = distance / range * 0.1f; 
+        float rangeFalloff = distance / range * rangeFallOffValue; 
 
         
         ShipType targetType = target.GetComponentInParent<SpaceUnit>().shipType;

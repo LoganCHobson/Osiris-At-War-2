@@ -2,39 +2,52 @@ using UnityEngine;
 
 public class Laser : MonoBehaviour
 {
-    public int layerMask;
+    public float speed = 1.0f;
+    public float damage = 1f;
+    public float timeOut = 10f;
+    public LayerMask layer;
 
-    public float damage;
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.gameObject.layer == layerMask)
-        {
-            if(other.gameObject.TryGetComponent(out HardpointHealth health))
-            {
-                health.DealDamage(damage);
-            }
-            else
-            {
-                other.transform.root.gameObject.GetComponent<UnitHealthManager>().DealRandomDamage(damage);
-            }
-           
-            Debug.Log("Hit target");
-            Destroy(gameObject);
-        }
-        else
-        {
-           
-            Debug.Log("Hit "+ other.gameObject.name + "Layer did not match. Found " + other.gameObject.layer + ", Expected " + layerMask);
-            Debug.Log("Missed!");
-
-            Destroy(gameObject);
-        }
-       
-    }
-
+    private Vector3 lastPos;
 
     void Start()
     {
-        Destroy(gameObject, 5);
+        lastPos = transform.position;
+        Destroy(gameObject, timeOut);
+    }
+
+    void FixedUpdate()
+    {
+        Vector3 move = transform.forward * speed * Time.fixedDeltaTime;
+        transform.position += move;
+
+        CheckHit(lastPos, transform.position);
+        lastPos = transform.position;
+    }
+
+    void CheckHit(Vector3 from, Vector3 to)
+    {
+        if (Physics.Linecast(from, to, out RaycastHit hit, layer))
+        {
+            Debug.Log("Hit: " + hit.collider.gameObject.name);
+            HardpointHealth hp = hit.collider.GetComponent<HardpointHealth>();
+            if (hp == null)
+            {
+                hp = hit.collider.GetComponentInChildren<HardpointHealth>();
+
+                if (hp == null)
+                {
+                    hp = hit.collider.GetComponentInParent<HardpointHealth>();
+                }
+            }
+               
+
+            if (hp != null)
+            {
+                hp.DealDamage(damage);
+                Destroy(gameObject); 
+            }
+        }
+
+        Debug.DrawLine(from, to, Color.red, 1f);
     }
 }

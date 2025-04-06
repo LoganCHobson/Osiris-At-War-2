@@ -191,20 +191,20 @@ public class PlayerSpaceManager : MonoBehaviour
 
         if (Physics.Raycast(ray, out hit, Mathf.Infinity, friendlyUnitLayer))
         {
-            Debug.Log("Friend");
+           
             if (hit.collider.gameObject.transform.root.TryGetComponent(out HardpointManager manager))
             {
-                Debug.Log("Turned on");
+                
                 lastHighlight = manager;
                 manager.ToggleHighlight(true);
             }
         }
         else if (Physics.Raycast(ray, out hit, Mathf.Infinity, enemyUnitLayer))
         {
-            Debug.Log("Foe");
+           
             if (hit.collider.gameObject.transform.root.TryGetComponent(out HardpointManager manager))
             {
-                Debug.Log("Turned on");
+                
                 lastHighlight = manager;
                 manager.ToggleHighlight(true);
             }
