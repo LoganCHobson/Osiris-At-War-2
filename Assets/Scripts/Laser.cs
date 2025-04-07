@@ -5,6 +5,7 @@ public class Laser : MonoBehaviour
     public float speed = 1.0f;
     public float damage = 1f;
     public float timeOut = 10f;
+    public ParticleSystem particle;
     public LayerMask layer;
 
     private Vector3 lastPos;
@@ -28,7 +29,10 @@ public class Laser : MonoBehaviour
     {
         if (Physics.Linecast(from, to, out RaycastHit hit, layer))
         {
-            Debug.Log("Hit: " + hit.collider.gameObject.name);
+            //Debug.Log("Hit: " + hit.collider.gameObject.name);
+            particle.transform.parent = null;
+            particle.Play();
+            Destroy(particle.gameObject, 2f);
             HardpointHealth hp = hit.collider.GetComponent<HardpointHealth>();
             if (hp == null)
             {
