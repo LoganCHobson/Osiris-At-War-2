@@ -212,7 +212,7 @@ public class PlayerSpaceManager : MonoBehaviour
         }
         else
         {
-            Debug.Log("Else");
+            //Debug.Log("Else");
             if (lastHighlight != null && !lastHighlight.gameObject.GetComponent<SpaceUnit>().isSelected)
             {
                 Debug.Log("Turned off");
@@ -279,7 +279,7 @@ public class PlayerSpaceManager : MonoBehaviour
             unit.isSelected = true;
             unit.ToggleSelect(true);
             selectedUnits.Add(unit);
-            Debug.Log("Added Unit");
+            //Debug.Log("Added Unit");
         }
     }
 

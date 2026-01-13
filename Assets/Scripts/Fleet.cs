@@ -11,6 +11,10 @@ public class Fleet : MonoBehaviour
 
     private void Start()
     {
+        if(tempIcon == null || tempPrefab == null)
+        {
+            return;
+        }
         Ship ship = new Ship
         {
             icon = tempIcon,
