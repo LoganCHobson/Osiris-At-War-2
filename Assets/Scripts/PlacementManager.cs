@@ -27,8 +27,8 @@ public class PlacementManager : MonoBehaviour
             return false;
         }
 
-        Instantiate(ship.prefab, hit.point, Quaternion.identity);
-        Debug.Log("Placed unit at: " + hit.point);
+        GameObject spawned = Instantiate(ship.prefab, hit.point, Quaternion.identity);
+        GameManager.TagShip(spawned, ship, true);
 
         Destroy(sourceIcon);
         return true;

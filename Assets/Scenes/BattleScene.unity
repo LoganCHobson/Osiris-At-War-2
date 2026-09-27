@@ -815,6 +815,65 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!1 &512422329
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 512422330}
+  - component: {fileID: 512422331}
+  m_Layer: 0
+  m_Name: LaserRedPool
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &512422330
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 512422329}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &512422331
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 512422329}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7eb19cb3de245ec4eb252af73839f7c2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SolarStudios.ObjectPool
+  prefab: {fileID: 9062178426813273101, guid: e8ccb87e282fd7f459d64b69aa39cadf, type: 3}
+  poolSize: 300
+  objectPool: []
+  onSpawn:
+    m_PersistentCalls:
+      m_Calls: []
+  onRecycle:
+    m_PersistentCalls:
+      m_Calls: []
+  onRecycleAll:
+    m_PersistentCalls:
+      m_Calls: []
+  onInitalize:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &679816708
 GameObject:
   m_ObjectHideFlags: 0
@@ -1034,7 +1093,7 @@ RectTransform:
   m_GameObject: {fileID: 755306848}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 14955262}
@@ -1456,7 +1515,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   allFriendlyUnits: []
   UnitsListUI: {fileID: 1972480120}
-  startingShipSpawnPoint: {fileID: 1138445455}
+  attackerShipSpawnPoint: {fileID: 1138445455}
+  defenderShipSpawnPoint: {fileID: 9300000000000002}
+  defenderSpawnSpacing: 15
   fleet: {fileID: 1057846725}
 --- !u!4 &1345970854
 Transform:
@@ -1867,6 +1928,65 @@ MonoBehaviour:
   m_MinRegionArea: 2
   m_NavMeshData: {fileID: 23800000, guid: 59fce296176958846a2b40f9b9edc7d5, type: 2}
   m_BuildHeightMesh: 0
+--- !u!1 &2012470192
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2012470194}
+  - component: {fileID: 2012470193}
+  m_Layer: 0
+  m_Name: LaserBluePool
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2012470193
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2012470192}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7eb19cb3de245ec4eb252af73839f7c2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SolarStudios.ObjectPool
+  prefab: {fileID: 9062178426813273101, guid: c35cd167db47fd049b45319467d5858c, type: 3}
+  poolSize: 300
+  objectPool: []
+  onSpawn:
+    m_PersistentCalls:
+      m_Calls: []
+  onRecycle:
+    m_PersistentCalls:
+      m_Calls: []
+  onRecycleAll:
+    m_PersistentCalls:
+      m_Calls: []
+  onInitalize:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!4 &2012470194
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2012470192}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2077843593
 GameObject:
   m_ObjectHideFlags: 0
@@ -1959,7 +2079,7 @@ RectTransform:
   m_GameObject: {fileID: 2077843593}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 250504112}
@@ -1982,8 +2102,37 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 211a61f89ebdcbb4c9aaf0cc8248cb5c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  placementMode: 0
-  unitList: {fileID: 0}
+--- !u!1 &9300000000000001
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9300000000000002}
+  m_Layer: 0
+  m_Name: DefenderStart
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &9300000000000002
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9300000000000001}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.92387956, z: 0, w: 0.38268343}
+  m_LocalPosition: {x: -164.7, y: 1.298, z: 171.3}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 135, z: 0}
 --- !u!1001 &7704120674275380904
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2054,6 +2203,7 @@ SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 1138445455}
+  - {fileID: 9300000000000002}
   - {fileID: 938436641}
   - {fileID: 410087041}
   - {fileID: 832575519}
@@ -2074,3 +2224,5 @@ SceneRoots:
   - {fileID: 2077843597}
   - {fileID: 1057846724}
   - {fileID: 980424901}
+  - {fileID: 512422330}
+  - {fileID: 2012470194}

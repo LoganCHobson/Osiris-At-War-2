@@ -779,9 +779,9 @@ MonoBehaviour:
   m_AudioPlay: 0
   m_DebugDrawModesUseInteractiveLightBakingData: 0
   m_Position:
-    m_Target: {x: -192.39409, y: 350.9061, z: -290.44662}
+    m_Target: {x: -13.457166, y: 11.046162, z: -17.738789}
     speed: 2
-    m_Value: {x: -192.39409, y: 350.9061, z: -290.44662}
+    m_Value: {x: -13.457166, y: 11.046162, z: -17.738789}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -827,13 +827,13 @@ MonoBehaviour:
     m_GridAxis: 1
     m_gridOpacity: 0.5
   m_Rotation:
-    m_Target: {x: -0.42026192, y: -0.21386495, z: 0.10255694, w: -0.8759981}
+    m_Target: {x: -0.27427876, y: -0.4050537, z: 0.12879024, w: -0.8627733}
     speed: 2
-    m_Value: {x: -0.42020968, y: -0.21383837, z: 0.10254419, w: -0.8758892}
+    m_Value: {x: -0.27424282, y: -0.40500066, z: 0.12877338, w: -0.8626603}
   m_Size:
-    m_Target: 10
+    m_Target: 11.925186
     speed: 2
-    m_Value: 10
+    m_Value: 11.925186
   m_Ortho:
     m_Target: 0
     speed: 2
@@ -972,7 +972,7 @@ MonoBehaviour:
     m_DynamicPanelBehavior: 0
   m_LockTracker:
     m_IsLocked: 0
-  m_LastSelectedObjectID: 61994
+  m_LastSelectedObjectID: 44258
 --- !u!114 &9
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -990,7 +990,7 @@ MonoBehaviour:
     serializedVersion: 2
     x: 906
     y: 0
-    width: 320
+    width: 261
     height: 933
   m_MinSize: {x: 202, y: 226}
   m_MaxSize: {x: 4002, y: 4026}
@@ -1022,7 +1022,7 @@ MonoBehaviour:
     serializedVersion: 2
     x: 906
     y: 79
-    width: 318
+    width: 259
     height: 907
   m_SerializedDataModeController:
     m_DataMode: 0
@@ -1041,94 +1041,20 @@ MonoBehaviour:
     m_TreeViewState:
       scrollPos: {x: 0, y: 0}
       m_SelectedIDs:
-      - m_Data: 61994
+      - m_Data: -2925498
       m_LastClickedID:
-        m_Data: 0
+        m_Data: -2925498
       m_ExpandedIDs:
-      - m_Data: -848578
-      - m_Data: -806866
-      - m_Data: -756608
-      - m_Data: -706362
-      - m_Data: -653292
-      - m_Data: -651504
-      - m_Data: -609656
-      - m_Data: -567786
-      - m_Data: -525864
-      - m_Data: -476486
-      - m_Data: -474490
-      - m_Data: -388838
-      - m_Data: -344490
-      - m_Data: -299908
-      - m_Data: -297950
-      - m_Data: -255032
-      - m_Data: -211932
-      - m_Data: -208174
-      - m_Data: -166120
-      - m_Data: -135414
-      - m_Data: -134152
-      - m_Data: -132960
-      - m_Data: -131896
-      - m_Data: -130554
-      - m_Data: -127266
-      - m_Data: -125606
-      - m_Data: -125540
-      - m_Data: -124604
-      - m_Data: -124588
-      - m_Data: -122968
-      - m_Data: -121856
-      - m_Data: -117128
-      - m_Data: -116970
-      - m_Data: -75036
-      - m_Data: -66640
-      - m_Data: -64262
-      - m_Data: -63380
-      - m_Data: -63218
-      - m_Data: -63018
-      - m_Data: -58150
-      - m_Data: -55306
-      - m_Data: -44886
-      - m_Data: -44078
-      - m_Data: -1292
-      - m_Data: -12
-      - m_Data: 104482
-      - m_Data: 106836
-      - m_Data: 107012
-      - m_Data: 107370
-      - m_Data: 107532
-      - m_Data: 152398
-      - m_Data: 152574
-      - m_Data: 152936
-      - m_Data: 153098
-      - m_Data: 155812
-      - m_Data: 155988
-      - m_Data: 156350
-      - m_Data: 156512
-      - m_Data: 159834
-      - m_Data: 159884
-      - m_Data: 159996
-      - m_Data: 188622
-      - m_Data: 188638
-      - m_Data: 188646
-      - m_Data: 188700
-      - m_Data: 188704
-      - m_Data: 188742
-      - m_Data: 194444
-      - m_Data: 194664
-      - m_Data: 205852
-      - m_Data: 205856
-      - m_Data: 205972
-      - m_Data: 206046
-      - m_Data: 206050
-      - m_Data: 206166
-      - m_Data: 207844
-      - m_Data: 207848
-      - m_Data: 207964
-      - m_Data: 211650
-      - m_Data: 211654
-      - m_Data: 211770
-      - m_Data: 212964
-      - m_Data: 212968
-      - m_Data: 213084
+      - m_Data: -2923880
+      - m_Data: -1578000
+      - m_Data: -1535468
+      - m_Data: -226352
+      - m_Data: -132706
+      - m_Data: -90706
+      - m_Data: -1336
+      - m_Data: 57586
+      - m_Data: 77018
+      - m_Data: 101270
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -1169,9 +1095,9 @@ MonoBehaviour:
   m_Children: []
   m_Position:
     serializedVersion: 2
-    x: 1226
+    x: 1167
     y: 0
-    width: 261
+    width: 320
     height: 933
   m_MinSize: {x: 232, y: 276}
   m_MaxSize: {x: 10002, y: 10026}
@@ -1201,9 +1127,9 @@ MonoBehaviour:
     m_TextWithWhitespace: "Project\u200B"
   m_Pos:
     serializedVersion: 2
-    x: 1226
+    x: 1167
     y: 79
-    width: 259
+    width: 318
     height: 907
   m_SerializedDataModeController:
     m_DataMode: 0
@@ -1219,7 +1145,7 @@ MonoBehaviour:
     m_OverlaysVisible: 1
     m_DynamicPanelBehavior: 0
   m_SearchFilter:
-    m_NameFilter: 
+    m_NameFilter: galac
     m_ClassNames: []
     m_AssetLabels: []
     m_AssetBundleNames: []
@@ -1229,17 +1155,17 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets/Scenes
+    - Assets/Prefabs
     m_Globs: []
     m_ProductIds: 
     m_AnyWithAssetOrigin: 0
-    m_OriginalText: 
+    m_OriginalText: galac
     m_ImportLogFlags: 0
     m_FilterByTypeIntersection: 0
   m_ViewMode: 1
   m_StartGridSize: 64
   m_LastFolders:
-  - Assets/Scenes
+  - Assets/Prefabs
   m_LastFoldersGridSize: -1
   m_LastProjectPath: E:\Development\GameDevelopment\Unity\Osiris at war 2\Osiris-At-War-2
   m_LockTracker:
@@ -1248,12 +1174,12 @@ MonoBehaviour:
   m_FolderTreeState:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs:
-    - m_Data: 61920
+    - m_Data: 58016
     m_LastClickedID:
-      m_Data: 61920
+      m_Data: 58016
     m_ExpandedIDs:
     - m_Data: 0
-    - m_Data: 61610
+    - m_Data: 57706
     - m_Data: 1000000000
     - m_Data: 2147483647
     m_RenameOverlay:
@@ -1288,7 +1214,7 @@ MonoBehaviour:
       m_Data: 0
     m_ExpandedIDs:
     - m_Data: 0
-    - m_Data: 61610
+    - m_Data: 57706
     - m_Data: 1000000000
     - m_Data: 2147483647
     m_RenameOverlay:
@@ -1318,9 +1244,9 @@ MonoBehaviour:
       m_ResourceFile: 
   m_ListAreaState:
     m_SelectedInstanceIDs:
-    - m_Data: 61994
-    m_LastClickedInstanceID: 61994
-    m_HadKeyboardFocusLastEvent: 1
+    - m_Data: -2925498
+    m_LastClickedInstanceID: -2925498
+    m_HadKeyboardFocusLastEvent: 0
     m_ExpandedInstanceIDs: []
     m_RenameOverlay:
       m_UserAcceptedRename: 0
@@ -1422,7 +1348,7 @@ MonoBehaviour:
     m_ControlHash: -371814159
     m_PrefName: Preview_InspectorPreview
   m_LastInspectedObjectInstanceID: -1
-  m_LastVerticalScrollValue: 0
+  m_LastVerticalScrollValue: 263
   m_GlobalObjectId: 
   m_InspectorMode: 0
   m_LockTracker:

@@ -40,7 +40,6 @@ public class PlayerSpaceManager : MonoBehaviour
             {
                 if (selectedUnits.Count > 0)
                 {
-                    Debug.Log("UI HIT: " + hit.transform.gameObject + " On Layer " + hit.transform.gameObject.layer);
                     TargetSelection(hit);
                 }
             }
@@ -71,7 +70,6 @@ public class PlayerSpaceManager : MonoBehaviour
     {
         if (hit.transform.gameObject.CompareTag("TargetUI"))
         {
-            Debug.Log("UI TARGET");
             Transform targetTransform = hit.transform.parent.parent;
             foreach (SpaceUnit unit in selectedUnits)
             {
@@ -89,7 +87,6 @@ public class PlayerSpaceManager : MonoBehaviour
         }
         else if (hit.collider.gameObject.CompareTag("Hardpoint"))
         {
-            Debug.Log("MESH TARGET");
             foreach (SpaceUnit unit in selectedUnits)
             {
                 unit.gameObject.GetComponent<HardpointManager>().AssignTarget(hit.collider.transform);
@@ -106,7 +103,6 @@ public class PlayerSpaceManager : MonoBehaviour
         }
         else
         {
-            Debug.Log("RANDOM TARGET");
             foreach (SpaceUnit unit in selectedUnits)
             {
                 unit.gameObject.GetComponent<HardpointManager>().AssignTarget(hit.collider.gameObject.GetComponentInParent<HardpointManager>().GetRandomHardpoint());
@@ -134,7 +130,6 @@ public class PlayerSpaceManager : MonoBehaviour
             if (!selectedUnits.Contains(unit))
             {
                 SelectUnit(unit);
-                Debug.Log("Unit Selected");
             }
         }
         else //Single selection
@@ -142,7 +137,6 @@ public class PlayerSpaceManager : MonoBehaviour
             DeselectAllUnits();
             SelectUnit(unit);
             unit.ToggleSelect(true);
-            Debug.Log("Single Unit Selected");
         }
     }
 
@@ -159,11 +153,8 @@ public class PlayerSpaceManager : MonoBehaviour
                     unit.stateMachine.SetState(unit.moveState);
                 }
             }
-            //selectionAnim.gameObject.SetActive(true);
             selectionAnim.gameObject.transform.localPosition = hit.point;
-            //selectionAnim.gameObject.transform.position = new Vector3(0f, selectedUnits[0].agent.baseOffset, 0f) + hit.point;
             selectionAnim.Play("GroundMarker");
-            Debug.Log("Location Selected");
         }
         else
         {
@@ -180,32 +171,31 @@ public class PlayerSpaceManager : MonoBehaviour
             }
             selectionAnim.gameObject.transform.localPosition = hit.point;
             selectionAnim.Play("GroundMarker");
-            Debug.Log("Location Selected");
         }
     }
 
     private void ShipHeathHighlighter()
     {
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        Ray ray = cam.ScreenPointToRay(Input.mousePosition);
         RaycastHit hit;
 
 
         if (Physics.Raycast(ray, out hit, Mathf.Infinity, friendlyUnitLayer))
         {
-           
+
             if (hit.collider.gameObject.transform.root.TryGetComponent(out HardpointManager manager))
             {
-                
+
                 lastHighlight = manager;
                 manager.ToggleHighlight(true);
             }
         }
         else if (Physics.Raycast(ray, out hit, Mathf.Infinity, enemyUnitLayer))
         {
-           
+
             if (hit.collider.gameObject.transform.root.TryGetComponent(out HardpointManager manager))
             {
-                
+
                 lastHighlight = manager;
                 manager.ToggleHighlight(true);
             }
@@ -213,10 +203,8 @@ public class PlayerSpaceManager : MonoBehaviour
         }
         else
         {
-            //Debug.Log("Else");
             if (lastHighlight != null && !lastHighlight.gameObject.GetComponent<SpaceUnit>().isSelected)
             {
-                Debug.Log("Turned off");
                 lastHighlight.ToggleHighlight(false);
 
                 lastHighlight = null;
@@ -227,7 +215,7 @@ public class PlayerSpaceManager : MonoBehaviour
 
     private void CursorSelector()
     {
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        Ray ray = cam.ScreenPointToRay(Input.mousePosition);
         RaycastHit hit;
 
         if (Physics.Raycast(ray, out hit, Mathf.Infinity, friendlyUnitLayer))

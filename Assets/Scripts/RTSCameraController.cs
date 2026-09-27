@@ -53,9 +53,12 @@ public class RTSCameraController : MonoBehaviour
         DEFAULT
     }
 
+    private Camera cam;
+
     private void Start()
     {
         instance = this;
+        cam = Camera.main;
 
         newPosition = transform.position;
 
@@ -207,7 +210,7 @@ public class RTSCameraController : MonoBehaviour
         if (Input.GetMouseButtonDown(2) && EventSystem.current.IsPointerOverGameObject() == false)
         {
             Plane plane = new Plane(Vector3.up, Vector3.zero);
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            Ray ray = cam.ScreenPointToRay(Input.mousePosition);
 
             float entry;
 
@@ -219,7 +222,7 @@ public class RTSCameraController : MonoBehaviour
         if (Input.GetMouseButton(2) && EventSystem.current.IsPointerOverGameObject() == false)
         {
             Plane plane = new Plane(Vector3.up, Vector3.zero);
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            Ray ray = cam.ScreenPointToRay(Input.mousePosition);
 
             float entry;
 

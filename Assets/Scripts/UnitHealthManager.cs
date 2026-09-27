@@ -12,9 +12,20 @@ public class UnitHealthManager : MonoBehaviour
     public UnityEvent onDie;
 
     private bool dead;
+    private Camera cam;
+
+    public Ship sourceShip;
+    public bool isAttackerSide;
+
+    public void Configure(Ship ship, bool attackerSide)
+    {
+        sourceShip = ship;
+        isAttackerSide = attackerSide;
+    }
 
     private void Start()
     {
+        cam = Camera.main;
         hardpointManager = GetComponent<HardpointManager>();
 
         if (hardpointManager.hardpoints.Count > 0)
@@ -64,12 +75,13 @@ public class UnitHealthManager : MonoBehaviour
         {
             dead = true;
             onDie.Invoke();
+            BattleContext.Instance?.ReportLoss(isAttackerSide, sourceShip);
             Destroy(gameObject, 5);
         }
 
         if(healthSlider.gameObject.activeInHierarchy)
         {
-            healthSlider.gameObject.transform.parent.LookAt(Camera.main.transform);
+            healthSlider.gameObject.transform.parent.LookAt(cam.transform);
         }
     }
 

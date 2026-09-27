@@ -34,19 +34,13 @@ public class TurretController : MonoBehaviour
     public float maxTimeWithoutLOS = 3f;
 
 
-    private Collider[] targetsInRange;
-        
     void Update()
     {
-        targetsInRange = Physics.OverlapSphere(transform.position, range, targetLayer); //Constantly report valid targets.
-
         if (target == null)
         {
             AcquireTarget();
         }
-        
-        
-        
+
         if (target != null)
         {
            
@@ -74,8 +68,9 @@ public class TurretController : MonoBehaviour
     }
 
 
-    void AcquireTarget() //Auto Target aquisition
+    void AcquireTarget()
     {
+        Collider[] targetsInRange = Physics.OverlapSphere(transform.position, range, targetLayer);
 
         if (targetsInRange.Length > 0)
         {
@@ -143,11 +138,9 @@ public class TurretController : MonoBehaviour
     {
         Vector3 direction = (target.position - firingPoint.position).normalized;
         RaycastHit hit;
-        //Debug.DrawRay(firingPoint.position, direction, Color.red);
         if (Physics.Raycast(firingPoint.position, direction, out hit, range))
         {
-            Debug.Log("LOS Made it.");
-            return hit.transform == target || ((1 << hit.transform.gameObject.layer) & targetLayer) != 0; //IF we atleast hit something of the correct layer, fire anyway.
+            return hit.transform == target || ((1 << hit.transform.gameObject.layer) & targetLayer) != 0;
         }
         return false;
     }
@@ -160,10 +153,16 @@ public class TurretController : MonoBehaviour
         Vector3 inaccuracyOffset = Random.insideUnitSphere * accuracyMultiplier;
         Vector3 finalDirection = (direction + inaccuracyOffset).normalized;
 
-        Debug.Log("Direction: " + direction + " Accuracy: " + accuracyMultiplier + " Offset: " + inaccuracyOffset + " Final Direction: " + finalDirection);
+        ObjectPool pool = ObjectPool.GetPoolFor(projectilePrefab);
+        GameObject temp = pool != null
+            ? pool.Spawn(firingPoint.position, firingPoint.parent.parent.rotation)
+            : Instantiate(projectilePrefab, firingPoint.position, firingPoint.parent.parent.rotation);
 
-        GameObject temp = Instantiate(projectilePrefab, firingPoint.position, firingPoint.parent.parent.rotation);
-        temp.GetComponent<Laser>().damage = damage;
+        if (temp == null) return;
+
+        Laser laser = temp.GetComponent<Laser>();
+        laser.damage = damage;
+        laser.SetSourcePool(pool);
 
         Rigidbody rb = temp.GetComponent<Rigidbody>();
         if (rb != null)

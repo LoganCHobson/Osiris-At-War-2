@@ -1,3 +1,4 @@
+using SolarStudios;
 using UnityEngine;
 
 public class Laser : MonoBehaviour
@@ -9,11 +10,18 @@ public class Laser : MonoBehaviour
     public LayerMask layer;
 
     private Vector3 lastPos;
+    private float lifeTimer;
+    private ObjectPool sourcePool;
 
-    void Start()
+    private void OnEnable()
     {
         lastPos = transform.position;
-        Destroy(gameObject, timeOut);
+        lifeTimer = 0f;
+    }
+
+    public void SetSourcePool(ObjectPool pool)
+    {
+        sourcePool = pool;
     }
 
     void FixedUpdate()
@@ -23,16 +31,25 @@ public class Laser : MonoBehaviour
 
         CheckHit(lastPos, transform.position);
         lastPos = transform.position;
+
+        lifeTimer += Time.fixedDeltaTime;
+        if (lifeTimer >= timeOut)
+        {
+            Recycle();
+        }
     }
 
     void CheckHit(Vector3 from, Vector3 to)
     {
         if (Physics.Linecast(from, to, out RaycastHit hit, layer))
         {
-            //Debug.Log("Hit: " + hit.collider.gameObject.name);
-            particle.transform.parent = null;
-            particle.Play();
-            Destroy(particle.gameObject, 2f);
+            if (particle != null)
+            {
+                ParticleSystem impact = Instantiate(particle, hit.point, particle.transform.rotation);
+                impact.Play();
+                Destroy(impact.gameObject, 2f);
+            }
+
             HardpointHealth hp = hit.collider.GetComponent<HardpointHealth>();
             if (hp == null)
             {
@@ -43,15 +60,25 @@ public class Laser : MonoBehaviour
                     hp = hit.collider.GetComponentInParent<HardpointHealth>();
                 }
             }
-               
 
             if (hp != null)
             {
                 hp.DealDamage(damage);
-                Destroy(gameObject); 
             }
-        }
 
-        Debug.DrawLine(from, to, Color.red, 1f);
+            Recycle();
+        }
+    }
+
+    private void Recycle()
+    {
+        if (sourcePool != null)
+        {
+            sourcePool.Recycle(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
     }
 }

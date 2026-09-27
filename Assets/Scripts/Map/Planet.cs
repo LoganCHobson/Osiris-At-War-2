@@ -7,7 +7,6 @@ public class Planet : MonoBehaviour
 
     public string planetName;
     public bool ownedByPlayer = true;
-    public bool contested;
     public float fleetSlotRadius = 3f;
 
     public List<Planet> connections = new List<Planet>();
@@ -102,7 +101,7 @@ public class Planet : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        Gizmos.color = contested ? Color.red : (ownedByPlayer ? Color.cyan : Color.gray);
+        Gizmos.color = ownedByPlayer ? Color.cyan : Color.red;
         Gizmos.DrawWireSphere(transform.position, 1f);
 
         Gizmos.color = new Color(0f, 1f, 1f, 0.4f);

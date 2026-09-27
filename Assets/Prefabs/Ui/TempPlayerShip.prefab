@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 5038961919918409729}
   - component: {fileID: 1185812290130268952}
   m_Layer: 0
-  m_Name: TempShip
+  m_Name: TempPlayerShip
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

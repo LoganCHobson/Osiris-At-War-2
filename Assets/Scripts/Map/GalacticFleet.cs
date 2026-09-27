@@ -14,6 +14,10 @@ public class GalacticFleet : MonoBehaviour
     public float stopoverDuration = 0.75f;
     public bool preferFriendlyRoute = true;
 
+    [Header("Faction Visual")]
+    public Color playerTint = new Color(0.3f, 0.6f, 1f, 1f);
+    public Color enemyTint = new Color(1f, 0.25f, 0.25f, 1f);
+
     public bool IsTraveling { get; private set; }
 
     private List<Planet> route = new List<Planet>();
@@ -22,12 +26,23 @@ public class GalacticFleet : MonoBehaviour
     private bool isStoppedOver;
     private float stopoverTimer;
 
+    private static readonly int BaseColorID = Shader.PropertyToID("_BaseColor");
+    private static readonly int ColorID = Shader.PropertyToID("_Color");
+    private MaterialPropertyBlock factionProperties;
+
     private void Start()
     {
+        UpdateFactionVisual();
+
         if (currentPlanet != null)
         {
             SnapToPlanet(currentPlanet);
         }
+    }
+
+    private void OnValidate()
+    {
+        UpdateFactionVisual();
     }
 
     private void Update()
@@ -90,6 +105,7 @@ public class GalacticFleet : MonoBehaviour
     public bool TransferShipTo(Ship ship, GalacticFleet destination)
     {
         if (destination == this || IsTraveling || destination.IsTraveling) return false;
+        if (destination.isPlayerFleet != isPlayerFleet) return false; // Can't reorganize ships across factions.
         if (currentPlanet == null || currentPlanet != destination.currentPlanet) return false;
         if (!roster.Remove(ship)) return false;
 
@@ -104,6 +120,26 @@ public class GalacticFleet : MonoBehaviour
         return true;
     }
 
+    public void RemoveShip(Ship ship)
+    {
+        if (!roster.Remove(ship)) return;
+
+        if (roster.Count == 0)
+        {
+            currentPlanet?.ReleaseSlot(this);
+            Destroy(gameObject);
+        }
+    }
+
+    public void PlaceAt(Planet planet)
+    {
+        if (planet == null) return;
+
+        currentPlanet?.ReleaseSlot(this);
+        currentPlanet = planet;
+        SnapToPlanet(planet);
+    }
+
     private void ArriveAtWaypoint(Planet planet, bool isFinalHop)
     {
         currentPlanet = planet;
@@ -113,10 +149,12 @@ public class GalacticFleet : MonoBehaviour
             planet.ClaimSlot(this); // Brief stopover parking while passing through.
         }
 
-        if (CheckForEngagement(planet))
+        if (TryStartBattle(planet))
         {
             return; // Battle scene is loading - stop right here, mid-route.
         }
+
+        TryCapturePlanet(planet);
 
         if (isFinalHop)
         {
@@ -138,30 +176,65 @@ public class GalacticFleet : MonoBehaviour
         routeIndex++;
     }
 
-    private bool CheckForEngagement(Planet planet)
+    private bool TryStartBattle(Planet planet)
     {
-        Debug.Log($"[CheckForEngagement] planet={planet.planetName} isPlayerFleet={isPlayerFleet} contested={planet.contested} roster.Count={roster.Count}");
+        if (!isPlayerFleet)
+        {
+            return false; // Only the player's own arrivals trigger a battle for now - enemy fleets don't act yet.
+        }
 
-        if (!isPlayerFleet || !planet.contested)
+        GalacticFleet defender = FindOpposingFleet(planet);
+
+        if (defender == null)
         {
             return false;
         }
 
         if (BattleContext.Instance == null)
         {
-            Debug.LogWarning("No BattleContext in scene - can't hand off fleet roster to BattleScene.");
+            Debug.LogWarning("No BattleContext in scene - can't hand off fleets to BattleScene.");
             return false;
         }
 
-        for (int i = 0; i < roster.Count; i++)
-        {
-            Debug.Log($"[CheckForEngagement] roster[{i}] = {(roster[i] == null ? "NULL" : roster[i].name)}");
-        }
-
-        BattleContext.Instance.SetIncomingRoster(roster);
-        Debug.Log($"[CheckForEngagement] BattleContext.incomingRoster.Count after SetIncomingRoster = {BattleContext.Instance.incomingRoster.Count}");
+        GalacticState.Instance?.CaptureFromScene();
+        BattleContext.Instance.BeginBattle(this, defender);
         SceneManager.LoadScene("BattleScene");
         return true;
+    }
+
+    private void TryCapturePlanet(Planet planet)
+    {
+        if (planet.ownedByPlayer == isPlayerFleet) return;
+        if (FindOpposingFleet(planet) != null) return;
+
+        planet.SetOwnership(isPlayerFleet);
+    }
+
+    private GalacticFleet FindOpposingFleet(Planet planet)
+    {
+        for (int slot = 0; slot < Planet.FleetSlotCount; slot++)
+        {
+            GalacticFleet occupant = planet.GetFleetInSlot(slot);
+            if (occupant != null && occupant.isPlayerFleet != isPlayerFleet)
+            {
+                return occupant;
+            }
+        }
+        return null;
+    }
+
+    private void UpdateFactionVisual()
+    {
+        factionProperties ??= new MaterialPropertyBlock();
+        Color tint = isPlayerFleet ? playerTint : enemyTint;
+
+        foreach (MeshRenderer meshRenderer in GetComponentsInChildren<MeshRenderer>())
+        {
+            meshRenderer.GetPropertyBlock(factionProperties);
+            factionProperties.SetColor(BaseColorID, tint);
+            factionProperties.SetColor(ColorID, tint);
+            meshRenderer.SetPropertyBlock(factionProperties);
+        }
     }
 
     private void SnapToPlanet(Planet planet)

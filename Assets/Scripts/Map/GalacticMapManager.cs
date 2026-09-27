@@ -4,6 +4,8 @@ using UnityEngine.EventSystems;
 
 public class GalacticMapManager : MonoBehaviour
 {
+    public static GalacticMapManager Instance;
+
     [Header("Raycasting")]
     public LayerMask fleetLayer;
     public LayerMask planetLayer;
@@ -22,15 +24,86 @@ public class GalacticMapManager : MonoBehaviour
     private bool isDragging;
     private Vector3 dragOrigin;
 
+    private void Awake()
+    {
+        Instance = this;
+    }
+
     private void Start()
     {
         cam = Camera.main;
+        Cursor.visible = true;
+
         DrawHyperspaceLanes();
 
         if (orderLinePreview != null)
         {
             orderLinePreview.positionCount = 0;
         }
+
+        GalacticState.Instance?.ApplyToScene();
+        ApplyPendingBattleResult();
+    }
+
+    private void ApplyPendingBattleResult()
+    {
+        if (BattleContext.Instance == null || !BattleContext.Instance.hasPendingBattle) return;
+
+        BattleContext context = BattleContext.Instance;
+        Planet destinationPlanet = FindPlanetByName(context.destinationPlanetName);
+
+        ApplyFleetResult(context.attackerFleetName, context.attackerRoster, destinationPlanet);
+
+        if (context.hasDefender)
+        {
+            ApplyFleetResult(context.defenderFleetName, context.defenderRoster, null);
+        }
+
+        bool attackerSurvived = context.attackerRoster.Count > 0;
+        bool defenderWiped = context.hasDefender && context.defenderRoster.Count == 0;
+
+        if (attackerSurvived && defenderWiped && destinationPlanet != null)
+        {
+            destinationPlanet.SetOwnership(context.attackerIsPlayerFleet);
+        }
+
+        context.Clear();
+    }
+
+    private void ApplyFleetResult(string fleetName, List<Ship> survivingRoster, Planet moveToPlanet)
+    {
+        if (string.IsNullOrEmpty(fleetName)) return;
+
+        GameObject fleetObject = GameObject.Find(fleetName);
+        if (fleetObject == null) return;
+
+        GalacticFleet fleet = fleetObject.GetComponent<GalacticFleet>();
+        if (fleet == null) return;
+
+        if (survivingRoster.Count == 0)
+        {
+            Destroy(fleetObject);
+            return;
+        }
+
+        fleet.roster = new List<Ship>(survivingRoster);
+
+        if (moveToPlanet != null)
+        {
+            fleet.PlaceAt(moveToPlanet);
+        }
+    }
+
+    private Planet FindPlanetByName(string planetName)
+    {
+        if (string.IsNullOrEmpty(planetName)) return null;
+
+        foreach (Planet planet in FindObjectsByType<Planet>(FindObjectsSortMode.None))
+        {
+            if (planet.planetName == planetName) return planet;
+        }
+
+        return null;
     }
 
     private void Update()

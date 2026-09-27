@@ -8,6 +8,8 @@ namespace SolarStudios //Logans Library
 {
     public class ObjectPool : MonoBehaviour
     {
+        private static readonly Dictionary<GameObject, ObjectPool> poolsByPrefab = new Dictionary<GameObject, ObjectPool>();
+
         public GameObject prefab;
         public int poolSize = 0;
         public List<GameObject> objectPool = new List<GameObject>();
@@ -16,7 +18,16 @@ namespace SolarStudios //Logans Library
         public UnityEvent onRecycle;
         public UnityEvent onRecycleAll;
         public UnityEvent onInitalize;
-        
+
+        public static ObjectPool GetPoolFor(GameObject forPrefab)
+        {
+            return poolsByPrefab.TryGetValue(forPrefab, out ObjectPool pool) ? pool : null;
+        }
+
+        void Awake()
+        {
+            poolsByPrefab[prefab] = this;
+        }
 
         // Start is called before the first frame update
         void Start()

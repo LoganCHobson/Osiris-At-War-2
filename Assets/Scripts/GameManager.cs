@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
@@ -8,77 +9,113 @@ public class GameManager : MonoBehaviour
     public List<SpaceUnit> allFriendlyUnits = new List<SpaceUnit>();
 
     public GameObject UnitsListUI;
-    public Transform startingShipSpawnPoint;
+    public Transform attackerShipSpawnPoint;
+    public Transform defenderShipSpawnPoint;
+    public float defenderSpawnSpacing = 15f;
 
     public Fleet fleet;
+
+    private bool battleEnded;
+
     private void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
         }
-
         else
         {
             Destroy(gameObject);
         }
 
-        Debug.Log($"[GameManager] BattleContext.Instance is {(BattleContext.Instance == null ? "NULL" : "present")}, incomingRoster.Count = {(BattleContext.Instance == null ? -1 : BattleContext.Instance.incomingRoster.Count)}");
+        bool hasBattleContext = BattleContext.Instance != null && BattleContext.Instance.hasPendingBattle;
 
-        List<Ship> roster = fleet != null ? fleet.ships : new List<Ship>();
-        if (BattleContext.Instance != null && BattleContext.Instance.incomingRoster.Count > 0)
+        List<Ship> attackerRoster = hasBattleContext ? BattleContext.Instance.attackerRoster : (fleet != null ? fleet.ships : new List<Ship>());
+        List<Ship> defenderRoster = hasBattleContext ? BattleContext.Instance.defenderRoster : new List<Ship>();
+
+        if (attackerRoster.Count > 0)
         {
-            roster = BattleContext.Instance.incomingRoster;
+            SpawnStartingShip(attackerRoster[0], attackerShipSpawnPoint);
         }
 
-        Debug.Log($"[GameManager] Using roster with {roster.Count} entries.");
-        for (int i = 0; i < roster.Count; i++)
+        for (int i = 1; i < attackerRoster.Count; i++)
         {
-            Ship s = roster[i];
-            Debug.Log($"[GameManager] roster[{i}] = {(s == null ? "NULL" : $"{s.name} (prefab={(s.prefab == null ? "NULL" : s.prefab.name)}, icon={(s.icon == null ? "NULL" : s.icon.name)})")}");
+            AddReinforcement(attackerRoster[i]);
         }
 
-        if (roster.Count > 0)
-        {
-            SpawnStartingShip(roster[0]);
-        }
-
-        for (int i = 1; i < roster.Count; i++)
-        {
-            AddReinforcement(i, roster[i]);
-        }
-
-        Debug.Log($"[GameManager] UnitsListUI is {(UnitsListUI == null ? "NULL" : UnitsListUI.name)}, childCount after populating = {(UnitsListUI == null ? -1 : UnitsListUI.transform.childCount)}");
+        SpawnDefendingFleet(defenderRoster);
     }
 
-    private void SpawnStartingShip(Ship ship)
+    private void Update()
+    {
+        if (battleEnded) return;
+        if (BattleContext.Instance == null || !BattleContext.Instance.hasPendingBattle) return;
+
+        bool attackerDefeated = BattleContext.Instance.attackerRoster.Count == 0;
+        bool defenderDefeated = BattleContext.Instance.hasDefender && BattleContext.Instance.defenderRoster.Count == 0;
+
+        if (attackerDefeated || defenderDefeated)
+        {
+            EndBattle();
+        }
+    }
+
+    private void EndBattle()
+    {
+        battleEnded = true;
+        SceneManager.LoadScene("GalacticMap");
+    }
+
+    private void SpawnStartingShip(Ship ship, Transform spawnPoint)
     {
         if (ship == null || ship.prefab == null) return;
 
-        Vector3 position = startingShipSpawnPoint != null ? startingShipSpawnPoint.position : Vector3.zero;
-        Quaternion rotation = startingShipSpawnPoint != null ? startingShipSpawnPoint.rotation : Quaternion.identity;
+        Vector3 position = spawnPoint != null ? spawnPoint.position : Vector3.zero;
+        Quaternion rotation = spawnPoint != null ? spawnPoint.rotation : Quaternion.identity;
 
-        Instantiate(ship.prefab, position, rotation);
+        GameObject spawned = Instantiate(ship.prefab, position, rotation);
+        TagShip(spawned, ship, true);
     }
 
-    private void AddReinforcement(int index, Ship ship)
+    private void SpawnDefendingFleet(List<Ship> defenderRoster)
     {
-        Debug.Log($"[AddReinforcement #{index}] called for {(ship == null ? "NULL" : ship.name)}, UnitsListUI={(UnitsListUI == null ? "NULL" : UnitsListUI.name)}");
+        Vector3 basePosition = defenderShipSpawnPoint != null ? defenderShipSpawnPoint.position : Vector3.zero;
+        Quaternion rotation = defenderShipSpawnPoint != null ? defenderShipSpawnPoint.rotation : Quaternion.identity;
 
+        for (int i = 0; i < defenderRoster.Count; i++)
+        {
+            Ship ship = defenderRoster[i];
+            if (ship == null || ship.prefab == null) continue;
+
+            Vector3 offset = (rotation * Vector3.right) * (i * defenderSpawnSpacing);
+            GameObject spawned = Instantiate(ship.prefab, basePosition + offset, rotation);
+            TagShip(spawned, ship, false);
+        }
+    }
+
+    private void AddReinforcement(Ship ship)
+    {
         if (ship == null || ship.icon == null) return;
 
         GameObject temp = Instantiate(ship.icon, UnitsListUI.transform);
-        Debug.Log($"[AddReinforcement #{index}] instantiated instanceID={(temp == null ? -1 : temp.GetInstanceID())}, activeInHierarchy={(temp != null && temp.activeInHierarchy)}, parent={(temp != null && temp.transform.parent != null ? temp.transform.parent.name : "NULL")}, siblingIndex={(temp == null ? -1 : temp.transform.GetSiblingIndex())}");
 
         IconShipRef iconRef = temp.GetComponent<IconShipRef>();
         if (iconRef == null)
         {
-            Debug.LogWarning($"[AddReinforcement #{index}] Ship icon prefab for '{ship.name}' has no IconShipRef component - skipping reinforcement entry.");
+            Debug.LogWarning($"Ship icon prefab for '{ship.name}' has no IconShipRef component - skipping reinforcement entry.");
             Destroy(temp);
             return;
         }
 
         iconRef.ship = ship;
-        Debug.Log($"[AddReinforcement #{index}] success for {ship.name}, instanceID={temp.GetInstanceID()}");
+    }
+
+    public static void TagShip(GameObject spawned, Ship ship, bool isAttackerSide)
+    {
+        UnitHealthManager health = spawned.GetComponent<UnitHealthManager>();
+        if (health != null)
+        {
+            health.Configure(ship, isAttackerSide);
+        }
     }
 }
