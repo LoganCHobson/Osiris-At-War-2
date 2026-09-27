@@ -16,11 +16,19 @@ public class UnitHealthManager : MonoBehaviour
 
     public Ship sourceShip;
     public bool isAttackerSide;
+    public bool isShipyardBonus;
+    public bool isBattleStation;
 
     public void Configure(Ship ship, bool attackerSide)
     {
         sourceShip = ship;
         isAttackerSide = attackerSide;
+    }
+
+    public void ConfigureSpecial(bool shipyardBonus, bool battleStation)
+    {
+        isShipyardBonus = shipyardBonus;
+        isBattleStation = battleStation;
     }
 
     private void Start()
@@ -75,7 +83,20 @@ public class UnitHealthManager : MonoBehaviour
         {
             dead = true;
             onDie.Invoke();
-            BattleContext.Instance?.ReportLoss(isAttackerSide, sourceShip);
+
+            if (isShipyardBonus)
+            {
+                BattleContext.Instance?.ReportShipyardDestroyed();
+            }
+            else if (isBattleStation)
+            {
+                BattleContext.Instance?.ReportBattleStationDestroyed();
+            }
+            else
+            {
+                BattleContext.Instance?.ReportLoss(isAttackerSide, sourceShip);
+            }
+
             Destroy(gameObject, 5);
         }
 

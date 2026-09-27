@@ -860,7 +860,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SolarStudios.ObjectPool
   prefab: {fileID: 9062178426813273101, guid: e8ccb87e282fd7f459d64b69aa39cadf, type: 3}
-  poolSize: 300
+  poolSize: 1000
   objectPool: []
   onSpawn:
     m_PersistentCalls:
@@ -1403,6 +1403,7 @@ MonoBehaviour:
   icon: {fileID: 4195880176976937001, guid: 9b7800c82682e8744b62abbbfeec59d8, type: 3}
   prefab: {fileID: 1349032318270045980, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
   cost: 0
+  buildTime: 20
 --- !u!1 &1057846723
 GameObject:
   m_ObjectHideFlags: 0
@@ -1518,6 +1519,8 @@ MonoBehaviour:
   attackerShipSpawnPoint: {fileID: 1138445455}
   defenderShipSpawnPoint: {fileID: 9300000000000002}
   defenderSpawnSpacing: 15
+  shipyardDefenderPrefab: {fileID: 1349032318270045980, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+  battleStationPrefab: {fileID: 1349032318270045980, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
   fleet: {fileID: 1057846725}
 --- !u!4 &1345970854
 Transform:
@@ -1958,7 +1961,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SolarStudios.ObjectPool
   prefab: {fileID: 9062178426813273101, guid: c35cd167db47fd049b45319467d5858c, type: 3}
-  poolSize: 300
+  poolSize: 1000
   objectPool: []
   onSpawn:
     m_PersistentCalls:

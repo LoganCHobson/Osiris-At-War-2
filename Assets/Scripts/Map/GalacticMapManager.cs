@@ -67,6 +67,19 @@ public class GalacticMapManager : MonoBehaviour
             destinationPlanet.SetOwnership(context.attackerFaction);
         }
 
+        if (destinationPlanet != null)
+        {
+            if (context.defenderHasShipyard && !context.defenderShipyardSurvived)
+            {
+                destinationPlanet.hasCapitalShipyard = false;
+            }
+
+            if (context.defenderHasBattleStation && !context.defenderBattleStationSurvived)
+            {
+                destinationPlanet.hasBattleStation = false;
+            }
+        }
+
         context.Clear();
     }
 
@@ -128,6 +141,7 @@ public class GalacticMapManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             FleetPanel.Instance?.Hide();
+            PlanetBuildPanel.Instance?.Hide();
         }
     }
 
@@ -162,20 +176,23 @@ public class GalacticMapManager : MonoBehaviour
             isDragging = true;
             dragOrigin = fleet.transform.position;
             FleetPanel.Instance?.Hide();
+            PlanetBuildPanel.Instance?.Hide();
             return;
         }
 
         if (Physics.Raycast(ray, out RaycastHit planetHit, Mathf.Infinity, planetLayer))
         {
             Planet planet = planetHit.collider.GetComponentInParent<Planet>();
-            if (planet != null && FleetPanel.Instance != null)
+            if (planet != null)
             {
-                FleetPanel.Instance.Show(planet);
+                FleetPanel.Instance?.Show(planet);
+                PlanetBuildPanel.Instance?.Show(planet);
             }
             return;
         }
 
         FleetPanel.Instance?.Hide();
+        PlanetBuildPanel.Instance?.Hide();
     }
 
     private void HandleDrag()
@@ -248,6 +265,7 @@ public class GalacticMapManager : MonoBehaviour
     {
         selectedFleets.Clear();
         FleetPanel.Instance?.Hide();
+        PlanetBuildPanel.Instance?.Hide();
     }
 
     private void DrawHyperspaceLanes()

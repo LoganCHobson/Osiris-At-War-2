@@ -11,6 +11,17 @@ public class Planet : MonoBehaviour
 
     public List<Planet> connections = new List<Planet>();
 
+    [Header("Buildings")]
+    public const int TaxOfficeCost = 200;
+    public const int TaxOfficeIncome = 100;
+    public const int CapitalShipyardCost = 1000;
+    public const int BattleStationCost = 2000;
+
+    public bool hasTaxOffice;
+    public bool hasCapitalShipyard;
+    public bool hasBattleStation;
+    public List<ShipBuildOrder> shipBuildQueue = new List<ShipBuildOrder>();
+
     private readonly GalacticFleet[] fleetSlots = new GalacticFleet[FleetSlotCount];
 
     [Header("Ownership Visual")]

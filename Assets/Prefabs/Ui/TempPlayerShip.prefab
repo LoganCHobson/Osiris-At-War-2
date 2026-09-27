@@ -46,4 +46,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Ship
   icon: {fileID: 4195880176976937001, guid: 9b7800c82682e8744b62abbbfeec59d8, type: 3}
   prefab: {fileID: 1349032318270045980, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
-  cost: 0
+  cost: 150
+  buildTime: 15

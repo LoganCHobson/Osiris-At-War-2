@@ -10,6 +10,10 @@ public class GalacticState : MonoBehaviour
     {
         public string planetName;
         public Faction owner;
+        public bool hasTaxOffice;
+        public bool hasCapitalShipyard;
+        public bool hasBattleStation;
+        public List<ShipBuildOrder> shipBuildQueue = new List<ShipBuildOrder>();
     }
 
     [System.Serializable]
@@ -21,9 +25,21 @@ public class GalacticState : MonoBehaviour
         public List<Ship> roster = new List<Ship>();
     }
 
+    [System.Serializable]
+    public class TreasurySnapshot
+    {
+        public Faction faction;
+        public int currency;
+    }
+
     public bool initialized;
     public List<PlanetSnapshot> planetSnapshots = new List<PlanetSnapshot>();
     public List<FleetSnapshot> fleetSnapshots = new List<FleetSnapshot>();
+    public List<TreasurySnapshot> treasuries = new List<TreasurySnapshot>();
+
+    [Header("Economy")]
+    public int startingCurrency = 500;
+    public int currencyCap = 10000;
 
     [Header("Fleet Reconstruction")]
     public GameObject fleetPrefab;
@@ -48,7 +64,11 @@ public class GalacticState : MonoBehaviour
             planetSnapshots.Add(new PlanetSnapshot
             {
                 planetName = planet.planetName,
-                owner = planet.owner
+                owner = planet.owner,
+                hasTaxOffice = planet.hasTaxOffice,
+                hasCapitalShipyard = planet.hasCapitalShipyard,
+                hasBattleStation = planet.hasBattleStation,
+                shipBuildQueue = planet.shipBuildQueue.ConvertAll(o => new ShipBuildOrder { ship = o.ship, remainingTime = o.remainingTime })
             });
         }
 
@@ -84,6 +104,10 @@ public class GalacticState : MonoBehaviour
             if (planetsByName.TryGetValue(snapshot.planetName, out Planet planet))
             {
                 planet.SetOwnership(snapshot.owner);
+                planet.hasTaxOffice = snapshot.hasTaxOffice;
+                planet.hasCapitalShipyard = snapshot.hasCapitalShipyard;
+                planet.hasBattleStation = snapshot.hasBattleStation;
+                planet.shipBuildQueue = snapshot.shipBuildQueue.ConvertAll(o => new ShipBuildOrder { ship = o.ship, remainingTime = o.remainingTime });
             }
         }
 
@@ -141,5 +165,41 @@ public class GalacticState : MonoBehaviour
         }
 
         return fleet;
+    }
+
+    public int GetCurrency(Faction faction)
+    {
+        if (faction == null) return 0;
+        return FindTreasury(faction).currency;
+    }
+
+    public bool TrySpend(Faction faction, int amount)
+    {
+        if (faction == null) return false;
+
+        TreasurySnapshot treasury = FindTreasury(faction);
+        if (treasury.currency < amount) return false;
+
+        treasury.currency -= amount;
+        return true;
+    }
+
+    public void AddCurrency(Faction faction, int amount)
+    {
+        if (faction == null) return;
+
+        TreasurySnapshot treasury = FindTreasury(faction);
+        treasury.currency = Mathf.Min(treasury.currency + amount, currencyCap);
+    }
+
+    private TreasurySnapshot FindTreasury(Faction faction)
+    {
+        TreasurySnapshot treasury = treasuries.Find(t => t.faction == faction);
+        if (treasury == null)
+        {
+            treasury = new TreasurySnapshot { faction = faction, currency = startingCurrency };
+            treasuries.Add(treasury);
+        }
+        return treasury;
     }
 }

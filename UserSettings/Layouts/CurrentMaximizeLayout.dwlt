@@ -176,8 +176,8 @@ MonoBehaviour:
     y: 0
     width: 906
     height: 480
-  m_MinSize: {x: 200, y: 200}
-  m_MaxSize: {x: 4000, y: 4000}
+  m_MinSize: {x: 201, y: 226}
+  m_MaxSize: {x: 4001, y: 4026}
   m_ActualView: {fileID: 5}
   m_Panes:
   - {fileID: 5}
@@ -779,9 +779,9 @@ MonoBehaviour:
   m_AudioPlay: 0
   m_DebugDrawModesUseInteractiveLightBakingData: 0
   m_Position:
-    m_Target: {x: -13.457166, y: 11.046162, z: -17.738789}
+    m_Target: {x: 820.9667, y: 776.433, z: -678.10675}
     speed: 2
-    m_Value: {x: -13.457166, y: 11.046162, z: -17.738789}
+    m_Value: {x: 820.9667, y: 776.433, z: -678.10675}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -827,13 +827,13 @@ MonoBehaviour:
     m_GridAxis: 1
     m_gridOpacity: 0.5
   m_Rotation:
-    m_Target: {x: -0.27427876, y: -0.4050537, z: 0.12879024, w: -0.8627733}
+    m_Target: {x: 0.19226877, y: -0.064248115, z: 0.011947563, w: 0.979377}
     speed: 2
-    m_Value: {x: -0.27424282, y: -0.40500066, z: 0.12877338, w: -0.8626603}
+    m_Value: {x: 0.19222869, y: -0.06423472, z: 0.011945073, w: 0.9791728}
   m_Size:
-    m_Target: 11.925186
+    m_Target: 0.8660254
     speed: 2
-    m_Value: 11.925186
+    m_Value: 0.8660254
   m_Ortho:
     m_Target: 0
     speed: 2
@@ -992,8 +992,8 @@ MonoBehaviour:
     y: 0
     width: 261
     height: 933
-  m_MinSize: {x: 202, y: 226}
-  m_MaxSize: {x: 4002, y: 4026}
+  m_MinSize: {x: 200, y: 200}
+  m_MaxSize: {x: 4000, y: 4000}
   m_ActualView: {fileID: 10}
   m_Panes:
   - {fileID: 10}
@@ -1040,11 +1040,34 @@ MonoBehaviour:
   m_SceneHierarchy:
     m_TreeViewState:
       scrollPos: {x: 0, y: 0}
-      m_SelectedIDs:
-      - m_Data: -2925498
+      m_SelectedIDs: []
       m_LastClickedID:
-        m_Data: -2925498
+        m_Data: 0
       m_ExpandedIDs:
+      - m_Data: -4931428
+      - m_Data: -4923394
+      - m_Data: -4915374
+      - m_Data: -4898122
+      - m_Data: -4890070
+      - m_Data: -4847936
+      - m_Data: -3887480
+      - m_Data: -3887474
+      - m_Data: -3887460
+      - m_Data: -3873320
+      - m_Data: -3867476
+      - m_Data: -3864042
+      - m_Data: -3863846
+      - m_Data: -3863758
+      - m_Data: -3863576
+      - m_Data: -3861638
+      - m_Data: -3861636
+      - m_Data: -3852410
+      - m_Data: -3822844
+      - m_Data: -3814444
+      - m_Data: -3805030
+      - m_Data: -3769316
+      - m_Data: -3760662
+      - m_Data: -3750324
       - m_Data: -2923880
       - m_Data: -1578000
       - m_Data: -1535468
@@ -1055,10 +1078,28 @@ MonoBehaviour:
       - m_Data: 57586
       - m_Data: 77018
       - m_Data: 101270
+      - m_Data: 129158
+      - m_Data: 130110
+      - m_Data: 130494
+      - m_Data: 189998
+      - m_Data: 190086
+      - m_Data: 190280
+      - m_Data: 190302
+      - m_Data: 190844
+      - m_Data: 191018
+      - m_Data: 191412
+      - m_Data: 191586
+      - m_Data: 254092
+      - m_Data: 254180
+      - m_Data: 254404
+      - m_Data: 254938
+      - m_Data: 255112
+      - m_Data: 255506
+      - m_Data: 255680
       m_RenameOverlay:
         m_UserAcceptedRename: 0
-        m_Name: 
-        m_OriginalName: 
+        m_Name: Panel
+        m_OriginalName: Panel
         m_EditFieldRect:
           serializedVersion: 2
           x: 0
@@ -1066,10 +1107,10 @@ MonoBehaviour:
           width: 0
           height: 0
         m_UserData:
-          m_Data: 0
+          m_Data: 254092
         m_IsWaitingForDelay: 0
         m_IsRenaming: 0
-        m_OriginalEventType: 11
+        m_OriginalEventType: 0
         m_IsRenamingFilename: 0
         m_TrimLeadingAndTrailingWhitespace: 0
         m_ClientGUIView: {fileID: 9}
@@ -1145,7 +1186,7 @@ MonoBehaviour:
     m_OverlaysVisible: 1
     m_DynamicPanelBehavior: 0
   m_SearchFilter:
-    m_NameFilter: galac
+    m_NameFilter: 
     m_ClassNames: []
     m_AssetLabels: []
     m_AssetBundleNames: []
@@ -1155,17 +1196,17 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets/Prefabs
+    - Assets/Scenes
     m_Globs: []
     m_ProductIds: 
     m_AnyWithAssetOrigin: 0
-    m_OriginalText: galac
+    m_OriginalText: 
     m_ImportLogFlags: 0
     m_FilterByTypeIntersection: 0
   m_ViewMode: 1
   m_StartGridSize: 64
   m_LastFolders:
-  - Assets/Prefabs
+  - Assets/Scenes
   m_LastFoldersGridSize: -1
   m_LastProjectPath: E:\Development\GameDevelopment\Unity\Osiris at war 2\Osiris-At-War-2
   m_LockTracker:
@@ -1174,9 +1215,9 @@ MonoBehaviour:
   m_FolderTreeState:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs:
-    - m_Data: 58016
+    - m_Data: 58018
     m_LastClickedID:
-      m_Data: 58016
+      m_Data: 58018
     m_ExpandedIDs:
     - m_Data: 0
     - m_Data: 57706
@@ -1243,10 +1284,9 @@ MonoBehaviour:
       m_Icon: {fileID: 0}
       m_ResourceFile: 
   m_ListAreaState:
-    m_SelectedInstanceIDs:
-    - m_Data: -2925498
-    m_LastClickedInstanceID: -2925498
-    m_HadKeyboardFocusLastEvent: 0
+    m_SelectedInstanceIDs: []
+    m_LastClickedInstanceID: 0
+    m_HadKeyboardFocusLastEvent: 1
     m_ExpandedInstanceIDs: []
     m_RenameOverlay:
       m_UserAcceptedRename: 0
@@ -1287,7 +1327,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 1
   m_Script: {fileID: 12006, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: 
+  m_Name: InspectorWindow
   m_EditorClassIdentifier: 
   m_Children: []
   m_Position:
@@ -1296,13 +1336,14 @@ MonoBehaviour:
     y: 0
     width: 433
     height: 933
-  m_MinSize: {x: 275, y: 50}
-  m_MaxSize: {x: 4000, y: 4000}
+  m_MinSize: {x: 276, y: 76}
+  m_MaxSize: {x: 4001, y: 4026}
   m_ActualView: {fileID: 14}
   m_Panes:
   - {fileID: 14}
+  - {fileID: 15}
   m_Selected: 0
-  m_LastSelected: 0
+  m_LastSelected: 1
 --- !u!114 &14
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -1348,9 +1389,47 @@ MonoBehaviour:
     m_ControlHash: -371814159
     m_PrefName: Preview_InspectorPreview
   m_LastInspectedObjectInstanceID: -1
-  m_LastVerticalScrollValue: 263
+  m_LastVerticalScrollValue: 0
   m_GlobalObjectId: 
   m_InspectorMode: 0
   m_LockTracker:
     m_IsLocked: 0
   m_PreviewWindow: {fileID: 0}
+--- !u!114 &15
+MonoBehaviour:
+  m_ObjectHideFlags: 52
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2e74d25cf32dcea48a8644deb62b9ad6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp-Editor::GalacticMapGeneratorWindow
+  m_MinSize: {x: 50, y: 50}
+  m_MaxSize: {x: 4000, y: 4000}
+  m_TitleContent:
+    m_Text: Galaxy Map Generator
+    m_Image: {fileID: 0}
+    m_Tooltip: 
+    m_TextWithWhitespace: "Galaxy Map Generator\u200B"
+  m_Pos:
+    serializedVersion: 2
+    x: 1487
+    y: 79
+    width: 432
+    height: 907
+  m_SerializedDataModeController:
+    m_DataMode: 0
+    m_PreferredDataMode: 0
+    m_SupportedDataModes: 
+    isAutomatic: 1
+  m_ViewDataDictionary: {fileID: 0}
+  m_OverlayCanvas:
+    m_LastAppliedPresetName: Default
+    m_SaveData: []
+    m_ContainerData: []
+    m_DynamicPanelContainerData: []
+    m_OverlaysVisible: 1
+    m_DynamicPanelBehavior: 0

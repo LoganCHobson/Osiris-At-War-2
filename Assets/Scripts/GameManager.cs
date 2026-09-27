@@ -13,6 +13,10 @@ public class GameManager : MonoBehaviour
     public Transform defenderShipSpawnPoint;
     public float defenderSpawnSpacing = 15f;
 
+    [Header("Planet Defenses")]
+    public GameObject shipyardDefenderPrefab;
+    public GameObject battleStationPrefab;
+
     public Fleet fleet;
 
     private bool battleEnded;
@@ -44,6 +48,16 @@ public class GameManager : MonoBehaviour
         }
 
         SpawnDefendingFleet(defenderRoster);
+
+        if (hasBattleContext && BattleContext.Instance.defenderHasShipyard)
+        {
+            SpawnPlanetDefense(shipyardDefenderPrefab, defenderRoster.Count, isShipyardBonus: true, isBattleStation: false);
+        }
+
+        if (hasBattleContext && BattleContext.Instance.defenderHasBattleStation)
+        {
+            SpawnPlanetDefense(battleStationPrefab, defenderRoster.Count + 1, isShipyardBonus: false, isBattleStation: true);
+        }
     }
 
     private void Update()
@@ -52,7 +66,10 @@ public class GameManager : MonoBehaviour
         if (BattleContext.Instance == null || !BattleContext.Instance.hasPendingBattle) return;
 
         bool attackerDefeated = BattleContext.Instance.attackerRoster.Count == 0;
-        bool defenderDefeated = BattleContext.Instance.hasDefender && BattleContext.Instance.defenderRoster.Count == 0;
+
+        bool defenderRosterCleared = BattleContext.Instance.hasDefender && BattleContext.Instance.defenderRoster.Count == 0;
+        bool battleStationCleared = !BattleContext.Instance.defenderHasBattleStation || !BattleContext.Instance.defenderBattleStationSurvived;
+        bool defenderDefeated = defenderRosterCleared && battleStationCleared;
 
         if (attackerDefeated || defenderDefeated)
         {
@@ -91,6 +108,23 @@ public class GameManager : MonoBehaviour
             GameObject spawned = Instantiate(ship.prefab, basePosition + offset, rotation);
             TagShip(spawned, ship, false);
         }
+    }
+
+    private void SpawnPlanetDefense(GameObject prefab, int spawnIndex, bool isShipyardBonus, bool isBattleStation)
+    {
+        if (prefab == null)
+        {
+            Debug.LogWarning("Planet has a defense building but no matching prefab is assigned on GameManager - skipping its battle spawn.");
+            return;
+        }
+
+        Vector3 basePosition = defenderShipSpawnPoint != null ? defenderShipSpawnPoint.position : Vector3.zero;
+        Quaternion rotation = defenderShipSpawnPoint != null ? defenderShipSpawnPoint.rotation : Quaternion.identity;
+        Vector3 offset = (rotation * Vector3.right) * (spawnIndex * defenderSpawnSpacing);
+
+        GameObject spawned = Instantiate(prefab, basePosition + offset, rotation);
+        UnitHealthManager health = spawned.GetComponent<UnitHealthManager>();
+        health?.ConfigureSpecial(isShipyardBonus, isBattleStation);
     }
 
     private void AddReinforcement(Ship ship)

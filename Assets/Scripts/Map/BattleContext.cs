@@ -17,6 +17,11 @@ public class BattleContext : MonoBehaviour
 
     public string destinationPlanetName;
 
+    public bool defenderHasShipyard;
+    public bool defenderShipyardSurvived = true;
+    public bool defenderHasBattleStation;
+    public bool defenderBattleStationSurvived = true;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -42,6 +47,11 @@ public class BattleContext : MonoBehaviour
         defenderRoster = hasDefender ? new List<Ship>(defender.roster) : new List<Ship>();
 
         destinationPlanetName = attacker.currentPlanet != null ? attacker.currentPlanet.planetName : null;
+
+        defenderHasShipyard = attacker.currentPlanet != null && attacker.currentPlanet.hasCapitalShipyard;
+        defenderShipyardSurvived = true;
+        defenderHasBattleStation = attacker.currentPlanet != null && attacker.currentPlanet.hasBattleStation;
+        defenderBattleStationSurvived = true;
     }
 
     public void ReportLoss(bool attackerSide, Ship ship)
@@ -58,6 +68,16 @@ public class BattleContext : MonoBehaviour
         }
     }
 
+    public void ReportShipyardDestroyed()
+    {
+        defenderShipyardSurvived = false;
+    }
+
+    public void ReportBattleStationDestroyed()
+    {
+        defenderBattleStationSurvived = false;
+    }
+
     public void Clear()
     {
         hasPendingBattle = false;
@@ -68,5 +88,9 @@ public class BattleContext : MonoBehaviour
         defenderFleetName = null;
         defenderRoster.Clear();
         destinationPlanetName = null;
+        defenderHasShipyard = false;
+        defenderShipyardSurvived = true;
+        defenderHasBattleStation = false;
+        defenderBattleStationSurvived = true;
     }
 }
