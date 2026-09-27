@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class UnitSelectionBox : MonoBehaviour
 {
@@ -11,6 +12,8 @@ public class UnitSelectionBox : MonoBehaviour
 
     Vector2 startPosition;
     Vector2 endPosition;
+
+    private bool startedOverUI;
 
     public PlayerSpaceManager spaceManager;
     private void Start()
@@ -26,10 +29,20 @@ public class UnitSelectionBox : MonoBehaviour
         //Clicked
         if (Input.GetMouseButtonDown(0))
         {
+            startedOverUI = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
             startPosition = Input.mousePosition;
 
             // For selection the Units
             selectionBox = new Rect();
+        }
+
+        if (startedOverUI)
+        {
+            if (Input.GetMouseButtonUp(0))
+            {
+                startedOverUI = false;
+            }
+            return;
         }
 
         //Dragging

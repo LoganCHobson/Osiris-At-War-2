@@ -2,92 +2,35 @@ using UnityEngine;
 
 public class PlacementManager : MonoBehaviour
 {
-    public bool placementMode = false;
-
-    public GameObject unitList;
-
-
-    private GameObject shipToPlace;
-    private Vector3 posToPlace;
-
     public static PlacementManager Instance;
+
     private void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
         }
-
         else
         {
             Destroy(gameObject);
         }
     }
 
-
-
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    public bool TryPlace(Ship ship, Vector2 screenPosition, GameObject sourceIcon)
     {
-        
-    }
+        if (ship == null || ship.prefab == null) return false;
 
-    // Update is called once per frame
-    void Update()
-    {
-        if(placementMode == false) 
+        Ray ray = Camera.main.ScreenPointToRay(screenPosition);
+
+        if (!Physics.Raycast(ray, out RaycastHit hit))
         {
-            Debug.Log("Not in placement mode");
-            return;
+            return false;
         }
 
-        if(Input.GetMouseButtonDown(1))
-        {
-            placementMode = false;
+        Instantiate(ship.prefab, hit.point, Quaternion.identity);
+        Debug.Log("Placed unit at: " + hit.point);
 
-            ResetPlacement();
-            //Dont place unit
-        }
-        if(Input.GetMouseButtonUp(0))
-        {
-           
-            Instantiate(shipToPlace, posToPlace, Quaternion.identity);
-            Debug.Log("Placed Unit");
-
-             placementMode = false;
-        }
-        
-
-
-
-    }
-
-
-    public void EnablePlacement(GameObject obj) //Set via button
-    {
-        
-        placementMode = true;
-        
-        shipToPlace = obj.GetComponentInParent<IconShipRef>().ship.prefab;
-
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-
-        if (Physics.Raycast(ray, out RaycastHit hit))
-        {
-            posToPlace = hit.point;
-            Debug.Log("Placing unit at: " + posToPlace);
-        }
-        else
-        {
-            posToPlace = Vector3.zero;
-            Debug.LogError("Could not place unit, no raycast hit");
-        }
-
-       
-    }
-
-    void ResetPlacement()
-    {
-       
+        Destroy(sourceIcon);
+        return true;
     }
 }

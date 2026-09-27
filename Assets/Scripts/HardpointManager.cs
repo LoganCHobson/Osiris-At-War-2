@@ -9,6 +9,8 @@ public class HardpointManager : MonoBehaviour
 
     private void Awake()
     {
+        unitHealthManager = GetComponent<UnitHealthManager>();
+
         GetHardpoints(transform);
         if (hardpoints.Count > 0)
         {
@@ -17,11 +19,6 @@ public class HardpointManager : MonoBehaviour
                 health.gameObject.GetComponentInChildren<Canvas>().worldCamera = Camera.main;
             }
         }
-    }
-    void Start()
-    {
-        unitHealthManager = GetComponent<UnitHealthManager>();
-        
     }
 
     

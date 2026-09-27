@@ -9,8 +9,11 @@ EditorBuildSettings:
     path: Assets/Scenes/MainMenu.unity
     guid: d354b8bd00ca4294e9598a359b64813f
   - enabled: 1
-    path: Assets/Scenes/Gameplay.unity
-    guid: e3d8fc7e53d1f85488db06644cd39aa5
+    path: Assets/Scenes/GalacticMap.unity
+    guid: d1afa7301d3af82409dd981257f055e6
+  - enabled: 1
+    path: Assets/Scenes/BattleScene.unity
+    guid: a87ddadf30c86604c82120c17f7d3e39
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

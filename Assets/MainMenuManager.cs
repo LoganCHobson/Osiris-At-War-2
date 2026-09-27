@@ -17,6 +17,6 @@ public class MainMenuManager : MonoBehaviour
 
     public void StartGame()
     {
-        SceneManager.LoadScene("Gameplay");
+        SceneManager.LoadScene("GalacticMap");
     }
 }
