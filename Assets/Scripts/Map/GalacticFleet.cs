@@ -8,15 +8,11 @@ public class GalacticFleet : MonoBehaviour
     public List<Ship> roster = new List<Ship>();
 
     [Header("Map state")]
-    public bool isPlayerFleet = true;
+    public Faction faction;
     public Planet currentPlanet;
     public float travelSpeed = 5f;
     public float stopoverDuration = 0.75f;
     public bool preferFriendlyRoute = true;
-
-    [Header("Faction Visual")]
-    public Color playerTint = new Color(0.3f, 0.6f, 1f, 1f);
-    public Color enemyTint = new Color(1f, 0.25f, 0.25f, 1f);
 
     public bool IsTraveling { get; private set; }
 
@@ -88,7 +84,7 @@ public class GalacticFleet : MonoBehaviour
             return true;
         }
 
-        List<Planet> path = GalacticPathfinder.FindPath(currentPlanet, planet, preferFriendlyRoute);
+        List<Planet> path = GalacticPathfinder.FindPath(currentPlanet, planet, preferFriendlyRoute ? faction : null);
         if (path.Count < 2)
         {
             return false; // No hyperspace route exists to that planet.
@@ -105,7 +101,7 @@ public class GalacticFleet : MonoBehaviour
     public bool TransferShipTo(Ship ship, GalacticFleet destination)
     {
         if (destination == this || IsTraveling || destination.IsTraveling) return false;
-        if (destination.isPlayerFleet != isPlayerFleet) return false; // Can't reorganize ships across factions.
+        if (destination.faction != faction) return false; // Can't reorganize ships across factions.
         if (currentPlanet == null || currentPlanet != destination.currentPlanet) return false;
         if (!roster.Remove(ship)) return false;
 
@@ -178,9 +174,9 @@ public class GalacticFleet : MonoBehaviour
 
     private bool TryStartBattle(Planet planet)
     {
-        if (!isPlayerFleet)
+        if (faction == null || !faction.isPlayerFaction)
         {
-            return false; // Only the player's own arrivals trigger a battle for now - enemy fleets don't act yet.
+            return false; // Only the player's own arrivals trigger a battle for now - other factions don't act yet.
         }
 
         GalacticFleet defender = FindOpposingFleet(planet);
@@ -204,10 +200,10 @@ public class GalacticFleet : MonoBehaviour
 
     private void TryCapturePlanet(Planet planet)
     {
-        if (planet.ownedByPlayer == isPlayerFleet) return;
+        if (planet.owner == faction) return;
         if (FindOpposingFleet(planet) != null) return;
 
-        planet.SetOwnership(isPlayerFleet);
+        planet.SetOwnership(faction);
     }
 
     private GalacticFleet FindOpposingFleet(Planet planet)
@@ -215,7 +211,7 @@ public class GalacticFleet : MonoBehaviour
         for (int slot = 0; slot < Planet.FleetSlotCount; slot++)
         {
             GalacticFleet occupant = planet.GetFleetInSlot(slot);
-            if (occupant != null && occupant.isPlayerFleet != isPlayerFleet)
+            if (occupant != null && occupant.faction != faction)
             {
                 return occupant;
             }
@@ -226,7 +222,7 @@ public class GalacticFleet : MonoBehaviour
     private void UpdateFactionVisual()
     {
         factionProperties ??= new MaterialPropertyBlock();
-        Color tint = isPlayerFleet ? playerTint : enemyTint;
+        Color tint = faction != null ? faction.color : Color.gray;
 
         foreach (MeshRenderer meshRenderer in GetComponentsInChildren<MeshRenderer>())
         {

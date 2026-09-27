@@ -6,7 +6,7 @@ public class Planet : MonoBehaviour
     public const int FleetSlotCount = 3;
 
     public string planetName;
-    public bool ownedByPlayer = true;
+    public Faction owner;
     public float fleetSlotRadius = 3f;
 
     public List<Planet> connections = new List<Planet>();
@@ -15,8 +15,7 @@ public class Planet : MonoBehaviour
 
     [Header("Ownership Visual")]
     public MeshRenderer ownershipRing;
-    public Color playerColor = new Color(0.25f, 0.55f, 1f, 0.85f);
-    public Color enemyColor = new Color(1f, 0.2f, 0.2f, 0.85f);
+    public Color unclaimedColor = new Color(0.5f, 0.5f, 0.5f, 0.6f);
 
     private static readonly int ColorID = Shader.PropertyToID("_Color");
     private MaterialPropertyBlock ringProperties;
@@ -31,9 +30,9 @@ public class Planet : MonoBehaviour
         UpdateOwnershipVisual();
     }
 
-    public void SetOwnership(bool isOwnedByPlayer)
+    public void SetOwnership(Faction newOwner)
     {
-        ownedByPlayer = isOwnedByPlayer;
+        owner = newOwner;
         UpdateOwnershipVisual();
     }
 
@@ -43,7 +42,7 @@ public class Planet : MonoBehaviour
 
         ringProperties ??= new MaterialPropertyBlock();
         ownershipRing.GetPropertyBlock(ringProperties);
-        ringProperties.SetColor(ColorID, ownedByPlayer ? playerColor : enemyColor);
+        ringProperties.SetColor(ColorID, owner != null ? owner.color : unclaimedColor);
         ownershipRing.SetPropertyBlock(ringProperties);
     }
 
@@ -101,7 +100,7 @@ public class Planet : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        Gizmos.color = ownedByPlayer ? Color.cyan : Color.red;
+        Gizmos.color = owner != null ? owner.color : Color.gray;
         Gizmos.DrawWireSphere(transform.position, 1f);
 
         Gizmos.color = new Color(0f, 1f, 1f, 0.4f);

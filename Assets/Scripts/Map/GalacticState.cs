@@ -9,14 +9,14 @@ public class GalacticState : MonoBehaviour
     public class PlanetSnapshot
     {
         public string planetName;
-        public bool ownedByPlayer;
+        public Faction owner;
     }
 
     [System.Serializable]
     public class FleetSnapshot
     {
         public string fleetName;
-        public bool isPlayerFleet;
+        public Faction faction;
         public string planetName;
         public List<Ship> roster = new List<Ship>();
     }
@@ -48,7 +48,7 @@ public class GalacticState : MonoBehaviour
             planetSnapshots.Add(new PlanetSnapshot
             {
                 planetName = planet.planetName,
-                ownedByPlayer = planet.ownedByPlayer
+                owner = planet.owner
             });
         }
 
@@ -60,7 +60,7 @@ public class GalacticState : MonoBehaviour
             fleetSnapshots.Add(new FleetSnapshot
             {
                 fleetName = fleet.gameObject.name,
-                isPlayerFleet = fleet.isPlayerFleet,
+                faction = fleet.faction,
                 planetName = fleet.currentPlanet.planetName,
                 roster = new List<Ship>(fleet.roster)
             });
@@ -83,7 +83,7 @@ public class GalacticState : MonoBehaviour
         {
             if (planetsByName.TryGetValue(snapshot.planetName, out Planet planet))
             {
-                planet.SetOwnership(snapshot.ownedByPlayer);
+                planet.SetOwnership(snapshot.owner);
             }
         }
 
@@ -109,7 +109,7 @@ public class GalacticState : MonoBehaviour
             }
 
             fleet.roster = new List<Ship>(snapshot.roster);
-            fleet.isPlayerFleet = snapshot.isPlayerFleet;
+            fleet.faction = snapshot.faction;
             fleet.PlaceAt(planet);
         }
 

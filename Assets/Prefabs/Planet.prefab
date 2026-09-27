@@ -127,8 +127,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Planet
   planetName: John
-  ownedByPlayer: 1
-  contested: 0
+  owner: {fileID: 0}
   connections: []
   ownershipRing: {fileID: 9100000000000004}
 --- !u!1 &9100000000000001

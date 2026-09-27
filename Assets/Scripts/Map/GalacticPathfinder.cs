@@ -6,7 +6,7 @@ public static class GalacticPathfinder
     private const float FriendlyCostMultiplier = 0.5f;
     private const float UnfriendlyCostMultiplier = 1.5f;
 
-    public static List<Planet> FindPath(Planet start, Planet goal, bool preferFriendly)
+    public static List<Planet> FindPath(Planet start, Planet goal, Faction travelingFaction)
     {
         List<Planet> path = new List<Planet>();
         if (start == null || goal == null) return path;
@@ -48,9 +48,9 @@ public static class GalacticPathfinder
                 if (neighbor == null || closed.Contains(neighbor)) continue;
 
                 float edgeCost = Vector3.Distance(current.transform.position, neighbor.transform.position);
-                if (preferFriendly)
+                if (travelingFaction != null)
                 {
-                    edgeCost *= neighbor.ownedByPlayer ? FriendlyCostMultiplier : UnfriendlyCostMultiplier;
+                    edgeCost *= neighbor.owner == travelingFaction ? FriendlyCostMultiplier : UnfriendlyCostMultiplier;
                 }
 
                 float newCost = bestCost[current] + edgeCost;

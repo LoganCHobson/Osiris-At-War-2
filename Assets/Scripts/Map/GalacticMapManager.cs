@@ -64,7 +64,7 @@ public class GalacticMapManager : MonoBehaviour
 
         if (attackerSurvived && defenderWiped && destinationPlanet != null)
         {
-            destinationPlanet.SetOwnership(context.attackerIsPlayerFleet);
+            destinationPlanet.SetOwnership(context.attackerFaction);
         }
 
         context.Clear();
@@ -144,6 +144,7 @@ public class GalacticMapManager : MonoBehaviour
         {
             GalacticFleet fleet = hit.collider.GetComponentInParent<GalacticFleet>();
             if (fleet == null) return;
+            if (fleet.faction == null || !fleet.faction.isPlayerFaction) return; // Can only command your own fleets.
 
             if (Input.GetKey(KeyCode.LeftShift))
             {
@@ -213,7 +214,7 @@ public class GalacticMapManager : MonoBehaviour
         {
             if (fleet.currentPlanet == null) continue;
             if (fleet.currentPlanet == planet) return true;
-            if (GalacticPathfinder.FindPath(fleet.currentPlanet, planet, false).Count >= 2) return true;
+            if (GalacticPathfinder.FindPath(fleet.currentPlanet, planet, null).Count >= 2) return true;
         }
         return false;
     }

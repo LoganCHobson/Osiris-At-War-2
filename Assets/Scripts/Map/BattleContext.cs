@@ -8,7 +8,7 @@ public class BattleContext : MonoBehaviour
     public bool hasPendingBattle;
 
     public string attackerFleetName;
-    public bool attackerIsPlayerFleet;
+    public Faction attackerFaction;
     public List<Ship> attackerRoster = new List<Ship>();
 
     public bool hasDefender;
@@ -34,7 +34,7 @@ public class BattleContext : MonoBehaviour
         hasPendingBattle = true;
 
         attackerFleetName = attacker.gameObject.name;
-        attackerIsPlayerFleet = attacker.isPlayerFleet;
+        attackerFaction = attacker.faction;
         attackerRoster = new List<Ship>(attacker.roster);
 
         hasDefender = defender != null;
@@ -62,6 +62,7 @@ public class BattleContext : MonoBehaviour
     {
         hasPendingBattle = false;
         attackerFleetName = null;
+        attackerFaction = null;
         attackerRoster.Clear();
         hasDefender = false;
         defenderFleetName = null;
