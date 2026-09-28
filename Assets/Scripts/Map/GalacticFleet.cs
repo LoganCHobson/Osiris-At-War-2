@@ -13,8 +13,18 @@ public class GalacticFleet : MonoBehaviour
     public float travelSpeed = 5f;
     public float stopoverDuration = 0.75f;
     public bool preferFriendlyRoute = true;
+    public float postBattleHoldDuration = 5f;
 
     public bool IsTraveling { get; private set; }
+    public bool IsHolding => holdTimer > 0f;
+    public Planet Destination => IsTraveling && route.Count > 0 ? route[route.Count - 1] : null;
+
+    public bool IsPresentAt(Planet planet)
+    {
+        return planet != null && currentPlanet == planet && (!IsTraveling || isStoppedOver);
+    }
+
+    private float holdTimer;
 
     private List<Planet> route = new List<Planet>();
     private int routeIndex;
@@ -30,7 +40,7 @@ public class GalacticFleet : MonoBehaviour
     {
         UpdateFactionVisual();
 
-        if (currentPlanet != null)
+        if (currentPlanet != null && !IsTraveling)
         {
             SnapToPlanet(currentPlanet);
         }
@@ -43,6 +53,11 @@ public class GalacticFleet : MonoBehaviour
 
     private void Update()
     {
+        if (holdTimer > 0f)
+        {
+            holdTimer -= Time.deltaTime;
+        }
+
         if (!IsTraveling) return;
 
         if (isStoppedOver)
@@ -70,7 +85,7 @@ public class GalacticFleet : MonoBehaviour
 
     public bool TrySetDestination(Planet planet)
     {
-        if (IsTraveling || currentPlanet == null || planet == null)
+        if (IsTraveling || IsHolding || currentPlanet == null || planet == null)
         {
             return false;
         }
@@ -183,7 +198,7 @@ public class GalacticFleet : MonoBehaviour
     private bool MergeIntoFirstSlot(Planet planet)
     {
         GalacticFleet targetFleet = planet.GetFleetInSlot(0);
-        if (targetFleet == null || targetFleet == this || targetFleet.faction != faction)
+        if (targetFleet == null || targetFleet == this || targetFleet.faction != faction || targetFleet.IsTraveling || targetFleet.currentPlanet != planet)
         {
             return false;
         }
@@ -211,6 +226,17 @@ public class GalacticFleet : MonoBehaviour
             return false;
         }
 
+        Faction defendingFaction = defender != null ? defender.faction : planet.owner;
+        if (!Strength.IsPlayer(faction) && !Strength.IsPlayer(defendingFaction))
+        {
+            if (AutoResolver.ResolveAll(this, planet))
+            {
+                HaltAt(planet);
+                HoldAfterBattle();
+            }
+            return true;
+        }
+
         if (BattleContext.Instance == null)
         {
             Debug.LogWarning("No BattleContext in scene - can't hand off fleets to BattleScene.");
@@ -228,15 +254,39 @@ public class GalacticFleet : MonoBehaviour
         if (planet.owner == faction) return;
         if (FindOpposingFleet(planet) != null) return;
 
-        planet.SetOwnership(faction);
+        planet.Capture(faction);
     }
 
-    private GalacticFleet FindOpposingFleet(Planet planet)
+    public void HoldAfterBattle()
+    {
+        holdTimer = postBattleHoldDuration;
+    }
+
+    private void HaltAt(Planet planet)
+    {
+        Planet destination = Destination;
+        if (destination != null && destination != planet)
+        {
+            destination.ReleaseSlot(this);
+        }
+
+        IsTraveling = false;
+        isStoppedOver = false;
+        route.Clear();
+        routeIndex = 0;
+        finalSlot = -1;
+
+        currentPlanet = planet;
+        int slot = planet.ClaimSlot(this);
+        transform.position = slot >= 0 ? planet.GetSlotPosition(slot) : planet.transform.position;
+    }
+
+    public GalacticFleet FindOpposingFleet(Planet planet)
     {
         for (int slot = 0; slot < Planet.FleetSlotCount; slot++)
         {
             GalacticFleet occupant = planet.GetFleetInSlot(slot);
-            if (occupant != null && occupant.faction != faction)
+            if (occupant != null && occupant.faction != faction && occupant.IsPresentAt(planet))
             {
                 return occupant;
             }

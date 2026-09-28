@@ -19,6 +19,7 @@ public class PlacementManager : MonoBehaviour
     public bool TryPlace(Ship ship, Vector2 screenPosition, GameObject sourceIcon)
     {
         if (ship == null || ship.prefab == null) return false;
+        if (GameManager.Instance != null && !GameManager.Instance.CanDeployPlayerShip()) return false;
 
         Ray ray = Camera.main.ScreenPointToRay(screenPosition);
 
@@ -28,7 +29,7 @@ public class PlacementManager : MonoBehaviour
         }
 
         GameObject spawned = Instantiate(ship.prefab, hit.point, Quaternion.identity);
-        GameManager.TagShip(spawned, ship, true);
+        GameManager.TagShip(spawned, ship, GameManager.Instance == null || GameManager.Instance.PlayerIsAttacker);
 
         Destroy(sourceIcon);
         return true;

@@ -44,6 +44,11 @@ public class GalacticMapManager : MonoBehaviour
             orderLinePreview.positionCount = 0;
         }
 
+        if (AIDirector.Instance == null)
+        {
+            new GameObject("AIDirector").AddComponent<AIDirector>();
+        }
+
         GalacticState.Instance?.ApplyToScene();
         ApplyPendingBattleResult();
     }
@@ -55,12 +60,16 @@ public class GalacticMapManager : MonoBehaviour
         BattleContext context = BattleContext.Instance;
         Planet destinationPlanet = FindPlanetByName(context.destinationPlanetName);
 
-        ApplyFleetResult(context.attackerFleetName, context.attackerRoster, destinationPlanet);
+        GalacticFleet attackerFleet = ApplyFleetResult(context.attackerFleetName, context.attackerRoster, destinationPlanet);
+        GalacticFleet defenderFleet = null;
 
         if (context.hasDefender)
         {
-            ApplyFleetResult(context.defenderFleetName, context.defenderRoster, null);
+            defenderFleet = ApplyFleetResult(context.defenderFleetName, context.defenderRoster, null);
         }
+
+        attackerFleet?.HoldAfterBattle();
+        defenderFleet?.HoldAfterBattle();
 
         bool attackerSurvived = context.attackerRoster.Count > 0;
         bool defenderRosterCleared = !context.hasDefender || context.defenderRoster.Count == 0;
@@ -68,9 +77,22 @@ public class GalacticMapManager : MonoBehaviour
         bool battleStationCleared = !context.defenderHasBattleStation || !context.defenderBattleStationSurvived;
         bool defenderDefeated = defenderRosterCleared && shipyardCleared && battleStationCleared;
 
+        float destroyedDefenses = (context.defenderHasShipyard && !context.defenderShipyardSurvived ? Strength.ShipyardPower : 0f)
+            + (context.defenderHasBattleStation && !context.defenderBattleStationSurvived ? Strength.BattleStationPower : 0f);
+
+        GalacticEvents.RaiseBattleResolved(new BattleReport
+        {
+            planet = destinationPlanet,
+            attacker = context.attackerFaction,
+            defender = context.defenderFaction,
+            attackerLosses = context.attackerStartPower - Strength.Of(context.attackerRoster),
+            defenderLosses = context.defenderStartPower - Strength.Of(context.defenderRoster) + destroyedDefenses,
+            attackerWon = attackerSurvived && defenderDefeated
+        });
+
         if (attackerSurvived && defenderDefeated && destinationPlanet != null)
         {
-            destinationPlanet.SetOwnership(context.attackerFaction);
+            destinationPlanet.Capture(context.attackerFaction);
         }
 
         if (destinationPlanet != null)
@@ -89,20 +111,20 @@ public class GalacticMapManager : MonoBehaviour
         context.Clear();
     }
 
-    private void ApplyFleetResult(string fleetName, List<Ship> survivingRoster, Planet moveToPlanet)
+    private GalacticFleet ApplyFleetResult(string fleetName, List<Ship> survivingRoster, Planet moveToPlanet)
     {
-        if (string.IsNullOrEmpty(fleetName)) return;
+        if (string.IsNullOrEmpty(fleetName)) return null;
 
         GameObject fleetObject = GameObject.Find(fleetName);
-        if (fleetObject == null) return;
+        if (fleetObject == null) return null;
 
         GalacticFleet fleet = fleetObject.GetComponent<GalacticFleet>();
-        if (fleet == null) return;
+        if (fleet == null) return null;
 
         if (survivingRoster.Count == 0)
         {
             Destroy(fleetObject);
-            return;
+            return null;
         }
 
         fleet.roster = new List<Ship>(survivingRoster);
@@ -111,6 +133,8 @@ public class GalacticMapManager : MonoBehaviour
         {
             fleet.PlaceAt(moveToPlanet);
         }
+
+        return fleet;
     }
 
     private Planet FindPlanetByName(string planetName)

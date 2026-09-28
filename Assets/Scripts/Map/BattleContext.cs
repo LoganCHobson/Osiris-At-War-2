@@ -23,6 +23,9 @@ public class BattleContext : MonoBehaviour
     public bool defenderHasBattleStation;
     public bool defenderBattleStationSurvived = true;
 
+    public float attackerStartPower;
+    public float defenderStartPower;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -54,6 +57,9 @@ public class BattleContext : MonoBehaviour
         defenderShipyardSurvived = true;
         defenderHasBattleStation = attacker.currentPlanet != null && attacker.currentPlanet.hasBattleStation;
         defenderBattleStationSurvived = true;
+
+        attackerStartPower = Strength.Of(attackerRoster);
+        defenderStartPower = Strength.Of(defenderRoster);
     }
 
     public void ReportLoss(bool attackerSide, Ship ship)
@@ -95,5 +101,7 @@ public class BattleContext : MonoBehaviour
         defenderShipyardSurvived = true;
         defenderHasBattleStation = false;
         defenderBattleStationSurvived = true;
+        attackerStartPower = 0f;
+        defenderStartPower = 0f;
     }
 }

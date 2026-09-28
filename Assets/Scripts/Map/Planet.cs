@@ -12,6 +12,7 @@ public class Planet : MonoBehaviour
     public List<Planet> connections = new List<Planet>();
 
     [Header("Buildings")]
+    public const int BaseIncome = 10;
     public const int TaxOfficeCost = 200;
     public const int TaxOfficeIncome = 100;
     public const int CapitalShipyardCost = 1000;
@@ -45,6 +46,16 @@ public class Planet : MonoBehaviour
     {
         owner = newOwner;
         UpdateOwnershipVisual();
+    }
+
+    public void Capture(Faction newOwner)
+    {
+        Faction previousOwner = owner;
+        if (previousOwner == newOwner) return;
+
+        shipBuildQueue.Clear();
+        SetOwnership(newOwner);
+        GalacticEvents.RaisePlanetCaptured(this, previousOwner, newOwner);
     }
 
     public void UpdateOwnershipVisual()
@@ -102,6 +113,15 @@ public class Planet : MonoBehaviour
     public GalacticFleet GetFleetInSlot(int slot)
     {
         return fleetSlots[slot];
+    }
+
+    public int FindFreeSlot()
+    {
+        for (int i = 0; i < fleetSlots.Length; i++)
+        {
+            if (fleetSlots[i] == null) return i;
+        }
+        return -1;
     }
 
     public void ForceClaimSlot(GalacticFleet fleet, int slot)

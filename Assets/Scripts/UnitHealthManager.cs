@@ -19,6 +19,9 @@ public class UnitHealthManager : MonoBehaviour
     public bool isShipyardBonus;
     public bool isBattleStation;
 
+    public bool IsDead => dead;
+    public bool IsDefense => isShipyardBonus || isBattleStation;
+
     public void Configure(Ship ship, bool attackerSide)
     {
         sourceShip = ship;

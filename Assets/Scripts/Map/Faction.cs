@@ -7,6 +7,7 @@ public class Faction : ScriptableObject
     public Color color = Color.white;
     public bool isPlayerFaction;
     public bool isNeutral;
+    public AIPersonality personality;
 
     [TextArea]
     public string description;

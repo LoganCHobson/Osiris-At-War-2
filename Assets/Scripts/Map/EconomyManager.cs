@@ -30,9 +30,9 @@ public class EconomyManager : MonoBehaviour
 
         foreach (Planet planet in FindObjectsByType<Planet>(FindObjectsSortMode.None))
         {
-            if (planet.hasTaxOffice && planet.owner != null)
+            if (planet.owner != null)
             {
-                GalacticState.Instance.AddCurrency(planet.owner, Planet.TaxOfficeIncome);
+                GalacticState.Instance.AddCurrency(planet.owner, Planet.BaseIncome + (planet.hasTaxOffice ? Planet.TaxOfficeIncome : 0));
             }
         }
     }
@@ -61,7 +61,7 @@ public class EconomyManager : MonoBehaviour
         for (int slot = 0; slot < Planet.FleetSlotCount; slot++)
         {
             GalacticFleet occupant = planet.GetFleetInSlot(slot);
-            if (occupant != null && occupant.faction == planet.owner)
+            if (occupant != null && occupant.faction == planet.owner && !occupant.IsTraveling && occupant.currentPlanet == planet)
             {
                 occupant.roster.Add(ship);
                 return;

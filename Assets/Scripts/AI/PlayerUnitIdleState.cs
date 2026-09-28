@@ -17,7 +17,6 @@ namespace SolarStudios
         }
         public void Run() //Runs every frame
         {
-            Debug.Log("Idleing. .");
         }
         public void Exit() //Runs when we exit
         {

@@ -16,5 +16,6 @@ MonoBehaviour:
   color: {r: 0.8, g: 0.1, b: 0.15, a: 1}
   isPlayerFaction: 0
   isNeutral: 0
+  personality: {fileID: 0}
   description: The original imperial authority the warlords broke away from. Battered
     and cracked, but still convinced it is the rightful ruler of Osiris.

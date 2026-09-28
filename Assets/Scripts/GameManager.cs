@@ -25,6 +25,11 @@ public class GameManager : MonoBehaviour
 
     public Fleet fleet;
 
+    [Header("Battle Rules")]
+    public int maxShipsPerSide = 5;
+
+    public bool PlayerIsAttacker { get; private set; } = true;
+
     private bool battleEnded;
 
     private void Awake()
@@ -36,31 +41,46 @@ public class GameManager : MonoBehaviour
         else
         {
             Destroy(gameObject);
+            return;
         }
 
         bool hasBattleContext = BattleContext.Instance != null && BattleContext.Instance.hasPendingBattle;
 
-        List<Ship> attackerRoster = hasBattleContext ? BattleContext.Instance.attackerRoster : (fleet != null ? fleet.ships : new List<Ship>());
-        List<Ship> defenderRoster = hasBattleContext ? BattleContext.Instance.defenderRoster : new List<Ship>();
-
-        if (attackerRoster.Count > 0)
+        if (!hasBattleContext)
         {
-            SpawnStartingShip(attackerRoster[0], attackerShipSpawnPoint);
+            DeployPlayerSide(fleet != null ? fleet.ships : new List<Ship>(), true);
+            return;
         }
 
-        for (int i = 1; i < attackerRoster.Count; i++)
+        BattleContext context = BattleContext.Instance;
+        bool attackerIsPlayer = Strength.IsPlayer(context.attackerFaction);
+        bool defenderIsPlayer = Strength.IsPlayer(context.defenderFaction);
+        PlayerIsAttacker = attackerIsPlayer || !defenderIsPlayer;
+
+        if (attackerIsPlayer)
         {
-            AddReinforcement(attackerRoster[i]);
+            DeployPlayerSide(context.attackerRoster, true);
+        }
+        else
+        {
+            DeployAISide(context.attackerFaction, context.attackerRoster, true);
         }
 
-        SpawnDefendingFleet(defenderRoster);
+        if (defenderIsPlayer)
+        {
+            DeployPlayerSide(context.defenderRoster, false);
+        }
+        else
+        {
+            DeployAISide(context.defenderFaction, context.defenderRoster, false);
+        }
 
-        if (hasBattleContext && BattleContext.Instance.defenderHasShipyard)
+        if (context.defenderHasShipyard)
         {
             SpawnPlanetDefense(shipyardDefenderPrefab, shipyardLocalOffset, isShipyardBonus: true, isBattleStation: false);
         }
 
-        if (hasBattleContext && BattleContext.Instance.defenderHasBattleStation)
+        if (context.defenderHasBattleStation)
         {
             SpawnPlanetDefense(battleStationPrefab, battleStationLocalOffset, isShipyardBonus: false, isBattleStation: true);
         }
@@ -90,33 +110,74 @@ public class GameManager : MonoBehaviour
         SceneManager.LoadScene("GalacticMap");
     }
 
-    private void SpawnStartingShip(Ship ship, Transform spawnPoint)
+    private void DeployPlayerSide(List<Ship> roster, bool attackerSide)
     {
-        if (ship == null || ship.prefab == null) return;
+        if (attackerSide)
+        {
+            if (roster.Count > 0)
+            {
+                Vector3 position = attackerShipSpawnPoint != null ? attackerShipSpawnPoint.position : Vector3.zero;
+                Quaternion rotation = attackerShipSpawnPoint != null ? attackerShipSpawnPoint.rotation : Quaternion.identity;
+                SpawnShip(roster[0], position, rotation, true);
+            }
 
-        Vector3 position = spawnPoint != null ? spawnPoint.position : Vector3.zero;
-        Quaternion rotation = spawnPoint != null ? spawnPoint.rotation : Quaternion.identity;
+            for (int i = 1; i < roster.Count; i++)
+            {
+                AddReinforcement(roster[i]);
+            }
+            return;
+        }
 
-        GameObject spawned = Instantiate(ship.prefab, position, rotation);
-        TagShip(spawned, ship, true);
+        Vector3 basePosition = defenderShipSpawnPoint != null ? defenderShipSpawnPoint.position : Vector3.zero;
+        Quaternion lineRotation = defenderShipSpawnPoint != null ? defenderShipSpawnPoint.rotation : Quaternion.identity;
+        Vector3 back = lineRotation * Vector3.back;
+        int deployed = Mathf.Min(roster.Count, maxShipsPerSide);
+
+        for (int i = 0; i < roster.Count; i++)
+        {
+            if (i >= deployed)
+            {
+                AddReinforcement(roster[i]);
+                continue;
+            }
+
+            Vector3 sideOffset = (lineRotation * Vector3.right) * (i * defenderSpawnSpacing);
+            Vector3 depthJitter = back * Random.Range(0f, defenderSpawnSpacing);
+            SpawnShip(roster[i], basePosition + sideOffset + depthJitter, lineRotation, false);
+        }
     }
 
-    private void SpawnDefendingFleet(List<Ship> defenderRoster)
+    private void DeployAISide(Faction faction, List<Ship> roster, bool attackerSide)
     {
-        Vector3 basePosition = defenderShipSpawnPoint != null ? defenderShipSpawnPoint.position : Vector3.zero;
-        Quaternion rotation = defenderShipSpawnPoint != null ? defenderShipSpawnPoint.rotation : Quaternion.identity;
-        Vector3 back = rotation * Vector3.back;
+        AIBattleCommander commander = gameObject.AddComponent<AIBattleCommander>();
+        commander.Initialize(faction, attackerSide, roster, attackerSide ? attackerShipSpawnPoint : defenderShipSpawnPoint, maxShipsPerSide);
+    }
 
-        for (int i = 0; i < defenderRoster.Count; i++)
+    public GameObject SpawnShip(Ship ship, Vector3 position, Quaternion rotation, bool attackerSide)
+    {
+        if (ship == null || ship.prefab == null) return null;
+
+        GameObject spawned = Instantiate(ship.prefab, position, rotation);
+        TagShip(spawned, ship, attackerSide);
+        return spawned;
+    }
+
+    public bool CanDeployPlayerShip()
+    {
+        return CountLiveShips(PlayerIsAttacker) < maxShipsPerSide;
+    }
+
+    public static int CountLiveShips(bool attackerSide)
+    {
+        int count = 0;
+        foreach (UnitHealthManager unit in FindObjectsByType<UnitHealthManager>(FindObjectsSortMode.None))
         {
-            Ship ship = defenderRoster[i];
-            if (ship == null || ship.prefab == null) continue;
-
-            Vector3 sideOffset = (rotation * Vector3.right) * (i * defenderSpawnSpacing);
-            Vector3 depthJitter = back * Random.Range(0f, defenderSpawnSpacing);
-            GameObject spawned = Instantiate(ship.prefab, basePosition + sideOffset + depthJitter, rotation);
-            TagShip(spawned, ship, false);
+            if (!unit.IsDefense && !unit.IsDead && unit.isAttackerSide == attackerSide)
+            {
+                count++;
+            }
         }
+        return count;
     }
 
     private void SpawnPlanetDefense(GameObject prefab, Vector3 localOffset, bool isShipyardBonus, bool isBattleStation)

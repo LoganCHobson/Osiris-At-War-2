@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b501cb36a51dbc74898db3986167d8bc, type: 3}
+  m_Name: AvantiEmpire
+  m_EditorClassIdentifier: Assembly-CSharp::AIPersonality
+  aggression: 1
+  defensiveness: 1
+  expansion: 1
+  economy: 1
+  vengefulness: 1
+  attackPowerMargin: 1.5
+  defensePowerMargin: 1.2
+  maxCampaigns: 1
+  campaignStartThreshold: 0.35
+  campaignSwitchMargin: 0.35
+  campaignGiveUpRatio: 2.5
+  minCampaignDuration: 60
+  maxConcurrentExpansions: 2
+  grudgeHalfLife: 180
+  intelMemory: 90
+  shipsQueuedPerShipyard: 2
+  planetsPerShipyard: 5
+  reserveShips: 2
+  saveUpWindow: 45
+  pressAdvantageRatio: 1.25
+  fallBackRatio: 0.7
+  reinforcementDelay: 2.5
+  canFocusFire: 1
+  canManageStance: 1
+  canPickDropZones: 1
+  canSwitchCampaigns: 1
+  canGarrisonChokepoints: 1
+  canSplitFleets: 1
+  canBuildBattleStations: 1

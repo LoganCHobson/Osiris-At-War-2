@@ -61,6 +61,7 @@ public class FleetPanel : MonoBehaviour
         }
 
         GameObject obj = Instantiate(newFleetPrefab, planet.GetSlotPosition(slot), Quaternion.identity);
+        obj.name = $"Fleet_{planet.planetName}_{System.Guid.NewGuid().ToString("N").Substring(0, 8)}";
         GalacticFleet fleet = obj.GetComponent<GalacticFleet>();
         if (fleet == null)
         {
