@@ -105,7 +105,11 @@ public class PlayerSpaceManager : MonoBehaviour
         {
             foreach (SpaceUnit unit in selectedUnits)
             {
-                unit.gameObject.GetComponent<HardpointManager>().AssignTarget(hit.collider.gameObject.GetComponentInParent<HardpointManager>().GetRandomHardpoint());
+                HardpointManager targetManager = hit.collider.gameObject.GetComponentInParent<HardpointManager>();
+                Transform randomHardpoint = targetManager != null ? targetManager.GetRandomHardpoint() : null;
+                if (randomHardpoint == null) continue; // Target has no hardpoints left (or none at all) - nothing to attack there.
+
+                unit.gameObject.GetComponent<HardpointManager>().AssignTarget(randomHardpoint);
                 unit.agent.isStopped = true;
                 unit.moveState.ClearDestinations();
                 unit.moveState.MoveWithinRangeOfTarget(hit.point);

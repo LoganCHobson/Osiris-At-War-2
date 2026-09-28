@@ -154,6 +154,20 @@ public class GalacticFleet : MonoBehaviour
 
         if (isFinalHop)
         {
+            if (finalSlot < 0)
+            {
+                finalSlot = planet.ClaimSlot(this); // A slot may have freed up during the trip - try again before giving up.
+                if (finalSlot >= 0)
+                {
+                    transform.position = planet.GetSlotPosition(finalSlot);
+                }
+            }
+
+            if (finalSlot < 0 && MergeIntoFirstSlot(planet))
+            {
+                return; // Absorbed into the fleet already parked there - this fleet object is gone.
+            }
+
             IsTraveling = false;
             route.Clear();
             routeIndex = 0;
@@ -166,6 +180,20 @@ public class GalacticFleet : MonoBehaviour
         }
     }
 
+    private bool MergeIntoFirstSlot(Planet planet)
+    {
+        GalacticFleet targetFleet = planet.GetFleetInSlot(0);
+        if (targetFleet == null || targetFleet == this || targetFleet.faction != faction)
+        {
+            return false;
+        }
+
+        targetFleet.roster.AddRange(roster);
+        roster.Clear();
+        Destroy(gameObject);
+        return true;
+    }
+
     private void DepartCurrentWaypoint()
     {
         currentPlanet.ReleaseSlot(this);
@@ -174,14 +202,11 @@ public class GalacticFleet : MonoBehaviour
 
     private bool TryStartBattle(Planet planet)
     {
-        if (faction == null || !faction.isPlayerFaction)
-        {
-            return false; // Only the player's own arrivals trigger a battle for now - other factions don't act yet.
-        }
-
         GalacticFleet defender = FindOpposingFleet(planet);
+        bool planetIsHostile = planet.owner != faction;
+        bool planetIsDefended = planetIsHostile && (planet.hasCapitalShipyard || planet.hasBattleStation);
 
-        if (defender == null)
+        if (defender == null && !planetIsDefended)
         {
             return false;
         }

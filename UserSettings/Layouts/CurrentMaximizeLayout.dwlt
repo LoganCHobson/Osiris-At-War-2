@@ -779,9 +779,9 @@ MonoBehaviour:
   m_AudioPlay: 0
   m_DebugDrawModesUseInteractiveLightBakingData: 0
   m_Position:
-    m_Target: {x: 820.9667, y: 776.433, z: -678.10675}
+    m_Target: {x: -31.337458, y: -17.547466, z: 64.418465}
     speed: 2
-    m_Value: {x: 820.9667, y: 776.433, z: -678.10675}
+    m_Value: {x: -31.337458, y: -17.547466, z: 64.418465}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -827,13 +827,13 @@ MonoBehaviour:
     m_GridAxis: 1
     m_gridOpacity: 0.5
   m_Rotation:
-    m_Target: {x: 0.19226877, y: -0.064248115, z: 0.011947563, w: 0.979377}
+    m_Target: {x: -0.29348063, y: -0.305193, z: 0.10040911, w: -0.9006128}
     speed: 2
-    m_Value: {x: 0.19222869, y: -0.06423472, z: 0.011945073, w: 0.9791728}
+    m_Value: {x: -0.2934133, y: -0.305123, z: 0.100386076, w: -0.9004061}
   m_Size:
-    m_Target: 0.8660254
+    m_Target: 170.06226
     speed: 2
-    m_Value: 0.8660254
+    m_Value: 170.06226
   m_Ortho:
     m_Target: 0
     speed: 2
@@ -992,8 +992,8 @@ MonoBehaviour:
     y: 0
     width: 261
     height: 933
-  m_MinSize: {x: 200, y: 200}
-  m_MaxSize: {x: 4000, y: 4000}
+  m_MinSize: {x: 202, y: 226}
+  m_MaxSize: {x: 4002, y: 4026}
   m_ActualView: {fileID: 10}
   m_Panes:
   - {fileID: 10}
@@ -1040,10 +1040,50 @@ MonoBehaviour:
   m_SceneHierarchy:
     m_TreeViewState:
       scrollPos: {x: 0, y: 0}
-      m_SelectedIDs: []
+      m_SelectedIDs:
+      - m_Data: 612900
       m_LastClickedID:
-        m_Data: 0
+        m_Data: 612900
       m_ExpandedIDs:
+      - m_Data: -10638998
+      - m_Data: -10596284
+      - m_Data: -9420148
+      - m_Data: -9396010
+      - m_Data: -9352978
+      - m_Data: -7710232
+      - m_Data: -7647522
+      - m_Data: -6966586
+      - m_Data: -6924540
+      - m_Data: -6753136
+      - m_Data: -6566210
+      - m_Data: -6524122
+      - m_Data: -6120448
+      - m_Data: -6077078
+      - m_Data: -6034918
+      - m_Data: -6021394
+      - m_Data: -6021300
+      - m_Data: -6021272
+      - m_Data: -6021270
+      - m_Data: -6021150
+      - m_Data: -6021056
+      - m_Data: -6017944
+      - m_Data: -6017856
+      - m_Data: -6017854
+      - m_Data: -6017852
+      - m_Data: -6017850
+      - m_Data: -6017822
+      - m_Data: -6017820
+      - m_Data: -6017700
+      - m_Data: -6017606
+      - m_Data: -6010512
+      - m_Data: -6010510
+      - m_Data: -6004406
+      - m_Data: -6004260
+      - m_Data: -6004166
+      - m_Data: -6001338
+      - m_Data: -6001336
+      - m_Data: -5998186
+      - m_Data: -5991380
       - m_Data: -4931428
       - m_Data: -4923394
       - m_Data: -4915374
@@ -1096,10 +1136,12 @@ MonoBehaviour:
       - m_Data: 255112
       - m_Data: 255506
       - m_Data: 255680
+      - m_Data: 283130
+      - m_Data: 283524
       m_RenameOverlay:
         m_UserAcceptedRename: 0
-        m_Name: Panel
-        m_OriginalName: Panel
+        m_Name: 
+        m_OriginalName: 
         m_EditFieldRect:
           serializedVersion: 2
           x: 0
@@ -1107,10 +1149,10 @@ MonoBehaviour:
           width: 0
           height: 0
         m_UserData:
-          m_Data: 254092
+          m_Data: 0
         m_IsWaitingForDelay: 0
         m_IsRenaming: 0
-        m_OriginalEventType: 0
+        m_OriginalEventType: 11
         m_IsRenamingFilename: 0
         m_TrimLeadingAndTrailingWhitespace: 0
         m_ClientGUIView: {fileID: 9}
@@ -1186,7 +1228,7 @@ MonoBehaviour:
     m_OverlaysVisible: 1
     m_DynamicPanelBehavior: 0
   m_SearchFilter:
-    m_NameFilter: 
+    m_NameFilter: gal
     m_ClassNames: []
     m_AssetLabels: []
     m_AssetBundleNames: []
@@ -1196,17 +1238,17 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets/Scenes
+    - Assets/Prefabs
     m_Globs: []
     m_ProductIds: 
     m_AnyWithAssetOrigin: 0
-    m_OriginalText: 
+    m_OriginalText: gal
     m_ImportLogFlags: 0
     m_FilterByTypeIntersection: 0
   m_ViewMode: 1
   m_StartGridSize: 64
   m_LastFolders:
-  - Assets/Scenes
+  - Assets/Prefabs
   m_LastFoldersGridSize: -1
   m_LastProjectPath: E:\Development\GameDevelopment\Unity\Osiris at war 2\Osiris-At-War-2
   m_LockTracker:
@@ -1215,9 +1257,9 @@ MonoBehaviour:
   m_FolderTreeState:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs:
-    - m_Data: 58018
+    - m_Data: 58016
     m_LastClickedID:
-      m_Data: 58018
+      m_Data: 58016
     m_ExpandedIDs:
     - m_Data: 0
     - m_Data: 57706
@@ -1284,8 +1326,9 @@ MonoBehaviour:
       m_Icon: {fileID: 0}
       m_ResourceFile: 
   m_ListAreaState:
-    m_SelectedInstanceIDs: []
-    m_LastClickedInstanceID: 0
+    m_SelectedInstanceIDs:
+    - m_Data: 612900
+    m_LastClickedInstanceID: 612900
     m_HadKeyboardFocusLastEvent: 1
     m_ExpandedInstanceIDs: []
     m_RenameOverlay:
@@ -1336,8 +1379,8 @@ MonoBehaviour:
     y: 0
     width: 433
     height: 933
-  m_MinSize: {x: 276, y: 76}
-  m_MaxSize: {x: 4001, y: 4026}
+  m_MinSize: {x: 275, y: 50}
+  m_MaxSize: {x: 4000, y: 4000}
   m_ActualView: {fileID: 14}
   m_Panes:
   - {fileID: 14}

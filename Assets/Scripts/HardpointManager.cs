@@ -49,6 +49,8 @@ public class HardpointManager : MonoBehaviour
 
     public void AssignTarget(Transform target)
     {
+        if (target == null) return;
+
         Debug.Log("Target Assigned: " + target.gameObject.name);
         foreach (HardpointHealth health in hardpoints)
         {

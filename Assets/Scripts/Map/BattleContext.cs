@@ -13,6 +13,7 @@ public class BattleContext : MonoBehaviour
 
     public bool hasDefender;
     public string defenderFleetName;
+    public Faction defenderFaction;
     public List<Ship> defenderRoster = new List<Ship>();
 
     public string destinationPlanetName;
@@ -44,6 +45,7 @@ public class BattleContext : MonoBehaviour
 
         hasDefender = defender != null;
         defenderFleetName = hasDefender ? defender.gameObject.name : null;
+        defenderFaction = hasDefender ? defender.faction : attacker.currentPlanet?.owner;
         defenderRoster = hasDefender ? new List<Ship>(defender.roster) : new List<Ship>();
 
         destinationPlanetName = attacker.currentPlanet != null ? attacker.currentPlanet.planetName : null;
@@ -86,6 +88,7 @@ public class BattleContext : MonoBehaviour
         attackerRoster.Clear();
         hasDefender = false;
         defenderFleetName = null;
+        defenderFaction = null;
         defenderRoster.Clear();
         destinationPlanetName = null;
         defenderHasShipyard = false;

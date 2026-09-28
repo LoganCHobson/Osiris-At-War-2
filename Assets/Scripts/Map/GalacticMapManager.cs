@@ -19,6 +19,9 @@ public class GalacticMapManager : MonoBehaviour
     public Color laneColor = Color.cyan;
     public float laneWidth = 0.15f;
 
+    [Header("Debug")]
+    public bool debugControlAnyFleet = false;
+
     private Camera cam;
     private readonly List<GalacticFleet> selectedFleets = new List<GalacticFleet>();
     private bool isDragging;
@@ -60,9 +63,12 @@ public class GalacticMapManager : MonoBehaviour
         }
 
         bool attackerSurvived = context.attackerRoster.Count > 0;
-        bool defenderWiped = context.hasDefender && context.defenderRoster.Count == 0;
+        bool defenderRosterCleared = !context.hasDefender || context.defenderRoster.Count == 0;
+        bool shipyardCleared = !context.defenderHasShipyard || !context.defenderShipyardSurvived;
+        bool battleStationCleared = !context.defenderHasBattleStation || !context.defenderBattleStationSurvived;
+        bool defenderDefeated = defenderRosterCleared && shipyardCleared && battleStationCleared;
 
-        if (attackerSurvived && defenderWiped && destinationPlanet != null)
+        if (attackerSurvived && defenderDefeated && destinationPlanet != null)
         {
             destinationPlanet.SetOwnership(context.attackerFaction);
         }
@@ -158,7 +164,7 @@ public class GalacticMapManager : MonoBehaviour
         {
             GalacticFleet fleet = hit.collider.GetComponentInParent<GalacticFleet>();
             if (fleet == null) return;
-            if (fleet.faction == null || !fleet.faction.isPlayerFaction) return; // Can only command your own fleets.
+            if (!debugControlAnyFleet && (fleet.faction == null || !fleet.faction.isPlayerFaction)) return; // Can only command your own fleets.
 
             if (Input.GetKey(KeyCode.LeftShift))
             {

@@ -16,6 +16,12 @@ public class GameManager : MonoBehaviour
     [Header("Planet Defenses")]
     public GameObject shipyardDefenderPrefab;
     public GameObject battleStationPrefab;
+    public Vector3 battleStationLocalOffset = new Vector3(100f, 0f, -120f);
+    public Vector3 shipyardLocalOffset = new Vector3(-100f, 0f, -260f);
+    public int playerLayer = 7;
+    public int enemyLayer = 8;
+    public GameObject playerProjectilePrefab;
+    public GameObject enemyProjectilePrefab;
 
     public Fleet fleet;
 
@@ -51,12 +57,12 @@ public class GameManager : MonoBehaviour
 
         if (hasBattleContext && BattleContext.Instance.defenderHasShipyard)
         {
-            SpawnPlanetDefense(shipyardDefenderPrefab, defenderRoster.Count, isShipyardBonus: true, isBattleStation: false);
+            SpawnPlanetDefense(shipyardDefenderPrefab, shipyardLocalOffset, isShipyardBonus: true, isBattleStation: false);
         }
 
         if (hasBattleContext && BattleContext.Instance.defenderHasBattleStation)
         {
-            SpawnPlanetDefense(battleStationPrefab, defenderRoster.Count + 1, isShipyardBonus: false, isBattleStation: true);
+            SpawnPlanetDefense(battleStationPrefab, battleStationLocalOffset, isShipyardBonus: false, isBattleStation: true);
         }
     }
 
@@ -67,9 +73,10 @@ public class GameManager : MonoBehaviour
 
         bool attackerDefeated = BattleContext.Instance.attackerRoster.Count == 0;
 
-        bool defenderRosterCleared = BattleContext.Instance.hasDefender && BattleContext.Instance.defenderRoster.Count == 0;
+        bool defenderRosterCleared = !BattleContext.Instance.hasDefender || BattleContext.Instance.defenderRoster.Count == 0;
+        bool shipyardCleared = !BattleContext.Instance.defenderHasShipyard || !BattleContext.Instance.defenderShipyardSurvived;
         bool battleStationCleared = !BattleContext.Instance.defenderHasBattleStation || !BattleContext.Instance.defenderBattleStationSurvived;
-        bool defenderDefeated = defenderRosterCleared && battleStationCleared;
+        bool defenderDefeated = defenderRosterCleared && shipyardCleared && battleStationCleared;
 
         if (attackerDefeated || defenderDefeated)
         {
@@ -98,19 +105,21 @@ public class GameManager : MonoBehaviour
     {
         Vector3 basePosition = defenderShipSpawnPoint != null ? defenderShipSpawnPoint.position : Vector3.zero;
         Quaternion rotation = defenderShipSpawnPoint != null ? defenderShipSpawnPoint.rotation : Quaternion.identity;
+        Vector3 back = rotation * Vector3.back;
 
         for (int i = 0; i < defenderRoster.Count; i++)
         {
             Ship ship = defenderRoster[i];
             if (ship == null || ship.prefab == null) continue;
 
-            Vector3 offset = (rotation * Vector3.right) * (i * defenderSpawnSpacing);
-            GameObject spawned = Instantiate(ship.prefab, basePosition + offset, rotation);
+            Vector3 sideOffset = (rotation * Vector3.right) * (i * defenderSpawnSpacing);
+            Vector3 depthJitter = back * Random.Range(0f, defenderSpawnSpacing);
+            GameObject spawned = Instantiate(ship.prefab, basePosition + sideOffset + depthJitter, rotation);
             TagShip(spawned, ship, false);
         }
     }
 
-    private void SpawnPlanetDefense(GameObject prefab, int spawnIndex, bool isShipyardBonus, bool isBattleStation)
+    private void SpawnPlanetDefense(GameObject prefab, Vector3 localOffset, bool isShipyardBonus, bool isBattleStation)
     {
         if (prefab == null)
         {
@@ -120,11 +129,40 @@ public class GameManager : MonoBehaviour
 
         Vector3 basePosition = defenderShipSpawnPoint != null ? defenderShipSpawnPoint.position : Vector3.zero;
         Quaternion rotation = defenderShipSpawnPoint != null ? defenderShipSpawnPoint.rotation : Quaternion.identity;
-        Vector3 offset = (rotation * Vector3.right) * (spawnIndex * defenderSpawnSpacing);
+        Vector3 offset = rotation * localOffset;
 
         GameObject spawned = Instantiate(prefab, basePosition + offset, rotation);
         UnitHealthManager health = spawned.GetComponent<UnitHealthManager>();
         health?.ConfigureSpecial(isShipyardBonus, isBattleStation);
+
+        bool defenderIsPlayer = BattleContext.Instance != null
+            && BattleContext.Instance.defenderFaction != null
+            && BattleContext.Instance.defenderFaction.isPlayerFaction;
+
+        int ownLayer = defenderIsPlayer ? playerLayer : enemyLayer;
+        int hostileLayer = defenderIsPlayer ? enemyLayer : playerLayer;
+        GameObject friendlyProjectile = defenderIsPlayer ? playerProjectilePrefab : enemyProjectilePrefab;
+
+        SetLayerRecursively(spawned, ownLayer);
+
+        foreach (TurretController turret in spawned.GetComponentsInChildren<TurretController>())
+        {
+            turret.targetLayer = 1 << hostileLayer;
+
+            if (friendlyProjectile != null)
+            {
+                turret.projectilePrefab = friendlyProjectile;
+            }
+        }
+    }
+
+    private static void SetLayerRecursively(GameObject obj, int layer)
+    {
+        obj.layer = layer;
+        foreach (Transform child in obj.transform)
+        {
+            SetLayerRecursively(child.gameObject, layer);
+        }
     }
 
     private void AddReinforcement(Ship ship)

@@ -24,6 +24,9 @@ public class PlanetBuildPanel : MonoBehaviour
     public Transform queueListContainer;
     public TMP_Text queueEntryPrefab;
 
+    [Header("Debug")]
+    public bool debugBuildOnAnyPlanet = false;
+
     private TMP_Text taxOfficeLabel;
     private TMP_Text capitalShipyardLabel;
     private TMP_Text battleStationLabel;
@@ -80,7 +83,10 @@ public class PlanetBuildPanel : MonoBehaviour
 
     private bool CanBuildHere()
     {
-        return currentPlanet != null && currentPlanet.owner != null && currentPlanet.owner.isPlayerFaction;
+        if (currentPlanet == null) return false;
+        if (debugBuildOnAnyPlanet) return true;
+
+        return currentPlanet.owner != null && currentPlanet.owner.isPlayerFaction;
     }
 
     private void RefreshHeader()
@@ -102,7 +108,10 @@ public class PlanetBuildPanel : MonoBehaviour
     private void RefreshButtonStates()
     {
         bool canBuild = CanBuildHere();
-        int currency = canBuild && GalacticState.Instance != null ? GalacticState.Instance.GetCurrency(currentPlanet.owner) : 0;
+        int currency = !canBuild ? 0
+            : debugBuildOnAnyPlanet ? int.MaxValue
+            : GalacticState.Instance != null ? GalacticState.Instance.GetCurrency(currentPlanet.owner)
+            : 0;
 
         if (taxOfficeButton != null)
         {
@@ -162,14 +171,17 @@ public class PlanetBuildPanel : MonoBehaviour
 
     private bool TrySpend(int amount)
     {
-        if (!CanBuildHere() || GalacticState.Instance == null) return false;
+        if (!CanBuildHere()) return false;
+        if (debugBuildOnAnyPlanet) return true;
+        if (GalacticState.Instance == null) return false;
+
         return GalacticState.Instance.TrySpend(currentPlanet.owner, amount);
     }
 
     private void QueueShip(Ship ship)
     {
         if (ship == null || !CanBuildHere() || !currentPlanet.hasCapitalShipyard) return;
-        if (GalacticState.Instance == null || !GalacticState.Instance.TrySpend(currentPlanet.owner, ship.cost)) return;
+        if (!TrySpend(ship.cost)) return;
 
         currentPlanet.shipBuildQueue.Add(new ShipBuildOrder { ship = ship, remainingTime = ship.buildTime });
     }

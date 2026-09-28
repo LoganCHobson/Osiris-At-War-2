@@ -5,6 +5,7 @@ public class Laser : MonoBehaviour
 {
     public float speed = 1.0f;
     public float damage = 1f;
+    public float hullDamageMultiplier = 0.35f;
     public float timeOut = 10f;
     public ParticleSystem particle;
     public LayerMask layer;
@@ -64,6 +65,11 @@ public class Laser : MonoBehaviour
             if (hp != null)
             {
                 hp.DealDamage(damage);
+            }
+            else
+            {
+                UnitHealthManager healthManager = hit.collider.GetComponentInParent<UnitHealthManager>();
+                healthManager?.DealRandomDamage(damage * hullDamageMultiplier);
             }
 
             Recycle();

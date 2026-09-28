@@ -1519,8 +1519,14 @@ MonoBehaviour:
   attackerShipSpawnPoint: {fileID: 1138445455}
   defenderShipSpawnPoint: {fileID: 9300000000000002}
   defenderSpawnSpacing: 15
-  shipyardDefenderPrefab: {fileID: 1349032318270045980, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
-  battleStationPrefab: {fileID: 1349032318270045980, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+  shipyardDefenderPrefab: {fileID: 2832949738976322946, guid: c746c64acf071c14784772d62c3080b8, type: 3}
+  battleStationPrefab: {fileID: 7428256618577930067, guid: 4b72e6c27a56beb4284bb16d44cc66eb, type: 3}
+  battleStationLocalOffset: {x: 40, y: 0, z: 40}
+  shipyardLocalOffset: {x: 0, y: 0, z: 0}
+  playerLayer: 7
+  enemyLayer: 8
+  playerProjectilePrefab: {fileID: 9062178426813273101, guid: e8ccb87e282fd7f459d64b69aa39cadf, type: 3}
+  enemyProjectilePrefab: {fileID: 9062178426813273101, guid: c35cd167db47fd049b45319467d5858c, type: 3}
   fleet: {fileID: 1057846725}
 --- !u!4 &1345970854
 Transform:
