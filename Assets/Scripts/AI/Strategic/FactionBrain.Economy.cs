@@ -71,12 +71,9 @@ public partial class FactionBrain
     {
         List<Ship> candidates = new List<Ship>();
 
-        if (AIDirector.Instance != null)
+        foreach (Ship ship in faction.roster)
         {
-            foreach (Ship ship in AIDirector.Instance.buildableShips)
-            {
-                if (ship != null && !candidates.Contains(ship)) candidates.Add(ship);
-            }
+            if (ship != null && !candidates.Contains(ship)) candidates.Add(ship);
         }
 
         if (candidates.Count == 0)
@@ -198,7 +195,7 @@ public partial class FactionBrain
 
         if (best == null) return false;
 
-        best.shipBuildQueue.Add(new ShipBuildOrder { ship = BuildShip, remainingTime = BuildShip.buildTime });
+        best.shipBuildQueue.Add(new ShipBuildOrder { ship = BuildShip, remainingTime = faction.BuildTime(BuildShip) });
         return true;
     }
 

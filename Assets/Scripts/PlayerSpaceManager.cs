@@ -196,9 +196,11 @@ public class PlayerSpaceManager : MonoBehaviour
         }
 
         FleetFormation.Slot[] slots = FleetFormation.Attack(attackers, origins, targetCenter);
+        int group = SolarStudios.PlayerUnitMoveState.NextOrderGroup();
         for (int i = 0; i < attackers.Count; i++)
         {
             attackers[i].moveState.ClearDestinations();
+            attackers[i].moveState.SetOrderGroup(group);
             if (slots[i].move)
             {
                 attackers[i].moveState.AddDestination(slots[i].position);
@@ -268,6 +270,7 @@ public class PlayerSpaceManager : MonoBehaviour
         }
 
         FleetFormation.Slot[] slots = FleetFormation.Move(selectedUnits, origins, hit.point);
+        int group = SolarStudios.PlayerUnitMoveState.NextOrderGroup();
         for (int i = 0; i < selectedUnits.Count; i++)
         {
             SpaceUnit unit = selectedUnits[i];
@@ -279,6 +282,7 @@ public class PlayerSpaceManager : MonoBehaviour
             unit.moveState.AddDestination(slots[i].position);
             unit.moveState.SetFacing(slots[i].facing);
             unit.moveState.SetPriority(priority);
+            unit.moveState.SetOrderGroup(group);
             BeginMoving(unit);
         }
 

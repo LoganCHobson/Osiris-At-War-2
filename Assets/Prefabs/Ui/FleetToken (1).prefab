@@ -7898,11 +7898,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GalacticFleet
   roster:
-  - {fileID: 1185812290130268952, guid: 1b5d478e9d5666442b584f40b84c9202, type: 3}
-  - {fileID: 1185812290130268952, guid: 1b5d478e9d5666442b584f40b84c9202, type: 3}
-  - {fileID: 1185812290130268952, guid: 1b5d478e9d5666442b584f40b84c9202, type: 3}
-  - {fileID: 1185812290130268952, guid: 1b5d478e9d5666442b584f40b84c9202, type: 3}
-  - {fileID: 1185812290130268952, guid: 1b5d478e9d5666442b584f40b84c9202, type: 3}
+  - {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+  - {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+  - {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+  - {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+  - {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
   faction: {fileID: 11400000, guid: 6cc92e8569804452886ab521e84bb8a2, type: 2}
   currentPlanet: {fileID: 0}
   travelSpeed: 3

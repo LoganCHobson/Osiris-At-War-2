@@ -16,5 +16,10 @@ MonoBehaviour:
   color: {r: 1, g: 1, b: 1, a: 1}
   isPlayerFaction: 0
   isNeutral: 1
+  roster:
+  - {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+  buildTimeMultiplier: 0.125
+  projectilePrefab: {fileID: 9062178426813273101, guid: c35cd167db47fd049b45319467d5858c, type: 3}
+  shipMaterial: {fileID: 2100000, guid: f08f8a8e202ab3b40a94f7444c93f08d, type: 2}
   description: Scattered holdouts who want no part of the civil war. They never expand,
     never build, and never strike first - they just hold what little they have.

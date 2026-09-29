@@ -174,6 +174,7 @@ public class TurretController : MonoBehaviour
 
         Laser laser = temp.GetComponent<Laser>();
         laser.damage = damage;
+        laser.layer = targetLayer;
         laser.SetSourcePool(pool);
         laser.Launch(temp.transform.forward * laser.speed + finalDirection * projectileSpeed);
     }

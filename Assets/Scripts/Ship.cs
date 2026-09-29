@@ -7,7 +7,7 @@ public class Ship : MonoBehaviour
 {
     public GameObject icon;
 
-    public GameObject prefab;
+    public GameObject prefab => gameObject;
 
     public int cost;
     public float buildTime = 20f;

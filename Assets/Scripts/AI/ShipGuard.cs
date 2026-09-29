@@ -21,6 +21,7 @@ public class ShipGuard : MonoBehaviour
     private float lockedUntil;
     private float nextCheckAt;
     private Vector3 escortOffset;
+    private int orderGroup;
     private Vector3 lastOrdered = Vector3.positiveInfinity;
 
     public static void Assign(IReadOnlyList<SpaceUnit> guards, UnitHealthManager ward)
@@ -36,6 +37,7 @@ public class ShipGuard : MonoBehaviour
 
         float wardRadius = Footprint(ward.gameObject);
         float spacing = FleetFormation.Spacing(escorts);
+        int team = SolarStudios.PlayerUnitMoveState.NextOrderGroup();
 
         for (int i = 0; i < escorts.Count; i++)
         {
@@ -47,7 +49,7 @@ public class ShipGuard : MonoBehaviour
 
             ShipGuard guard = escort.GetComponent<ShipGuard>();
             if (guard == null) guard = escort.gameObject.AddComponent<ShipGuard>();
-            guard.Begin(ward, offset);
+            guard.Begin(ward, offset, team);
         }
     }
 
@@ -66,10 +68,11 @@ public class ShipGuard : MonoBehaviour
         hardpoints = GetComponent<HardpointManager>();
     }
 
-    private void Begin(UnitHealthManager ward, Vector3 offset)
+    private void Begin(UnitHealthManager ward, Vector3 offset, int team)
     {
         Ward = ward;
         escortOffset = offset;
+        orderGroup = team;
         Engaged = null;
         lockedUntil = 0f;
         nextCheckAt = 0f;
@@ -216,6 +219,7 @@ public class ShipGuard : MonoBehaviour
         unit.moveState.AddDestination(Snap(goal));
         unit.moveState.SetFacing(face);
         unit.moveState.IgnoreObstacle(Ward.transform);
+        unit.moveState.SetOrderGroup(orderGroup);
 
         if (!moving)
         {

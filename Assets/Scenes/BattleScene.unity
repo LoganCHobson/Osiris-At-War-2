@@ -1416,6 +1416,9 @@ MonoBehaviour:
   playerLayer: 7
   enemyLayer: 8
   playerProjectilePrefab: {fileID: 9062178426813273101, guid: e8ccb87e282fd7f459d64b69aa39cadf, type: 3}
+  teamMaterials:
+  - {fileID: 2100000, guid: e80ac5bd71fb46c4b8edf423929223ec, type: 2}
+  - {fileID: 2100000, guid: f08f8a8e202ab3b40a94f7444c93f08d, type: 2}
   enemyProjectilePrefab: {fileID: 9062178426813273101, guid: c35cd167db47fd049b45319467d5858c, type: 3}
   fleet: {fileID: 1057846725}
   maxShipsPerSide: 5

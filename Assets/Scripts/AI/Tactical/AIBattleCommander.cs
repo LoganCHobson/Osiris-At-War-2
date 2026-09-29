@@ -52,6 +52,7 @@ public class AIBattleCommander : MonoBehaviour
     private int maxShipsOnField;
     private float nextDecisionAt;
     private float reinforceReadyAt;
+    private readonly int orderGroup = SolarStudios.PlayerUnitMoveState.NextOrderGroup();
 
     private Vector3 ourCenter;
     private Vector3 enemyCenter;
@@ -468,6 +469,7 @@ public class AIBattleCommander : MonoBehaviour
         spaceUnit.moveState.ClearDestinations();
         spaceUnit.moveState.AddDestination(destination);
         spaceUnit.moveState.SetFacing(toEnemy);
+        spaceUnit.moveState.SetOrderGroup(orderGroup);
 
         if (!moving)
         {

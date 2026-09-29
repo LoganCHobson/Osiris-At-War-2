@@ -16,6 +16,11 @@ MonoBehaviour:
   color: {r: 0.0786757, g: 0.13073961, b: 0.9811321, a: 1}
   isPlayerFaction: 1
   isNeutral: 0
+  roster:
+  - {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+  buildTimeMultiplier: 1
+  projectilePrefab: {fileID: 9062178426813273101, guid: e8ccb87e282fd7f459d64b69aa39cadf, type: 3}
+  shipMaterial: {fileID: 2100000, guid: e80ac5bd71fb46c4b8edf423929223ec, type: 2}
   description: Human interlopers who arrived in Osiris mid-conquest and refused to
     look away. Disgusted by Avanti slaving and feudal savagery, they intend to break
     every warlord and take the galaxy for its people.

@@ -4038,19 +4038,19 @@ PrefabInstance:
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[0]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[1]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[2]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[3]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: postBattleHoldDuration
       value: 10
@@ -4733,19 +4733,19 @@ PrefabInstance:
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[0]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[1]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[2]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[3]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: postBattleHoldDuration
       value: 10
@@ -6560,19 +6560,19 @@ PrefabInstance:
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[0]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[1]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[2]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[3]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: postBattleHoldDuration
       value: 10
@@ -8536,19 +8536,19 @@ PrefabInstance:
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[0]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[1]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[2]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[3]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: postBattleHoldDuration
       value: 10
@@ -8932,19 +8932,19 @@ PrefabInstance:
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[0]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[1]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[2]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[3]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: postBattleHoldDuration
       value: 10
@@ -9545,19 +9545,19 @@ PrefabInstance:
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[0]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[1]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[2]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[3]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: postBattleHoldDuration
       value: 10
@@ -22044,7 +22044,7 @@ MonoBehaviour:
   capitalShipyardButton: {fileID: 1159310466}
   battleStationButton: {fileID: 174654111}
   buildableShips:
-  - {fileID: 1185812290130268952, guid: 1b5d478e9d5666442b584f40b84c9202, type: 3}
+  - {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
   shipButtonContainer: {fileID: 361768880}
   shipButtonPrefab: {fileID: 1000002, guid: 07d6ed0089eb413283fa4e2e3989efca, type: 3}
   queueListContainer: {fileID: 1942770382}
@@ -23907,19 +23907,19 @@ PrefabInstance:
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[0]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[1]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[2]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[3]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: postBattleHoldDuration
       value: 10
@@ -24101,19 +24101,19 @@ PrefabInstance:
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[0]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[1]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[2]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[3]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: postBattleHoldDuration
       value: 10
@@ -24303,19 +24303,19 @@ PrefabInstance:
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[0]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[1]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[2]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[3]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: postBattleHoldDuration
       value: 10
@@ -29227,19 +29227,19 @@ PrefabInstance:
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[0]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[1]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[2]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[3]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: postBattleHoldDuration
       value: 10
@@ -31015,19 +31015,19 @@ PrefabInstance:
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[0]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[1]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[2]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[3]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: postBattleHoldDuration
       value: 10
@@ -33364,19 +33364,19 @@ PrefabInstance:
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[0]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[1]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[2]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[3]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: postBattleHoldDuration
       value: 10
@@ -33991,19 +33991,19 @@ PrefabInstance:
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[0]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[1]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[2]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: 'roster.Array.data[3]'
       value: 
-      objectReference: {fileID: 1185812290130268952, guid: 69ef28e80efeefc4182df44d874697a5, type: 3}
+      objectReference: {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
     - target: {fileID: 1015525200964871906, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
       propertyPath: postBattleHoldDuration
       value: 10

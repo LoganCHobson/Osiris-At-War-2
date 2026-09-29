@@ -1,4 +1,3 @@
-using NUnit.Framework;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -6,23 +5,16 @@ public class Fleet : MonoBehaviour
 {
     public List<Ship> ships = new List<Ship>();
 
-    public GameObject tempIcon;
     public GameObject tempPrefab;
 
     private void Start()
     {
-        if(tempIcon == null || tempPrefab == null)
-        {
-            return;
-        }
-        Ship ship = new Ship
-        {
-            icon = tempIcon,
-            prefab = tempPrefab,
-            cost = 10,
-        
-        };
+        if (tempPrefab == null) return;
 
-        ships.Add(ship);
+        Ship ship = tempPrefab.GetComponent<Ship>();
+        if (ship != null)
+        {
+            ships.Add(ship);
+        }
     }
 }

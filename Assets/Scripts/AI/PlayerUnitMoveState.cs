@@ -8,6 +8,12 @@ namespace SolarStudios
     {
         private static readonly List<PlayerUnitMoveState> All = new List<PlayerUnitMoveState>();
         private const int MaxRouteChecks = 4;
+        private static int lastOrderGroup;
+
+        public static int NextOrderGroup()
+        {
+            return ++lastOrderGroup;
+        }
 
         private PlayerUnitStateMachine stateMachine;
         private NavMeshAgent agent;
@@ -27,6 +33,7 @@ namespace SolarStudios
         public float routeMargin = 6f;
         public float stopShortRadii = 5f;
         public float lineStandoff = 6f;
+        [Range(-1f, 1f)] public float sameDirectionThreshold = 0.7f;
 
         [Header("Priority Move - Making Way")]
         public float yieldCheckInterval = 0.25f;
@@ -50,6 +57,7 @@ namespace SolarStudios
         private bool priorityMove;
         private int detourPoints;
         private int routeChecks;
+        private int orderGroup;
         private Transform ignoredObstacle;
 
         private bool hasFacing;
@@ -61,6 +69,16 @@ namespace SolarStudios
         private bool IsParked => machine == null || (Object)machine.currentState != this || destinations.Count == 0;
         private bool IsDead => health != null && health.IsDead;
         private Vector3 Position => ownAgent.transform.position;
+
+        private Vector3 TravelDirection
+        {
+            get
+            {
+                if (IsParked) return Vector3.zero;
+                Vector3 direction = Flat(destinations[0] - Position);
+                return direction.sqrMagnitude > 0.01f ? direction.normalized : Vector3.zero;
+            }
+        }
 
         private void Awake()
         {
@@ -225,8 +243,13 @@ namespace SolarStudios
             List<PlayerUnitMoveState> obstacles = new List<PlayerUnitMoveState>();
             foreach (PlayerUnitMoveState other in All)
             {
-                if (other == this || other.ownAgent == null || !other.ownAgent.enabled || !other.IsParked || other.IsDead) continue;
+                if (other == this || other.ownAgent == null || !other.ownAgent.enabled || other.IsDead) continue;
                 if (ignoredObstacle != null && other.ownAgent.transform.IsChildOf(ignoredObstacle)) continue;
+                if (!other.IsParked)
+                {
+                    if (orderGroup != 0 && other.orderGroup == orderGroup) continue;
+                    if (Vector3.Dot(other.TravelDirection, heading) > sameDirectionThreshold) continue;
+                }
                 if (Flat(other.Position - start).magnitude < BlockRadius(other, selfRadius)) continue;
                 obstacles.Add(other);
             }
@@ -443,12 +466,18 @@ namespace SolarStudios
             priorityMove = false;
             detourPoints = 0;
             routeChecks = 0;
+            orderGroup = 0;
             ignoredObstacle = null;
         }
 
         public void SetPriority(bool priority)
         {
             priorityMove = priority;
+        }
+
+        public void SetOrderGroup(int group)
+        {
+            orderGroup = group;
         }
 
         public void IgnoreObstacle(Transform obstacle)

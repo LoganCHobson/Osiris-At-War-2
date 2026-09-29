@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
 
 public class GameManager : MonoBehaviour
 {
@@ -19,10 +20,12 @@ public class GameManager : MonoBehaviour
     public GameObject battleStationPrefab;
     public Vector3 battleStationLocalOffset = new Vector3(100f, 0f, -120f);
     public Vector3 shipyardLocalOffset = new Vector3(-100f, 0f, -260f);
+
+    [Header("Allegiance")]
     public int playerLayer = 7;
     public int enemyLayer = 8;
-    public GameObject playerProjectilePrefab;
-    public GameObject enemyProjectilePrefab;
+    [FormerlySerializedAs("playerProjectilePrefab")] public GameObject defaultProjectilePrefab;
+    public Material[] teamMaterials;
 
     public Fleet fleet;
 
@@ -213,33 +216,97 @@ public class GameManager : MonoBehaviour
         UnitHealthManager health = spawned.GetComponent<UnitHealthManager>();
         health?.ConfigureSpecial(isShipyardBonus, isBattleStation);
 
-        bool defenderIsPlayer = BattleContext.Instance != null
-            && BattleContext.Instance.defenderFaction != null
-            && BattleContext.Instance.defenderFaction.isPlayerFaction;
+        ApplyAllegiance(spawned, false);
+    }
 
-        int ownLayer = defenderIsPlayer ? playerLayer : enemyLayer;
-        int hostileLayer = defenderIsPlayer ? enemyLayer : playerLayer;
-        GameObject friendlyProjectile = defenderIsPlayer ? playerProjectilePrefab : enemyProjectilePrefab;
+    public void ApplyAllegiance(GameObject spawned, bool attackerSide)
+    {
+        bool playerSide = attackerSide == PlayerIsAttacker;
+        int ownLayer = playerSide ? playerLayer : enemyLayer;
+        int hostileLayer = playerSide ? enemyLayer : playerLayer;
 
-        SetLayerRecursively(spawned, ownLayer);
+        Faction faction = SideFaction(attackerSide);
+        GameObject projectile = faction != null && faction.projectilePrefab != null ? faction.projectilePrefab : defaultProjectilePrefab;
 
-        foreach (TurretController turret in spawned.GetComponentsInChildren<TurretController>())
+        SetSideLayer(spawned.transform, ownLayer);
+
+        foreach (TurretController turret in spawned.GetComponentsInChildren<TurretController>(true))
         {
             turret.targetLayer = 1 << hostileLayer;
 
-            if (friendlyProjectile != null)
+            if (projectile != null)
             {
-                turret.projectilePrefab = friendlyProjectile;
+                turret.projectilePrefab = projectile;
+            }
+        }
+
+        if (faction != null && faction.shipMaterial != null)
+        {
+            Repaint(spawned, faction.shipMaterial);
+        }
+
+        if (!playerSide)
+        {
+            StripPlayerOnly(spawned);
+        }
+    }
+
+    private void Repaint(GameObject spawned, Material material)
+    {
+        if (teamMaterials == null || teamMaterials.Length == 0) return;
+
+        foreach (Renderer renderer in spawned.GetComponentsInChildren<Renderer>(true))
+        {
+            Material[] materials = renderer.sharedMaterials;
+            bool changed = false;
+
+            for (int i = 0; i < materials.Length; i++)
+            {
+                if (materials[i] != null && materials[i] != material && System.Array.IndexOf(teamMaterials, materials[i]) >= 0)
+                {
+                    materials[i] = material;
+                    changed = true;
+                }
+            }
+
+            if (changed)
+            {
+                renderer.sharedMaterials = materials;
             }
         }
     }
 
-    private static void SetLayerRecursively(GameObject obj, int layer)
+    private static void StripPlayerOnly(GameObject spawned)
     {
-        obj.layer = layer;
-        foreach (Transform child in obj.transform)
+        foreach (PlayerSideOnly playerOnly in spawned.GetComponentsInChildren<PlayerSideOnly>(true))
         {
-            SetLayerRecursively(child.gameObject, layer);
+            playerOnly.Strip();
+        }
+
+        UnitHealthManager health = spawned.GetComponent<UnitHealthManager>();
+        if (health != null && health.healthSlider != null)
+        {
+            health.healthSlider.gameObject.SetActive(false);
+        }
+    }
+
+    private static Faction SideFaction(bool attackerSide)
+    {
+        BattleContext context = BattleContext.Instance;
+        if (context == null || !context.hasPendingBattle) return null;
+        return attackerSide ? context.attackerFaction : context.defenderFaction;
+    }
+
+    private void SetSideLayer(Transform target, int layer)
+    {
+        if (target.gameObject.layer == playerLayer || target.gameObject.layer == enemyLayer)
+        {
+            target.gameObject.layer = layer;
+        }
+
+        foreach (Transform child in target)
+        {
+            SetSideLayer(child, layer);
         }
     }
 
@@ -266,6 +333,11 @@ public class GameManager : MonoBehaviour
         if (health != null)
         {
             health.Configure(ship, isAttackerSide);
+        }
+
+        if (Instance != null)
+        {
+            Instance.ApplyAllegiance(spawned, isAttackerSide);
         }
     }
 }

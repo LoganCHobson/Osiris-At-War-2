@@ -18,7 +18,6 @@ public class PlanetBuildPanel : MonoBehaviour
     public Button battleStationButton;
 
     [Header("Ship Construction")]
-    public List<Ship> buildableShips = new List<Ship>();
     public Transform shipButtonContainer;
     public Button shipButtonPrefab;
     public Transform queueListContainer;
@@ -34,7 +33,10 @@ public class PlanetBuildPanel : MonoBehaviour
     private Planet currentPlanet;
     private int lastQueueCount = -1;
     private readonly List<GameObject> spawnedShipButtons = new List<GameObject>();
+    private readonly List<Ship> shownShips = new List<Ship>();
     private readonly List<TMP_Text> spawnedQueueEntries = new List<TMP_Text>();
+
+    private Faction Builder => currentPlanet != null ? currentPlanet.owner : null;
 
     private void Awake()
     {
@@ -144,9 +146,9 @@ public class PlanetBuildPanel : MonoBehaviour
         }
 
         bool shipyardReady = canBuild && currentPlanet.hasCapitalShipyard;
-        for (int i = 0; i < spawnedShipButtons.Count && i < buildableShips.Count; i++)
+        for (int i = 0; i < spawnedShipButtons.Count && i < shownShips.Count; i++)
         {
-            Ship ship = buildableShips[i];
+            Ship ship = shownShips[i];
             Button button = spawnedShipButtons[i].GetComponent<Button>();
             if (button == null || ship == null) continue;
 
@@ -187,7 +189,12 @@ public class PlanetBuildPanel : MonoBehaviour
         if (ship == null || !CanBuildHere() || !currentPlanet.hasCapitalShipyard) return;
         if (!TrySpend(ship.cost)) return;
 
-        currentPlanet.shipBuildQueue.Add(new ShipBuildOrder { ship = ship, remainingTime = ship.buildTime });
+        currentPlanet.shipBuildQueue.Add(new ShipBuildOrder { ship = ship, remainingTime = BuildTime(ship) });
+    }
+
+    private float BuildTime(Ship ship)
+    {
+        return Builder != null ? Builder.BuildTime(ship) : ship.buildTime;
     }
 
     private void RebuildShipButtons()
@@ -197,10 +204,11 @@ public class PlanetBuildPanel : MonoBehaviour
             Destroy(obj);
         }
         spawnedShipButtons.Clear();
+        shownShips.Clear();
 
-        if (shipButtonContainer == null || shipButtonPrefab == null) return;
+        if (shipButtonContainer == null || shipButtonPrefab == null || Builder == null) return;
 
-        foreach (Ship ship in buildableShips)
+        foreach (Ship ship in Builder.roster)
         {
             if (ship == null) continue;
 
@@ -211,10 +219,11 @@ public class PlanetBuildPanel : MonoBehaviour
             TMP_Text label = button.GetComponentInChildren<TMP_Text>();
             if (label != null)
             {
-                label.text = $"{ship.name} (${ship.cost}, {ship.buildTime:0}s)";
+                label.text = $"{ship.name} (${ship.cost}, {BuildTime(ship):0}s)";
             }
 
             spawnedShipButtons.Add(button.gameObject);
+            shownShips.Add(ship);
         }
     }
 

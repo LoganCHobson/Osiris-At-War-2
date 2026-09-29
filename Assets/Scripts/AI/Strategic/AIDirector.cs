@@ -8,7 +8,6 @@ public class AIDirector : MonoBehaviour
     public bool aiEnabled = true;
     public float thinkInterval = 3f;
     public float factionDiscoveryInterval = 5f;
-    public List<Ship> buildableShips = new List<Ship>();
     public AIPersonality defaultPersonality;
 
     public float GalacticTime { get; private set; }
