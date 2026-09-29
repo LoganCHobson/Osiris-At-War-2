@@ -45,6 +45,10 @@ public class FleetPanel : MonoBehaviour
         for (int slot = 0; slot < Planet.FleetSlotCount; slot++)
         {
             GalacticFleet fleet = currentPlanet.GetFleetInSlot(slot);
+            if (fleet != null && !fleet.IsRevealed)
+            {
+                fleet = null;
+            }
 
             FleetRowUI row = Instantiate(rowPrefab, rowContainer);
             row.Bind(fleet, currentPlanet, slot, this);

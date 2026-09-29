@@ -152,25 +152,26 @@ public class PlanetTooltip : MonoBehaviour
             ? $"<color=#{ColorUtility.ToHtmlStringRGB(planet.owner.color)}>{planet.planetName}</color>"
             : planet.planetName;
 
+        bool inVision = FogOfWar.CanSee(planet);
+
         builder.Clear();
         builder.Append("Owner: ").Append(MapText.Colored(planet.owner)).Append('\n');
 
-        if (planet.owner != null)
+        if (planet.owner != null && inVision)
         {
             int income = Planet.BaseIncome + (planet.hasTaxOffice ? Planet.TaxOfficeIncome : 0);
             float interval = EconomyManager.Instance != null ? EconomyManager.Instance.taxTickInterval : 20f;
             builder.Append("Income: ").Append(MapText.Tint($"+{income}", MapText.Good)).Append($" every {MapText.RealTime(interval)}\n");
         }
 
-        builder.Append("Buildings: ");
-        int buildingCount = 0;
-        AppendBuilding(planet.hasTaxOffice, "Tax Office", ref buildingCount);
-        AppendBuilding(planet.hasCapitalShipyard, "Capital Shipyard", ref buildingCount);
-        AppendBuilding(planet.hasBattleStation, "Battle Station", ref buildingCount);
-        if (buildingCount == 0) builder.Append(MapText.Tint("None", MapText.Muted));
-        builder.Append('\n');
+        if (inVision)
+        {
+            builder.Append("Buildings: ");
+            AppendBuildings(planet.hasTaxOffice, planet.hasCapitalShipyard, planet.hasBattleStation);
+            builder.Append('\n');
+        }
 
-        if (planet.canBuildCapitalShipyard && !planet.hasCapitalShipyard)
+        if (planet.canBuildCapitalShipyard && !(inVision && planet.hasCapitalShipyard))
         {
             builder.Append(MapText.Tint("Shipyard site - can build a Capital Shipyard", MapText.Site)).Append('\n');
         }
@@ -184,7 +185,14 @@ public class PlanetTooltip : MonoBehaviour
             builder.Append('\n');
         }
 
-        AppendFleetsAt(planet);
+        if (inVision)
+        {
+            AppendFleetsAt(planet);
+        }
+        else
+        {
+            AppendIntel(planet);
+        }
 
         int lanes = 0;
         foreach (Planet connection in planet.connections)
@@ -196,12 +204,57 @@ public class PlanetTooltip : MonoBehaviour
         bodyText.text = builder.ToString();
     }
 
+    private void AppendBuildings(bool taxOffice, bool shipyard, bool battleStation)
+    {
+        int count = 0;
+        AppendBuilding(taxOffice, "Tax Office", ref count);
+        AppendBuilding(shipyard, "Capital Shipyard", ref count);
+        AppendBuilding(battleStation, "Battle Station", ref count);
+        if (count == 0) builder.Append(MapText.Tint("None", MapText.Muted));
+    }
+
     private void AppendBuilding(bool has, string label, ref int count)
     {
         if (!has) return;
         if (count > 0) builder.Append(", ");
         builder.Append(label);
         count++;
+    }
+
+    private void AppendIntel(Planet planet)
+    {
+        builder.Append(MapText.Tint("No vision", MapText.Muted)).Append('\n');
+
+        PlanetIntel intel = FogOfWar.LastSeen(planet);
+        if (intel == null)
+        {
+            builder.Append(MapText.Tint("Never scouted - buildings and fleets unknown", MapText.Muted)).Append('\n');
+            return;
+        }
+
+        builder.Append(MapText.Tint($"Last seen {MapText.Duration(FogOfWar.Now - intel.seenAt)} ago:", MapText.Warning)).Append('\n');
+
+        if (intel.owner != planet.owner)
+        {
+            builder.Append("  Owner then: ").Append(MapText.Colored(intel.owner)).Append('\n');
+        }
+
+        builder.Append("  Buildings: ");
+        AppendBuildings(intel.hasTaxOffice, intel.hasCapitalShipyard, intel.hasBattleStation);
+        builder.Append('\n');
+
+        if (intel.fleets.Count == 0)
+        {
+            builder.Append("  Fleets: ").Append(MapText.Tint("None", MapText.Muted)).Append('\n');
+            return;
+        }
+
+        builder.Append("  Fleets:\n");
+        foreach (PlanetIntel.FleetSighting sighting in intel.fleets)
+        {
+            builder.Append("    ").Append(MapText.Colored(sighting.faction))
+                .Append($"  {MapText.Plural(sighting.ships, "ship")}  |  strength {sighting.power:0}\n");
+        }
     }
 
     private void AppendFleetsAt(Planet planet)

@@ -8,7 +8,23 @@ public class AIDebugOverlay : MonoBehaviour
     public KeyCode cycleFactionKey = KeyCode.F4;
     public bool visible;
 
+    public static AIDebugOverlay Instance { get; private set; }
+
+    public Faction FocusedFaction
+    {
+        get
+        {
+            AIDirector director = AIDirector.Instance;
+            return director != null && focusIndex >= 0 && focusIndex < director.brains.Count ? director.brains[focusIndex].faction : null;
+        }
+    }
+
     private int focusIndex = -1;
+
+    private void Awake()
+    {
+        Instance = this;
+    }
     private Vector2 scroll;
     private GUIStyle panelStyle;
     private GUIStyle labelStyle;

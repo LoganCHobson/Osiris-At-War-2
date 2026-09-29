@@ -4,6 +4,8 @@ using UnityEngine.SceneManagement;
 
 public class GalacticFleet : MonoBehaviour
 {
+    public static readonly List<GalacticFleet> All = new List<GalacticFleet>();
+
     [Header("Roster")]
     public List<Ship> roster = new List<Ship>();
 
@@ -21,6 +23,12 @@ public class GalacticFleet : MonoBehaviour
     public bool CanTakeOrders => !IsTraveling && !IsHolding && !AwaitingBattle && currentPlanet != null;
     public float HoldTimeRemaining => Mathf.Max(0f, holdTimer);
     public Planet Destination => IsTraveling && route.Count > 0 ? route[route.Count - 1] : null;
+    public Planet NextWaypoint => IsTraveling && routeIndex < route.Count ? route[routeIndex] : null;
+    public bool IsRevealed { get; private set; } = true;
+
+    private Renderer[] revealRenderers;
+    private Collider[] revealColliders;
+    private Canvas[] revealCanvases;
 
     public bool IsPresentAt(Planet planet)
     {
@@ -38,6 +46,39 @@ public class GalacticFleet : MonoBehaviour
     private static readonly int BaseColorID = Shader.PropertyToID("_BaseColor");
     private static readonly int ColorID = Shader.PropertyToID("_Color");
     private MaterialPropertyBlock factionProperties;
+
+    private void OnEnable()
+    {
+        All.Add(this);
+    }
+
+    private void OnDisable()
+    {
+        All.Remove(this);
+    }
+
+    public void SetRevealed(bool revealed)
+    {
+        if (revealed == IsRevealed) return;
+
+        IsRevealed = revealed;
+        revealRenderers ??= GetComponentsInChildren<Renderer>(true);
+        revealColliders ??= GetComponentsInChildren<Collider>(true);
+        revealCanvases ??= GetComponentsInChildren<Canvas>(true);
+
+        foreach (Renderer part in revealRenderers)
+        {
+            if (part != null) part.enabled = revealed;
+        }
+        foreach (Collider part in revealColliders)
+        {
+            if (part != null) part.enabled = revealed;
+        }
+        foreach (Canvas part in revealCanvases)
+        {
+            if (part != null) part.enabled = revealed;
+        }
+    }
 
     private void Start()
     {

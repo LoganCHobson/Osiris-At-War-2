@@ -357,11 +357,16 @@ public class GalacticMapManager : MonoBehaviour
             for (int i = 1; i < previewRoute.Count - 1; i++)
             {
                 Planet stop = previewRoute[i];
-                if ((stop.owner != null && stop.owner != routeOwner.faction) || routeOwner.FindOpposingFleet(stop) != null) hostileStops++;
+                bool enemySeen = FogOfWar.CanSee(stop) && routeOwner.FindOpposingFleet(stop) != null;
+                if ((stop.owner != null && stop.owner != routeOwner.faction) || enemySeen) hostileStops++;
             }
             if (hostileStops > 0) lines.Add(MapText.Tint($"Passes {MapText.Plural(hostileStops, "hostile system")} - may be intercepted", MapText.Warning));
 
-            if (routeOwner.HasBattleAt(previewPlanet))
+            if (!FogOfWar.CanSee(previewPlanet))
+            {
+                lines.Add(MapText.Tint(previewPlanet.owner != routeOwner.faction ? "No vision of destination - defenses unknown" : "No vision of destination", MapText.Warning));
+            }
+            else if (routeOwner.HasBattleAt(previewPlanet))
             {
                 lines.Add(MapText.Tint("Battle expected at destination", MapText.Bad));
             }

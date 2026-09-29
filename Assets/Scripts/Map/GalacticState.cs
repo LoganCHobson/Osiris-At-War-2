@@ -36,6 +36,7 @@ public class GalacticState : MonoBehaviour
     public List<PlanetSnapshot> planetSnapshots = new List<PlanetSnapshot>();
     public List<FleetSnapshot> fleetSnapshots = new List<FleetSnapshot>();
     public List<TreasurySnapshot> treasuries = new List<TreasurySnapshot>();
+    public readonly Dictionary<string, PlanetIntel> playerIntel = new Dictionary<string, PlanetIntel>();
 
     [Header("Economy")]
     public int startingCurrency = 500;

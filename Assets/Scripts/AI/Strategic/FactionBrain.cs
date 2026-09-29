@@ -170,22 +170,17 @@ public partial class FactionBrain
 
             myFleets.Add(fleet);
             totalPower += Strength.Of(fleet);
-
-            if (!fleet.IsTraveling && fleet.currentPlanet != null)
-            {
-                visible.Add(fleet.currentPlanet);
-            }
         }
         TotalPower = totalPower;
 
+        GalacticVisibility.Compute(faction, world.planets, world.fleets, visible);
+
         foreach (Planet planet in owned)
         {
-            visible.Add(planet);
             foreach (Planet neighbor in planet.connections)
             {
                 if (neighbor == null) continue;
 
-                visible.Add(neighbor);
                 if (!ownedSet.Contains(neighbor))
                 {
                     borderPlanets.Add(neighbor);

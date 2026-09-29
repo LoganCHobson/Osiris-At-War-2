@@ -108,6 +108,7 @@ public class PlanetBuildPanel : MonoBehaviour
     private void RefreshButtonStates()
     {
         bool canBuild = CanBuildHere();
+        bool known = canBuild || FogOfWar.CanSee(currentPlanet);
         int currency = !canBuild ? 0
             : debugBuildOnAnyPlanet ? int.MaxValue
             : GalacticState.Instance != null ? GalacticState.Instance.GetCurrency(currentPlanet.owner)
@@ -119,7 +120,7 @@ public class PlanetBuildPanel : MonoBehaviour
         }
         if (taxOfficeLabel != null)
         {
-            taxOfficeLabel.text = currentPlanet.hasTaxOffice ? "Tax Office (built)" : $"Build Tax Office (${Planet.TaxOfficeCost})";
+            taxOfficeLabel.text = known && currentPlanet.hasTaxOffice ? "Tax Office (built)" : $"Build Tax Office (${Planet.TaxOfficeCost})";
         }
 
         if (capitalShipyardButton != null)
@@ -128,7 +129,7 @@ public class PlanetBuildPanel : MonoBehaviour
         }
         if (capitalShipyardLabel != null)
         {
-            capitalShipyardLabel.text = currentPlanet.hasCapitalShipyard ? "Capital Shipyard (built)"
+            capitalShipyardLabel.text = known && currentPlanet.hasCapitalShipyard ? "Capital Shipyard (built)"
                 : !currentPlanet.canBuildCapitalShipyard ? "No Shipyard Site"
                 : $"Build Capital Shipyard (${Planet.CapitalShipyardCost})";
         }
@@ -139,7 +140,7 @@ public class PlanetBuildPanel : MonoBehaviour
         }
         if (battleStationLabel != null)
         {
-            battleStationLabel.text = currentPlanet.hasBattleStation ? "Battle Station (built)" : $"Build Battle Station (${Planet.BattleStationCost})";
+            battleStationLabel.text = known && currentPlanet.hasBattleStation ? "Battle Station (built)" : $"Build Battle Station (${Planet.BattleStationCost})";
         }
 
         bool shipyardReady = canBuild && currentPlanet.hasCapitalShipyard;
