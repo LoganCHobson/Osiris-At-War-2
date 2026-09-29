@@ -29,39 +29,59 @@ public class TurretController : MonoBehaviour
     public float fireRate = 1f;
     private float lastFiredTime;
     public GameObject projectilePrefab;
+    public float projectileSpeed = 20f;
     public float damage;
-    private float timeOutOfLOS = 0f; 
+    private float timeOutOfLOS = 0f;
     public float maxTimeWithoutLOS = 3f;
 
+    [Header("Performance")]
+    public float targetSearchInterval = 0.25f;
+    public float lineOfSightInterval = 0.2f;
+
+    private static readonly Collider[] overlapBuffer = new Collider[128];
+
+    private float nextSearchAt;
+    private float nextLineOfSightAt;
+    private bool hasLineOfSight;
+    private Transform lineOfSightTarget;
+    private Transform typedTarget;
+    private ShipType targetType;
 
     void Update()
     {
-        if (target == null)
+        if (target == null && Time.time >= nextSearchAt)
         {
+            nextSearchAt = Time.time + targetSearchInterval * Random.Range(0.8f, 1.2f);
             AcquireTarget();
         }
 
         if (target != null)
         {
-           
+
 
             Traverse();
 
-            
-            if (HasLineOfSight(firingPoints[0]))  //I would use one of the middle guns but I don't want to adjust this for single use guns. Wont matter much anyway.
+            if (target != lineOfSightTarget || Time.time >= nextLineOfSightAt)
+            {
+                lineOfSightTarget = target;
+                nextLineOfSightAt = Time.time + lineOfSightInterval * Random.Range(0.8f, 1.2f);
+                hasLineOfSight = HasLineOfSight(firingPoints[0]);  //I would use one of the middle guns but I don't want to adjust this for single use guns. Wont matter much anyway.
+            }
+
+            if (hasLineOfSight)
             {
                 timeOutOfLOS = 0f;
                 Shoot();
-                
+
             }
             else
             {
-                timeOutOfLOS += Time.deltaTime; 
+                timeOutOfLOS += Time.deltaTime;
 
                 if (timeOutOfLOS >= maxTimeWithoutLOS)
                 {
                     target = null;
-                    timeOutOfLOS = 0f;  
+                    timeOutOfLOS = 0f;
                 }
             }
         }
@@ -70,33 +90,25 @@ public class TurretController : MonoBehaviour
 
     void AcquireTarget()
     {
-        Collider[] targetsInRange = Physics.OverlapSphere(transform.position, range, targetLayer);
+        int count = Physics.OverlapSphereNonAlloc(transform.position, range, overlapBuffer, targetLayer);
 
-        if (targetsInRange.Length > 0)
+        float closestDistanceSqr = Mathf.Infinity;
+        HardpointManager closestManager = null;
+
+        for (int i = 0; i < count; i++)
         {
+            Transform potentialTarget = overlapBuffer[i].transform;
+            float distanceSqr = (potentialTarget.position - transform.position).sqrMagnitude;
+            if (distanceSqr >= closestDistanceSqr) continue;
 
-            float closestDistanceSqr = Mathf.Infinity;
-            Transform closestTarget = null;
-
-            foreach (Collider col in targetsInRange)
+            if (potentialTarget.root.TryGetComponent(out HardpointManager manager))
             {
-                Transform potentialTarget = col.transform;
-                float distanceSqr = (potentialTarget.position - transform.position).sqrMagnitude;
-
-                if (distanceSqr < closestDistanceSqr)
-                {
-                    closestDistanceSqr = distanceSqr;
-                    closestTarget = potentialTarget;
-                }
+                closestDistanceSqr = distanceSqr;
+                closestManager = manager;
             }
+        }
 
-            HardpointManager hardpointManager = closestTarget.root.GetComponent<HardpointManager>();
-            target = hardpointManager.GetRandomHardpoint();
-        }
-        else
-        {
-            target = null;
-        }
+        target = closestManager != null ? closestManager.GetRandomHardpoint() : null;
     }
     void Traverse()
     {
@@ -163,23 +175,22 @@ public class TurretController : MonoBehaviour
         Laser laser = temp.GetComponent<Laser>();
         laser.damage = damage;
         laser.SetSourcePool(pool);
-
-        Rigidbody rb = temp.GetComponent<Rigidbody>();
-        if (rb != null)
-        {
-            rb.linearVelocity = finalDirection * 20f;
-        }
+        laser.Launch(temp.transform.forward * laser.speed + finalDirection * projectileSpeed);
     }
 
     float GetAccuracyMultiplier(Transform target)
     {
-        
-        float distance = Vector3.Distance(transform.position, target.position);
-        
-        float rangeFalloff = distance / range * rangeFallOffValue; 
 
-        
-        ShipType targetType = target.GetComponentInParent<SpaceUnit>().shipType;
+        float distance = Vector3.Distance(transform.position, target.position);
+
+        float rangeFalloff = distance / range * rangeFallOffValue;
+
+        if (target != typedTarget)
+        {
+            typedTarget = target;
+            SpaceUnit unit = target.GetComponentInParent<SpaceUnit>();
+            targetType = unit != null ? unit.shipType : ShipType.Cruiser;
+        }
 
         switch (targetType)
         {

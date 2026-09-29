@@ -171,7 +171,7 @@ public class GameManager : MonoBehaviour
     public static int CountLiveShips(bool attackerSide)
     {
         int count = 0;
-        foreach (UnitHealthManager unit in FindObjectsByType<UnitHealthManager>(FindObjectsSortMode.None))
+        foreach (UnitHealthManager unit in UnitHealthManager.Active)
         {
             if (!unit.IsDefense && !unit.IsDead && unit.isAttackerSide == attackerSide)
             {

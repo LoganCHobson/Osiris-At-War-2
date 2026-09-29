@@ -1,9 +1,12 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
 
 public class UnitHealthManager : MonoBehaviour
 {
+    public static readonly List<UnitHealthManager> Active = new List<UnitHealthManager>();
+
     public float maxHealth;
     public float currentHealth;
     public Slider healthSlider;
@@ -32,6 +35,16 @@ public class UnitHealthManager : MonoBehaviour
     {
         isShipyardBonus = shipyardBonus;
         isBattleStation = battleStation;
+    }
+
+    private void OnEnable()
+    {
+        Active.Add(this);
+    }
+
+    private void OnDisable()
+    {
+        Active.Remove(this);
     }
 
     private void Start()

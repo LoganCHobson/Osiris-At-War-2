@@ -127,7 +127,7 @@ public class AIBattleCommander : MonoBehaviour
         enemies.Clear();
         friendlyDefenses.Clear();
 
-        foreach (UnitHealthManager health in FindObjectsByType<UnitHealthManager>(FindObjectsSortMode.None))
+        foreach (UnitHealthManager health in UnitHealthManager.Active)
         {
             if (health.IsDead) continue;
 

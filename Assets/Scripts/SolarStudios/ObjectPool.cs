@@ -12,6 +12,7 @@ namespace SolarStudios //Logans Library
 
         public GameObject prefab;
         public int poolSize = 0;
+        public bool canGrow = false;
         public List<GameObject> objectPool = new List<GameObject>();
         [Header("Events")]
         public UnityEvent onSpawn;
@@ -19,26 +20,34 @@ namespace SolarStudios //Logans Library
         public UnityEvent onRecycleAll;
         public UnityEvent onInitalize;
 
+        private readonly Stack<GameObject> available = new Stack<GameObject>();
+        private bool warnedFull;
+
         public static ObjectPool GetPoolFor(GameObject forPrefab)
         {
-            return poolsByPrefab.TryGetValue(forPrefab, out ObjectPool pool) ? pool : null;
+            if (forPrefab == null) return null;
+            return poolsByPrefab.TryGetValue(forPrefab, out ObjectPool pool) && pool != null ? pool : null;
         }
 
         void Awake()
         {
-            poolsByPrefab[prefab] = this;
+            if (prefab != null)
+            {
+                poolsByPrefab[prefab] = this;
+            }
         }
 
-        // Start is called before the first frame update
+        void OnDestroy()
+        {
+            if (prefab != null && poolsByPrefab.TryGetValue(prefab, out ObjectPool pool) && pool == this)
+            {
+                poolsByPrefab.Remove(prefab);
+            }
+        }
+
         void Start()
         {
             InitializePool();
-        }
-
-        // Update is called once per frame
-        void Update()
-        {
-            
         }
 
         public void InitializePool()
@@ -46,67 +55,100 @@ namespace SolarStudios //Logans Library
             onInitalize.Invoke();
             for (int i = 0; i < poolSize; i++)
             {
-                GameObject obj = Instantiate(prefab, Vector3.zero, Quaternion.identity);
-                obj.SetActive(false);
-                objectPool.Add(obj);
+                available.Push(CreateInstance());
             }
         }
-        
+
+        private GameObject CreateInstance()
+        {
+            GameObject obj = Instantiate(prefab, Vector3.zero, Quaternion.identity);
+            obj.SetActive(false);
+            objectPool.Add(obj);
+            return obj;
+        }
+
         public GameObject Spawn(Vector3 position, Quaternion rotation = default)
         {
             onSpawn.Invoke();
-            foreach (GameObject obj in objectPool)
+
+            GameObject obj = null;
+            while (obj == null && available.Count > 0)
             {
-                if (!obj.activeInHierarchy && obj != null)
-                {
-                    obj.transform.position = position;
-                    obj.transform.rotation = rotation;
-                    obj.SetActive(true);
-                    return obj;
-                }
+                obj = available.Pop();
             }
-            Debug.LogWarning("Object pool capacity reached.");
-            return null;
+
+            if (obj == null)
+            {
+                if (!canGrow)
+                {
+                    if (!warnedFull)
+                    {
+                        warnedFull = true;
+                        Debug.LogWarning($"Object pool for '{(prefab != null ? prefab.name : name)}' reached capacity ({poolSize}). Raise Pool Size or enable Can Grow.");
+                    }
+                    return null;
+                }
+
+                obj = CreateInstance();
+            }
+
+            obj.transform.position = position;
+            obj.transform.rotation = rotation;
+            obj.SetActive(true);
+            return obj;
         }
 
         public void Recycle(GameObject obj, float delay = 0f)
         {
-            StartCoroutine(DeactivateObjectDelayed(obj, delay));
+            if (obj == null) return;
+
+            if (delay <= 0f)
+            {
+                Deactivate(obj);
+            }
+            else
+            {
+                StartCoroutine(DeactivateObjectDelayed(obj, delay));
+            }
+
             onRecycle.Invoke();
+        }
+
+        private void Deactivate(GameObject obj)
+        {
+            if (obj == null || !obj.activeSelf) return;
+
+            obj.SetActive(false);
+            available.Push(obj);
         }
 
         private IEnumerator DeactivateObjectDelayed(GameObject obj, float delay)
         {
             yield return new WaitForSeconds(delay);
-            obj.SetActive(false);
+            Deactivate(obj);
         }
 
         public void RecycleAll(float delay = 0f)
         {
-            foreach(GameObject obj in objectPool)
+            foreach (GameObject obj in objectPool)
             {
-                if (obj.activeInHierarchy)
+                if (obj == null || !obj.activeInHierarchy) continue;
+
+                if (delay <= 0f)
+                {
+                    Deactivate(obj);
+                }
+                else
                 {
                     StartCoroutine(DeactivateObjectDelayed(obj, delay));
                 }
-                
             }
             onRecycleAll.Invoke();
-
         }
 
         public bool IsEmpty()
         {
-           
-           foreach(GameObject obj in objectPool)
-           {
-                if(!obj.activeInHierarchy)
-                {
-                    return false; //Pool ain't empty
-                }
-               
-           }
-            return true; //Aint got no gas innit
+            return available.Count == 0;
         }
     }
 
