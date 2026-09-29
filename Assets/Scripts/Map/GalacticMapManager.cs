@@ -14,6 +14,7 @@ public class GalacticMapManager : MonoBehaviour
     public LineRenderer orderLinePreview;
     public Color validOrderColor = Color.cyan;
     public Color invalidOrderColor = Color.red;
+    public float routeLineHeight = 0.1f;
 
     [Header("Hyperspace lanes")]
     public Color laneColor = Color.cyan;
@@ -26,6 +27,13 @@ public class GalacticMapManager : MonoBehaviour
     private readonly List<GalacticFleet> selectedFleets = new List<GalacticFleet>();
     private bool isDragging;
     private Vector3 dragOrigin;
+    private GalacticFleet dragFleet;
+    private Planet previewPlanet;
+    private List<Planet> previewRoute = new List<Planet>();
+    private bool previewValid;
+    private string previewInfo;
+
+    public bool IsDraggingFleet => isDragging;
 
     private void Awake()
     {
@@ -155,10 +163,7 @@ public class GalacticMapManager : MonoBehaviour
         if (BattlePrompt.IsOpen)
         {
             isDragging = false;
-            if (orderLinePreview != null)
-            {
-                orderLinePreview.positionCount = 0;
-            }
+            ClearRoutePreview();
             return;
         }
 
@@ -216,6 +221,9 @@ public class GalacticMapManager : MonoBehaviour
 
             isDragging = true;
             dragOrigin = fleet.transform.position;
+            dragFleet = fleet;
+            previewPlanet = null;
+            previewRoute.Clear();
             FleetPanel.Instance?.Hide();
             PlanetBuildPanel.Instance?.Hide();
             return;
@@ -255,36 +263,138 @@ public class GalacticMapManager : MonoBehaviour
             dragPoint = mapPlane.Raycast(ray, out float enter) ? ray.GetPoint(enter) : dragOrigin;
         }
 
-        bool valid = hoveredPlanet != null && CanAnySelectedFleetReach(hoveredPlanet);
+        if (hoveredPlanet != previewPlanet)
+        {
+            previewPlanet = hoveredPlanet;
+            RebuildRoutePreview();
+        }
 
-        orderLinePreview.positionCount = 2;
-        orderLinePreview.SetPosition(0, dragOrigin);
-        orderLinePreview.SetPosition(1, dragPoint);
+        Vector3 lift = Vector3.up * routeLineHeight;
+        if (previewRoute.Count >= 2 && dragFleet != null)
+        {
+            orderLinePreview.positionCount = previewRoute.Count;
+            orderLinePreview.SetPosition(0, dragFleet.transform.position + lift);
+            for (int i = 1; i < previewRoute.Count; i++)
+            {
+                orderLinePreview.SetPosition(i, previewRoute[i].transform.position + lift);
+            }
+        }
+        else
+        {
+            orderLinePreview.positionCount = 2;
+            orderLinePreview.SetPosition(0, dragOrigin + lift);
+            orderLinePreview.SetPosition(1, dragPoint + lift);
+        }
 
-        Color lineColor = valid ? validOrderColor : invalidOrderColor;
+        Color lineColor = previewValid ? validOrderColor : invalidOrderColor;
         orderLinePreview.startColor = lineColor;
         orderLinePreview.endColor = lineColor;
+
+        PlanetTooltip.Instance?.SetRouteInfo(previewInfo);
     }
 
-    private bool CanAnySelectedFleetReach(Planet planet)
+    private void RebuildRoutePreview()
     {
+        previewRoute.Clear();
+        previewValid = false;
+        previewInfo = null;
+
+        if (previewPlanet == null) return;
+
+        int ready = 0;
+        int busy = 0;
+        float slowest = 0f;
+        GalacticFleet routeOwner = null;
+
         foreach (GalacticFleet fleet in selectedFleets)
         {
-            if (fleet.currentPlanet == null) continue;
-            if (fleet.currentPlanet == planet) return true;
-            if (GalacticPathfinder.FindPath(fleet.currentPlanet, planet, null).Count >= 2) return true;
+            if (fleet == null) continue;
+
+            if (!fleet.CanTakeOrders)
+            {
+                busy++;
+                continue;
+            }
+
+            if (fleet.currentPlanet == previewPlanet)
+            {
+                ready++;
+                continue;
+            }
+
+            List<Planet> route = fleet.PlanRoute(previewPlanet);
+            if (route.Count < 2) continue;
+
+            ready++;
+            slowest = Mathf.Max(slowest, fleet.EstimateTravelTime(route));
+
+            if (routeOwner == null || fleet == dragFleet)
+            {
+                routeOwner = fleet;
+                previewRoute = route;
+            }
         }
-        return false;
+
+        previewValid = ready > 0;
+        if (!previewValid)
+        {
+            previewInfo = MapText.Tint(busy > 0 ? "Selected fleets can't take orders right now" : "No hyperspace route", MapText.Bad);
+            return;
+        }
+
+        List<string> lines = new List<string>();
+
+        if (routeOwner == null)
+        {
+            lines.Add("<b>Route</b>  Already here");
+        }
+        else
+        {
+            lines.Add($"<b>Route</b>  {MapText.Plural(previewRoute.Count - 1, "jump")}  |  ETA {MapText.RealTime(slowest)}");
+            if (ready > 1) lines.Add(MapText.Tint($"{ready} fleets - ETA is for the slowest", MapText.Muted));
+
+            int hostileStops = 0;
+            for (int i = 1; i < previewRoute.Count - 1; i++)
+            {
+                Planet stop = previewRoute[i];
+                if ((stop.owner != null && stop.owner != routeOwner.faction) || routeOwner.FindOpposingFleet(stop) != null) hostileStops++;
+            }
+            if (hostileStops > 0) lines.Add(MapText.Tint($"Passes {MapText.Plural(hostileStops, "hostile system")} - may be intercepted", MapText.Warning));
+
+            if (routeOwner.HasBattleAt(previewPlanet))
+            {
+                lines.Add(MapText.Tint("Battle expected at destination", MapText.Bad));
+            }
+            else if (previewPlanet.owner != routeOwner.faction)
+            {
+                lines.Add(MapText.Tint("Will claim this system", MapText.Good));
+            }
+        }
+
+        if (busy > 0) lines.Add(MapText.Tint($"{MapText.Plural(busy, "fleet")} busy and won't move", MapText.Muted));
+
+        previewInfo = string.Join("\n", lines);
     }
 
-    private void HandleRelease()
+    private void ClearRoutePreview()
     {
-        isDragging = false;
+        previewPlanet = null;
+        previewRoute.Clear();
+        previewValid = false;
+        previewInfo = null;
 
         if (orderLinePreview != null)
         {
             orderLinePreview.positionCount = 0;
         }
+
+        PlanetTooltip.Instance?.SetRouteInfo(null);
+    }
+
+    private void HandleRelease()
+    {
+        isDragging = false;
+        ClearRoutePreview();
 
         Ray ray = cam.ScreenPointToRay(Input.mousePosition);
 
@@ -305,6 +415,7 @@ public class GalacticMapManager : MonoBehaviour
     private void DeselectAll()
     {
         selectedFleets.Clear();
+        dragFleet = null;
         FleetPanel.Instance?.Hide();
         PlanetBuildPanel.Instance?.Hide();
     }

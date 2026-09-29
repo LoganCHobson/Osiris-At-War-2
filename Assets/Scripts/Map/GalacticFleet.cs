@@ -18,6 +18,8 @@ public class GalacticFleet : MonoBehaviour
     public bool IsTraveling { get; private set; }
     public bool IsHolding => holdTimer > 0f;
     public bool AwaitingBattle { get; set; }
+    public bool CanTakeOrders => !IsTraveling && !IsHolding && !AwaitingBattle && currentPlanet != null;
+    public float HoldTimeRemaining => Mathf.Max(0f, holdTimer);
     public Planet Destination => IsTraveling && route.Count > 0 ? route[route.Count - 1] : null;
 
     public bool IsPresentAt(Planet planet)
@@ -102,7 +104,7 @@ public class GalacticFleet : MonoBehaviour
             return true;
         }
 
-        List<Planet> path = GalacticPathfinder.FindPath(currentPlanet, planet, preferFriendlyRoute ? faction : null);
+        List<Planet> path = PlanRoute(planet);
         if (path.Count < 2)
         {
             return false; // No hyperspace route exists to that planet.
@@ -114,6 +116,39 @@ public class GalacticFleet : MonoBehaviour
         finalSlot = planet.ClaimSlot(this);
         IsTraveling = true;
         return true;
+    }
+
+    public List<Planet> PlanRoute(Planet planet)
+    {
+        if (currentPlanet == null || planet == null) return new List<Planet>();
+        return GalacticPathfinder.FindPath(currentPlanet, planet, preferFriendlyRoute ? faction : null);
+    }
+
+    public float EstimateTravelTime(List<Planet> path)
+    {
+        if (path == null || path.Count < 2 || travelSpeed <= 0f) return 0f;
+
+        float distance = Vector3.Distance(transform.position, path[1].transform.position);
+        for (int i = 1; i < path.Count - 1; i++)
+        {
+            distance += Vector3.Distance(path[i].transform.position, path[i + 1].transform.position);
+        }
+
+        return distance / travelSpeed + Mathf.Max(0, path.Count - 2) * stopoverDuration;
+    }
+
+    public float RemainingTravelTime()
+    {
+        if (!IsTraveling || travelSpeed <= 0f || routeIndex >= route.Count) return 0f;
+
+        float distance = Vector3.Distance(transform.position, route[routeIndex].transform.position);
+        for (int i = routeIndex; i < route.Count - 1; i++)
+        {
+            distance += Vector3.Distance(route[i].transform.position, route[i + 1].transform.position);
+        }
+
+        int stopoversLeft = Mathf.Max(0, route.Count - 1 - routeIndex - (isStoppedOver ? 1 : 0));
+        return distance / travelSpeed + stopoversLeft * stopoverDuration + (isStoppedOver ? stopoverTimer : 0f);
     }
 
     public bool TransferShipTo(Ship ship, GalacticFleet destination)
