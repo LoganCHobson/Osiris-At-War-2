@@ -4,6 +4,8 @@ using UnityEngine.EventSystems;
 
 public class PlayerSpaceManager : MonoBehaviour
 {
+    public enum CommandMode { None, Guard, PriorityMove }
+
     private Camera cam;
 
 
@@ -18,6 +20,26 @@ public class PlayerSpaceManager : MonoBehaviour
 
     public List<SpaceUnit> selectedUnits = new List<SpaceUnit>();
 
+    [Header("Command Hotkeys")]
+    public KeyCode guardKey = KeyCode.G;
+    public KeyCode priorityMoveKey = KeyCode.F;
+    public KeyCode cancelCommandKey = KeyCode.Escape;
+
+    public CommandMode Mode { get; private set; }
+    public event System.Action<CommandMode> ModeChanged;
+
+    public bool HasSelection
+    {
+        get
+        {
+            foreach (SpaceUnit unit in selectedUnits)
+            {
+                if (unit != null && !IsDead(unit)) return true;
+            }
+            return false;
+        }
+    }
+
     private HardpointManager lastHighlight;
 
     void Start()
@@ -30,8 +52,24 @@ public class PlayerSpaceManager : MonoBehaviour
     {
         ShipHeathHighlighter();
         CursorSelector();
+        HandleCommandKeys();
 
-        if (Input.GetMouseButtonDown(0) && !(EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()))
+        if (Mode != CommandMode.None && !HasSelection)
+        {
+            SetMode(CommandMode.None);
+        }
+
+        bool pointerOverUI = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+
+        if (Input.GetMouseButtonDown(0) && !pointerOverUI && Mode != CommandMode.None)
+        {
+            HandleCommandClick();
+        }
+        else if (Input.GetMouseButtonDown(1) && Mode != CommandMode.None)
+        {
+            SetMode(CommandMode.None);
+        }
+        else if (Input.GetMouseButtonDown(0) && !pointerOverUI)
         {
             RaycastHit hit;
             Ray ray = cam.ScreenPointToRay(Input.mousePosition);
@@ -66,68 +104,140 @@ public class PlayerSpaceManager : MonoBehaviour
         }
     }
 
+    public void BeginCommand(CommandMode mode)
+    {
+        PruneSelection();
+        if (selectedUnits.Count == 0 || Mode == mode)
+        {
+            mode = CommandMode.None;
+        }
+        SetMode(mode);
+    }
+
+    public void CancelCommand()
+    {
+        SetMode(CommandMode.None);
+    }
+
+    private void SetMode(CommandMode mode)
+    {
+        if (Mode == mode) return;
+        Mode = mode;
+        ModeChanged?.Invoke(Mode);
+    }
+
+    private void HandleCommandKeys()
+    {
+        if (Input.GetKeyDown(guardKey)) BeginCommand(CommandMode.Guard);
+        else if (Input.GetKeyDown(priorityMoveKey)) BeginCommand(CommandMode.PriorityMove);
+        else if (Input.GetKeyDown(cancelCommandKey)) CancelCommand();
+    }
+
+    private void HandleCommandClick()
+    {
+        Ray ray = cam.ScreenPointToRay(Input.mousePosition);
+        RaycastHit hit;
+
+        if (Mode == CommandMode.Guard)
+        {
+            if (Physics.Raycast(ray, out hit, Mathf.Infinity, friendlyUnitLayer))
+            {
+                UnitHealthManager ward = hit.collider.GetComponentInParent<UnitHealthManager>();
+                if (ward != null && !ward.IsDead)
+                {
+                    PruneSelection();
+                    ShipGuard.Assign(selectedUnits, ward);
+                }
+            }
+            SetMode(CommandMode.None);
+            return;
+        }
+
+        if (Physics.Raycast(ray, out hit, Mathf.Infinity, enemyUnitLayer))
+        {
+            TargetSelection(hit);
+        }
+        else if (!Physics.Raycast(ray, out hit, Mathf.Infinity, friendlyUnitLayer)
+            && Physics.Raycast(ray, out hit, Mathf.Infinity, groundLayer))
+        {
+            PlayerLocation(hit, true);
+        }
+
+        if (!Input.GetKey(KeyCode.LeftShift))
+        {
+            SetMode(CommandMode.None);
+        }
+    }
+
     private void TargetSelection(RaycastHit hit)
     {
-        if (hit.transform.gameObject.CompareTag("TargetUI"))
-        {
-            Transform targetTransform = hit.transform.parent.parent;
-            foreach (SpaceUnit unit in selectedUnits)
-            {
-                unit.gameObject.GetComponent<HardpointManager>().AssignTarget(targetTransform);
-                unit.agent.isStopped = true;
-                unit.moveState.ClearDestinations();
-                unit.moveState.MoveWithinRangeOfTarget(hit.point);
-                unit.agent.isStopped = false;
+        PruneSelection();
 
-                if ((Object)unit.stateMachine.currentState != unit.moveState)
-                {
-                    unit.stateMachine.SetState(unit.moveState);
-                }
-            }
-        }
-        else if (hit.collider.gameObject.CompareTag("Hardpoint"))
-        {
-            foreach (SpaceUnit unit in selectedUnits)
-            {
-                unit.gameObject.GetComponent<HardpointManager>().AssignTarget(hit.collider.transform);
-                unit.agent.isStopped = true;
-                unit.moveState.ClearDestinations();
-                unit.moveState.MoveWithinRangeOfTarget(hit.point);
-                unit.agent.isStopped = false;
+        HardpointManager targetManager = hit.collider.GetComponentInParent<HardpointManager>();
+        Vector3 targetCenter = targetManager != null ? targetManager.transform.position : hit.point;
 
-                if ((Object)unit.stateMachine.currentState != unit.moveState)
-                {
-                    unit.stateMachine.SetState(unit.moveState);
-                }
-            }
-        }
-        else
+        List<SpaceUnit> attackers = new List<SpaceUnit>();
+        foreach (SpaceUnit unit in selectedUnits)
         {
-            foreach (SpaceUnit unit in selectedUnits)
-            {
-                HardpointManager targetManager = hit.collider.gameObject.GetComponentInParent<HardpointManager>();
-                Transform randomHardpoint = targetManager != null ? targetManager.GetRandomHardpoint() : null;
-                if (randomHardpoint == null) continue; // Target has no hardpoints left (or none at all) - nothing to attack there.
+            Transform aimPoint = ResolveAimPoint(hit, targetManager);
+            if (aimPoint == null) continue;
 
-                unit.gameObject.GetComponent<HardpointManager>().AssignTarget(randomHardpoint);
-                unit.agent.isStopped = true;
-                unit.moveState.ClearDestinations();
-                unit.moveState.MoveWithinRangeOfTarget(hit.point);
-                unit.agent.isStopped = false;
-                if ((Object)unit.stateMachine.currentState != unit.moveState)
-                {
-                    unit.stateMachine.SetState(unit.moveState);
-                }
-            }
+            ShipGuard.Cancel(unit);
+            unit.GetComponent<HardpointManager>().AssignTarget(aimPoint);
+            attackers.Add(unit);
         }
 
+        if (attackers.Count == 0) return;
 
+        List<Vector3> origins = new List<Vector3>();
+        foreach (SpaceUnit unit in attackers)
+        {
+            origins.Add(unit.transform.position);
+        }
+
+        FleetFormation.Slot[] slots = FleetFormation.Attack(attackers, origins, targetCenter);
+        for (int i = 0; i < attackers.Count; i++)
+        {
+            attackers[i].moveState.ClearDestinations();
+            if (slots[i].move)
+            {
+                attackers[i].moveState.AddDestination(slots[i].position);
+            }
+            attackers[i].moveState.SetFacing(slots[i].facing);
+            BeginMoving(attackers[i]);
+        }
+    }
+
+    private static Transform ResolveAimPoint(RaycastHit hit, HardpointManager targetManager)
+    {
+        if (hit.transform.gameObject.CompareTag("TargetUI")) return hit.transform.parent.parent;
+        if (hit.collider.gameObject.CompareTag("Hardpoint")) return hit.collider.transform;
+        return targetManager != null ? targetManager.GetRandomHardpoint() : null;
+    }
+
+    private static void BeginMoving(SpaceUnit unit)
+    {
+        if ((Object)unit.stateMachine.currentState != unit.moveState)
+        {
+            unit.stateMachine.SetState(unit.moveState);
+        }
+    }
+
+    private void PruneSelection()
+    {
+        selectedUnits.RemoveAll(unit => unit == null || IsDead(unit));
+    }
+
+    private static bool IsDead(SpaceUnit unit)
+    {
+        UnitHealthManager health = unit.GetComponent<UnitHealthManager>();
+        return health != null && health.IsDead;
     }
 
     private void PlayerSelection(RaycastHit hit)
     {
         SpaceUnit unit = hit.collider.GetComponentInParent<SpaceUnit>();
-        if (unit == null) return;
+        if (unit == null || IsDead(unit)) return;
 
         if (Input.GetKey(KeyCode.LeftShift)) //Multi selection
         {
@@ -144,38 +254,36 @@ public class PlayerSpaceManager : MonoBehaviour
         }
     }
 
-    private void PlayerLocation(RaycastHit hit)
+    private void PlayerLocation(RaycastHit hit, bool priority = false)
     {
-        if (Input.GetKey(KeyCode.LeftShift)) //Multi selection
-        {
-            foreach (SpaceUnit unit in selectedUnits)
-            {
-                unit.moveState.AddDestination(hit.point);
+        PruneSelection();
+        if (selectedUnits.Count == 0) return;
 
-                if ((Object)unit.stateMachine.currentState != unit.moveState)
-                {
-                    unit.stateMachine.SetState(unit.moveState);
-                }
-            }
-            selectionAnim.gameObject.transform.localPosition = hit.point;
-            selectionAnim.Play("GroundMarker");
-        }
-        else
+        bool queue = Input.GetKey(KeyCode.LeftShift);
+
+        List<Vector3> origins = new List<Vector3>();
+        foreach (SpaceUnit unit in selectedUnits)
         {
-            foreach (SpaceUnit unit in selectedUnits) //Single location selection.
-            {
-                unit.agent.isStopped = true;
-                unit.moveState.ClearDestinations();
-                unit.moveState.AddDestination(hit.point);
-                unit.agent.isStopped = false;
-                if ((Object)unit.stateMachine.currentState != unit.moveState)
-                {
-                    unit.stateMachine.SetState(unit.moveState);
-                }
-            }
-            selectionAnim.gameObject.transform.localPosition = hit.point;
-            selectionAnim.Play("GroundMarker");
+            origins.Add(queue ? unit.moveState.LastQueuedPosition : unit.transform.position);
         }
+
+        FleetFormation.Slot[] slots = FleetFormation.Move(selectedUnits, origins, hit.point);
+        for (int i = 0; i < selectedUnits.Count; i++)
+        {
+            SpaceUnit unit = selectedUnits[i];
+            ShipGuard.Cancel(unit);
+            if (!queue)
+            {
+                unit.moveState.ClearDestinations();
+            }
+            unit.moveState.AddDestination(slots[i].position);
+            unit.moveState.SetFacing(slots[i].facing);
+            unit.moveState.SetPriority(priority);
+            BeginMoving(unit);
+        }
+
+        selectionAnim.gameObject.transform.localPosition = hit.point;
+        selectionAnim.Play("GroundMarker");
     }
 
     private void ShipHeathHighlighter()
@@ -207,7 +315,7 @@ public class PlayerSpaceManager : MonoBehaviour
         }
         else
         {
-            if (lastHighlight != null && !lastHighlight.gameObject.GetComponent<SpaceUnit>().isSelected)
+            if (lastHighlight != null && !(lastHighlight.TryGetComponent(out SpaceUnit highlighted) && highlighted.isSelected))
             {
                 lastHighlight.ToggleHighlight(false);
 
@@ -221,6 +329,13 @@ public class PlayerSpaceManager : MonoBehaviour
     {
         Ray ray = cam.ScreenPointToRay(Input.mousePosition);
         RaycastHit hit;
+
+        if (Mode == CommandMode.Guard)
+        {
+            bool overFriendly = Physics.Raycast(ray, out hit, Mathf.Infinity, friendlyUnitLayer);
+            CursorManager.Instance.SetMarkerType(overFriendly ? CursorManager.CursorType.Selectable : CursorManager.CursorType.None);
+            return;
+        }
 
         if (Physics.Raycast(ray, out hit, Mathf.Infinity, friendlyUnitLayer))
         {
@@ -242,6 +357,7 @@ public class PlayerSpaceManager : MonoBehaviour
 
     public void DeselectAllUnits()
     {
+        selectedUnits.RemoveAll(unit => unit == null);
         foreach (SpaceUnit unit in selectedUnits)
         {
             unit.gameObject.GetComponent<HardpointManager>().ToggleHighlight(false);
@@ -267,6 +383,8 @@ public class PlayerSpaceManager : MonoBehaviour
 
     public void DragSelect(SpaceUnit unit)
     {
+        if (IsDead(unit)) return;
+
         if (!selectedUnits.Contains(unit))
         {
             unit.isSelected = true;

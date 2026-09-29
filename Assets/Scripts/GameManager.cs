@@ -141,6 +141,15 @@ public class GameManager : MonoBehaviour
         Vector3 back = lineRotation * Vector3.back;
         int deployed = Mathf.Min(roster.Count, maxShipsPerSide);
 
+        float spacing = defenderSpawnSpacing;
+        for (int i = 0; i < deployed; i++)
+        {
+            if (roster[i] != null)
+            {
+                spacing = Mathf.Max(spacing, FleetFormation.Spacing(roster[i].prefab));
+            }
+        }
+
         for (int i = 0; i < roster.Count; i++)
         {
             if (i >= deployed)
@@ -149,7 +158,7 @@ public class GameManager : MonoBehaviour
                 continue;
             }
 
-            Vector3 sideOffset = (lineRotation * Vector3.right) * (i * defenderSpawnSpacing);
+            Vector3 sideOffset = (lineRotation * Vector3.right) * (i * spacing);
             Vector3 depthJitter = back * Random.Range(0f, defenderSpawnSpacing);
             SpawnShip(roster[i], basePosition + sideOffset + depthJitter, lineRotation, false);
         }

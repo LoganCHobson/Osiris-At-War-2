@@ -73,11 +73,35 @@ public class AIBattleCommander : MonoBehaviour
         Vector3 forward = spawnPoint != null ? spawnPoint.forward : Vector3.forward;
         Vector3 side = Vector3.Cross(Vector3.up, forward).normalized;
         int initial = Mathf.Min(maxShipsOnField, reserve.Count);
+        float spacing = SpawnSpacing(initial);
 
         for (int i = 0; i < initial; i++)
         {
-            Spawn(reserve[0], origin + side * SlotOffset(i) * formationSpacing, Quaternion.LookRotation(forward));
+            Spawn(reserve[0], origin + side * SlotOffset(i) * spacing, Quaternion.LookRotation(forward));
         }
+    }
+
+    private float SpawnSpacing(int count)
+    {
+        float spacing = formationSpacing;
+        for (int i = 0; i < count && i < reserve.Count; i++)
+        {
+            if (reserve[i] != null)
+            {
+                spacing = Mathf.Max(spacing, FleetFormation.Spacing(reserve[i].prefab));
+            }
+        }
+        return spacing;
+    }
+
+    private float FieldSpacing()
+    {
+        List<SpaceUnit> spaceUnits = new List<SpaceUnit>();
+        foreach (Unit unit in units)
+        {
+            if (unit.spaceUnit != null) spaceUnits.Add(unit.spaceUnit);
+        }
+        return spaceUnits.Count > 0 ? Mathf.Max(formationSpacing, FleetFormation.Spacing(spaceUnits)) : formationSpacing;
     }
 
     private static AIPersonality ResolvePersonality(Faction faction)
@@ -243,10 +267,11 @@ public class AIBattleCommander : MonoBehaviour
         int count = Mathf.Min(maxShipsOnField - units.Count, reserve.Count);
         Vector3 drop = ChooseDropZone();
         Quaternion facing = Quaternion.LookRotation(toEnemy);
+        float spacing = SpawnSpacing(count);
 
         for (int i = 0; i < count; i++)
         {
-            Spawn(reserve[0], drop + lateral * SlotOffset(i) * formationSpacing, facing);
+            Spawn(reserve[0], drop + lateral * SlotOffset(i) * spacing, facing);
         }
 
         reinforceReadyAt = Time.time + personality.reinforcementDelay;
@@ -402,11 +427,12 @@ public class AIBattleCommander : MonoBehaviour
 
         List<Unit> ordered = new List<Unit>(units);
         ordered.Sort((a, b) => (b.ship != null ? b.ship.combatPower : 0f).CompareTo(a.ship != null ? a.ship.combatPower : 0f));
+        float spacing = FieldSpacing();
 
         for (int i = 0; i < ordered.Count; i++)
         {
             Unit unit = ordered[i];
-            Vector3 destination = front + lateral * SlotOffset(i) * formationSpacing;
+            Vector3 destination = front + lateral * SlotOffset(i) * spacing;
 
             if (CurrentStance != Stance.FallBack && unit.target != null)
             {
@@ -441,6 +467,7 @@ public class AIBattleCommander : MonoBehaviour
         unit.lastDestination = destination;
         spaceUnit.moveState.ClearDestinations();
         spaceUnit.moveState.AddDestination(destination);
+        spaceUnit.moveState.SetFacing(toEnemy);
 
         if (!moving)
         {
