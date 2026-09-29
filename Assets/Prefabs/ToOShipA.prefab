@@ -5168,6 +5168,40 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   hardpoints: []
+--- !u!114 &3100000000000000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1349032318270045980}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 209930b787d4d3c418ee4f2651f73f8b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Ship
+  icon: {fileID: 4195880176976937001, guid: 9b7800c82682e8744b62abbbfeec59d8, type: 3}
+  cost: 150
+  buildTime: 120
+  combatPower: 100
+  strongAgainst: 
+--- !u!114 &3100000000000000002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1349032318270045980}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: be4771e62c824754842336e18149f99a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  objects:
+  - {fileID: 3528278435596632271}
+  components:
+  - {fileID: 3472868453424715958}
+  - {fileID: 8691677585535979768}
 --- !u!1 &1599326917611266086
 GameObject:
   m_ObjectHideFlags: 0
@@ -55385,6 +55419,10 @@ PrefabInstance:
       propertyPath: m_Center.z
       value: 3.9057844
       objectReference: {fileID: 0}
+    - target: {fileID: 301, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 6.04
+      objectReference: {fileID: 0}
     - target: {fileID: 7296107026465120967, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
       propertyPath: m_LocalPosition.y
       value: -0.74
@@ -55701,37 +55739,3 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2296964697691420413, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
   m_PrefabInstance: {fileID: 8013508300765658963}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &3100000000000000001
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1349032318270045980}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 209930b787d4d3c418ee4f2651f73f8b, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::Ship
-  icon: {fileID: 4195880176976937001, guid: 9b7800c82682e8744b62abbbfeec59d8, type: 3}
-  cost: 150
-  buildTime: 120
-  combatPower: 100
-  strongAgainst: []
---- !u!114 &3100000000000000002
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1349032318270045980}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: be4771e62c824754842336e18149f99a, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
-  objects:
-  - {fileID: 3528278435596632271}
-  components:
-  - {fileID: 3472868453424715958}
-  - {fileID: 8691677585535979768}

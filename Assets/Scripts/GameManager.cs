@@ -35,6 +35,8 @@ public class GameManager : MonoBehaviour
 
     public bool PlayerIsAttacker { get; private set; } = true;
 
+    public static bool CombatOver => Instance != null && Instance.battleEnded;
+
     private bool battleEnded;
 
     private void Awake()
@@ -96,24 +98,86 @@ public class GameManager : MonoBehaviour
         if (battleEnded) return;
         if (BattleContext.Instance == null || !BattleContext.Instance.hasPendingBattle) return;
 
-        bool attackerDefeated = BattleContext.Instance.attackerRoster.Count == 0;
+        bool attackerInPlay = CountInPlay(true) > 0;
+        bool defenderInPlay = CountInPlay(false) > 0;
 
-        bool defenderRosterCleared = !BattleContext.Instance.hasDefender || BattleContext.Instance.defenderRoster.Count == 0;
-        bool shipyardCleared = !BattleContext.Instance.defenderHasShipyard || !BattleContext.Instance.defenderShipyardSurvived;
-        bool battleStationCleared = !BattleContext.Instance.defenderHasBattleStation || !BattleContext.Instance.defenderBattleStationSurvived;
-        bool defenderDefeated = defenderRosterCleared && shipyardCleared && battleStationCleared;
-
-        if (attackerDefeated || defenderDefeated)
+        if (!attackerInPlay || !defenderInPlay)
         {
-            bool attackerWon = !attackerDefeated;
-            StartCoroutine(EndBattle(PlayerIsAttacker == attackerWon));
+            ConcludeBattle(!attackerInPlay, false);
         }
     }
 
-    private IEnumerator EndBattle(bool playerWon)
+    public static int CountInPlay(bool attackerSide)
     {
+        int count = 0;
+        foreach (UnitHealthManager unit in UnitHealthManager.Active)
+        {
+            if (unit != null && !unit.IsDead && unit.isAttackerSide == attackerSide)
+            {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    public Transform StartPointFor(bool attackerSide)
+    {
+        return attackerSide ? attackerShipSpawnPoint : defenderShipSpawnPoint;
+    }
+
+    public void ConcludeBattle(bool attackerLost, bool byRetreat)
+    {
+        if (battleEnded) return;
         battleEnded = true;
-        BattleEndBanner.Instance?.Show(playerWon);
+        RetreatManager.Instance?.Finish();
+
+        BattleContext context = BattleContext.Instance;
+        if (context != null)
+        {
+            context.attackerLost = attackerLost;
+            context.defenderLost = !attackerLost;
+
+            if (byRetreat)
+            {
+                ResolveRetreat(context, attackerLost);
+                if (attackerLost) context.attackerRetreated = true;
+                else context.defenderRetreated = true;
+            }
+
+            if (!attackerLost)
+            {
+                if (context.defenderHasShipyard) context.ReportShipyardDestroyed();
+                if (context.defenderHasBattleStation) context.ReportBattleStationDestroyed();
+            }
+
+            context.Lock();
+        }
+
+        bool playerLost = attackerLost == PlayerIsAttacker;
+        string subtitle = !byRetreat ? null : playerLost ? "Your fleet has retreated" : "The enemy fleet has retreated";
+        StartCoroutine(EndBattle(!playerLost, subtitle));
+    }
+
+    private static void ResolveRetreat(BattleContext context, bool attackerSide)
+    {
+        foreach (UnitHealthManager unit in new List<UnitHealthManager>(UnitHealthManager.Active))
+        {
+            if (unit == null || unit.IsDead || unit.IsDefense || unit.isAttackerSide != attackerSide) continue;
+
+            if (RetreatManager.ShipCanRetreat(unit))
+            {
+                RetreatManager.Depart(unit);
+            }
+            else
+            {
+                context.ReportLoss(attackerSide, unit.sourceShip, unit.battleToken);
+            }
+        }
+    }
+
+    private IEnumerator EndBattle(bool playerWon, string subtitle)
+    {
+        BattleEndBanner.Instance?.Show(playerWon, subtitle);
 
         yield return new WaitForSecondsRealtime(battleEndDelay);
 
@@ -333,6 +397,12 @@ public class GameManager : MonoBehaviour
         if (health != null)
         {
             health.Configure(ship, isAttackerSide);
+
+            BattleContext context = BattleContext.Instance;
+            if (context != null && context.hasPendingBattle)
+            {
+                health.battleToken = context.Claim(isAttackerSide, ship);
+            }
         }
 
         if (Instance != null)

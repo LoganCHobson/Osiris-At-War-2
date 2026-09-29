@@ -46,6 +46,8 @@ public class AIPersonality : ScriptableObject
     public float pressAdvantageRatio = 1.25f;
     public float fallBackRatio = 0.7f;
     public float reinforcementDelay = 2.5f;
+    public float retreatRatio = 0.35f;
+    [Range(0.1f, 1f)] public float defendedRetreatFactor = 0.6f;
 
     [Header("Playbook")]
     public bool canFocusFire = true;
@@ -55,6 +57,7 @@ public class AIPersonality : ScriptableObject
     public bool canGarrisonChokepoints = true;
     public bool canSplitFleets = true;
     public bool canBuildBattleStations = true;
+    public bool canRetreat = true;
 
     public static AIPersonality CreateVaried(int seed)
     {

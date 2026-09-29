@@ -48,10 +48,21 @@ public class PlayerSpaceManager : MonoBehaviour
     }
 
 
+    public static bool PlayerRetreating => RetreatManager.Instance != null && GameManager.Instance != null
+        && RetreatManager.Instance.IsRetreating(GameManager.Instance.PlayerIsAttacker);
+
     void Update()
     {
         ShipHeathHighlighter();
         CursorSelector();
+
+        if (PlayerRetreating)
+        {
+            if (selectedUnits.Count > 0) DeselectAllUnits();
+            SetMode(CommandMode.None);
+            return;
+        }
+
         HandleCommandKeys();
 
         if (Mode != CommandMode.None && !HasSelection)
@@ -74,7 +85,7 @@ public class PlayerSpaceManager : MonoBehaviour
             RaycastHit hit;
             Ray ray = cam.ScreenPointToRay(Input.mousePosition);
 
-            if (Physics.Raycast(ray, out hit, Mathf.Infinity, uiLayer))
+            if (TryHostileTargetIcon(ray, out hit))
             {
                 if (selectedUnits.Count > 0)
                 {
@@ -104,8 +115,28 @@ public class PlayerSpaceManager : MonoBehaviour
         }
     }
 
+    private bool TryHostileTargetIcon(Ray ray, out RaycastHit best)
+    {
+        best = default;
+        float bestDistance = float.MaxValue;
+
+        foreach (RaycastHit candidate in Physics.RaycastAll(ray, Mathf.Infinity, uiLayer))
+        {
+            if (candidate.distance >= bestDistance || !candidate.transform.CompareTag("TargetUI")) continue;
+
+            UnitHealthManager owner = candidate.collider.GetComponentInParent<UnitHealthManager>();
+            if (owner == null || owner.IsDead || (enemyUnitLayer.value & (1 << owner.gameObject.layer)) == 0) continue;
+
+            best = candidate;
+            bestDistance = candidate.distance;
+        }
+
+        return bestDistance < float.MaxValue;
+    }
+
     public void BeginCommand(CommandMode mode)
     {
+        if (PlayerRetreating) mode = CommandMode.None;
         PruneSelection();
         if (selectedUnits.Count == 0 || Mode == mode)
         {
@@ -387,7 +418,7 @@ public class PlayerSpaceManager : MonoBehaviour
 
     public void DragSelect(SpaceUnit unit)
     {
-        if (IsDead(unit)) return;
+        if (IsDead(unit) || PlayerRetreating) return;
 
         if (!selectedUnits.Contains(unit))
         {

@@ -25,11 +25,11 @@ public class BattleEndBanner : MonoBehaviour
         }
     }
 
-    public void Show(bool playerWon)
+    public void Show(bool playerWon, string subtitle = null)
     {
         titleText.text = playerWon ? "VICTORY" : "DEFEAT";
         titleText.color = playerWon ? victoryColor : defeatColor;
-        subtitleText.text = "Returning to the galactic map...";
+        subtitleText.text = string.IsNullOrEmpty(subtitle) ? "Returning to the galactic map..." : $"{subtitle}  -  returning to the galactic map...";
         banner.SetActive(true);
     }
 }

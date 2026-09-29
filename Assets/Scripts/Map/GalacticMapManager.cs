@@ -69,22 +69,10 @@ public class GalacticMapManager : MonoBehaviour
         BattleContext context = BattleContext.Instance;
         Planet destinationPlanet = FindPlanetByName(context.destinationPlanetName);
 
-        GalacticFleet attackerFleet = ApplyFleetResult(context.attackerFleetName, context.attackerRoster, destinationPlanet);
-        GalacticFleet defenderFleet = null;
+        List<GalacticFleet> attackerFleets = ApplySideResult(context, true, destinationPlanet);
+        List<GalacticFleet> defenderFleets = ApplySideResult(context, false, null);
 
-        if (context.hasDefender)
-        {
-            defenderFleet = ApplyFleetResult(context.defenderFleetName, context.defenderRoster, null);
-        }
-
-        attackerFleet?.HoldAfterBattle();
-        defenderFleet?.HoldAfterBattle();
-
-        bool attackerSurvived = context.attackerRoster.Count > 0;
-        bool defenderRosterCleared = !context.hasDefender || context.defenderRoster.Count == 0;
-        bool shipyardCleared = !context.defenderHasShipyard || !context.defenderShipyardSurvived;
-        bool battleStationCleared = !context.defenderHasBattleStation || !context.defenderBattleStationSurvived;
-        bool defenderDefeated = defenderRosterCleared && shipyardCleared && battleStationCleared;
+        bool attackerWon = context.defenderLost && !context.attackerLost;
 
         float destroyedDefenses = (context.defenderHasShipyard && !context.defenderShipyardSurvived ? Strength.ShipyardPower : 0f)
             + (context.defenderHasBattleStation && !context.defenderBattleStationSurvived ? Strength.BattleStationPower : 0f);
@@ -96,15 +84,32 @@ public class GalacticMapManager : MonoBehaviour
             defender = context.defenderFaction,
             attackerLosses = context.attackerStartPower - Strength.Of(context.attackerRoster),
             defenderLosses = context.defenderStartPower - Strength.Of(context.defenderRoster) + destroyedDefenses,
-            attackerWon = attackerSurvived && defenderDefeated
+            attackerWon = attackerWon
         });
 
-        BattleReportPanel.Show(BuildBattleResult(context, destinationPlanet, attackerSurvived && defenderDefeated));
-
-        if (attackerSurvived && defenderDefeated && destinationPlanet != null)
+        Faction ownerBefore = destinationPlanet != null ? destinationPlanet.owner : null;
+        if (attackerWon && destinationPlanet != null)
         {
             destinationPlanet.Capture(context.attackerFaction);
         }
+
+        List<GalacticFleet> losingFleets = attackerWon ? defenderFleets : attackerFleets;
+        Planet retreatedTo = null;
+        foreach (GalacticFleet fleet in losingFleets)
+        {
+            Planet haven = fleet.RetreatFrom(destinationPlanet);
+            if (retreatedTo == null) retreatedTo = haven;
+        }
+
+        BattleResult result = BuildBattleResult(context, destinationPlanet, attackerWon, ownerBefore);
+        if (result != null && losingFleets.Count > 0)
+        {
+            bool playerLost = Strength.IsPlayer(attackerWon ? context.defenderFaction : context.attackerFaction);
+            result.playerRetreated = playerLost;
+            result.enemyRetreated = !playerLost;
+            result.retreatedTo = retreatedTo != null ? retreatedTo.planetName : null;
+        }
+        BattleReportPanel.Show(result);
 
         if (destinationPlanet != null)
         {
@@ -122,7 +127,7 @@ public class GalacticMapManager : MonoBehaviour
         context.Clear();
     }
 
-    private static BattleResult BuildBattleResult(BattleContext context, Planet planet, bool attackerWon)
+    private static BattleResult BuildBattleResult(BattleContext context, Planet planet, bool attackerWon, Faction ownerBefore)
     {
         bool playerAttacking = Strength.IsPlayer(context.attackerFaction);
         bool playerDefending = !playerAttacking && Strength.IsPlayer(context.defenderFaction);
@@ -130,7 +135,7 @@ public class GalacticMapManager : MonoBehaviour
 
         List<Ship> attackerLosses = BattleResult.Missing(context.attackerStartRoster, context.attackerRoster);
         List<Ship> defenderLosses = BattleResult.Missing(context.defenderStartRoster, context.defenderRoster);
-        bool captured = attackerWon && planet != null && planet.owner != context.attackerFaction;
+        bool captured = attackerWon && planet != null && ownerBefore != context.attackerFaction;
 
         BattleResult result = new BattleResult
         {
@@ -154,6 +159,23 @@ public class GalacticMapManager : MonoBehaviour
         }
 
         return result;
+    }
+
+    private List<GalacticFleet> ApplySideResult(BattleContext context, bool attackerSide, Planet moveToPlanet)
+    {
+        List<GalacticFleet> fleets = new List<GalacticFleet>();
+        List<string> names = attackerSide ? context.attackerFleetNames : context.defenderFleetNames;
+
+        for (int i = 0; i < names.Count; i++)
+        {
+            GalacticFleet fleet = ApplyFleetResult(names[i], context.SurvivorsOf(attackerSide, i), moveToPlanet);
+            if (fleet == null) continue;
+
+            fleet.HoldAfterBattle();
+            fleets.Add(fleet);
+        }
+
+        return fleets;
     }
 
     private GalacticFleet ApplyFleetResult(string fleetName, List<Ship> survivingRoster, Planet moveToPlanet)

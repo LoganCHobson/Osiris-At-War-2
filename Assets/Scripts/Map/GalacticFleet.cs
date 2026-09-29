@@ -342,7 +342,7 @@ public class GalacticFleet : MonoBehaviour
         }
 
         GalacticState.Instance?.CaptureFromScene();
-        BattleContext.Instance.BeginBattle(this, FindOpposingFleet(planet));
+        BattleContext.Instance.BeginBattle(this, planet);
         SceneManager.LoadScene("BattleScene");
     }
 
@@ -357,6 +357,35 @@ public class GalacticFleet : MonoBehaviour
     public void HoldAfterBattle()
     {
         holdTimer = postBattleHoldDuration;
+    }
+
+    public Planet RetreatFrom(Planet from)
+    {
+        if (from == null) from = currentPlanet;
+
+        List<Planet> path = GalacticPathfinder.FindNearest(from, planet => planet.owner == faction);
+        if (path.Count < 2)
+        {
+            path = GalacticPathfinder.FindNearest(from, planet => planet.owner == null || planet.owner.isNeutral);
+        }
+
+        if (path.Count < 2)
+        {
+            roster.Clear();
+            Destroy(gameObject);
+            return null;
+        }
+
+        from.ReleaseSlot(this);
+        currentPlanet = from;
+        AwaitingBattle = false;
+        isStoppedOver = false;
+        route = path;
+        routeIndex = 1;
+        Planet haven = path[path.Count - 1];
+        finalSlot = haven.ClaimSlot(this);
+        IsTraveling = true;
+        return haven;
     }
 
     private void HaltAt(Planet planet)

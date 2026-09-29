@@ -5,15 +5,26 @@ public class BattleContext : MonoBehaviour
 {
     public static BattleContext Instance { get; private set; }
 
+    [System.Serializable]
+    public class ShipToken
+    {
+        public Ship ship;
+        public int fleet;
+        public bool claimed;
+        public bool lost;
+    }
+
     public bool hasPendingBattle;
 
-    public string attackerFleetName;
     public Faction attackerFaction;
+    public List<string> attackerFleetNames = new List<string>();
+    public List<ShipToken> attackerTokens = new List<ShipToken>();
     public List<Ship> attackerRoster = new List<Ship>();
 
     public bool hasDefender;
-    public string defenderFleetName;
     public Faction defenderFaction;
+    public List<string> defenderFleetNames = new List<string>();
+    public List<ShipToken> defenderTokens = new List<ShipToken>();
     public List<Ship> defenderRoster = new List<Ship>();
 
     public string destinationPlanetName;
@@ -29,6 +40,13 @@ public class BattleContext : MonoBehaviour
     public List<Ship> attackerStartRoster = new List<Ship>();
     public List<Ship> defenderStartRoster = new List<Ship>();
 
+    public bool attackerLost;
+    public bool defenderLost;
+    public bool attackerRetreated;
+    public bool defenderRetreated;
+
+    public bool IsLocked { get; private set; }
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -41,25 +59,39 @@ public class BattleContext : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
-    public void BeginBattle(GalacticFleet attacker, GalacticFleet defender)
+    public void BeginBattle(GalacticFleet attacker, Planet planet)
     {
+        Clear();
         hasPendingBattle = true;
 
-        attackerFleetName = attacker.gameObject.name;
+        GalacticFleet firstDefender = attacker.FindOpposingFleet(planet);
+
         attackerFaction = attacker.faction;
-        attackerRoster = new List<Ship>(attacker.roster);
+        defenderFaction = firstDefender != null ? firstDefender.faction : planet != null ? planet.owner : null;
 
-        hasDefender = defender != null;
-        defenderFleetName = hasDefender ? defender.gameObject.name : null;
-        defenderFaction = hasDefender ? defender.faction : attacker.currentPlanet?.owner;
-        defenderRoster = hasDefender ? new List<Ship>(defender.roster) : new List<Ship>();
+        AddFleet(attacker, attackerFleetNames, attackerTokens);
+        foreach (GalacticFleet fleet in FleetsAt(planet))
+        {
+            if (fleet == attacker) continue;
 
-        destinationPlanetName = attacker.currentPlanet != null ? attacker.currentPlanet.planetName : null;
+            if (fleet.faction == attackerFaction)
+            {
+                AddFleet(fleet, attackerFleetNames, attackerTokens);
+            }
+            else if (firstDefender != null && fleet.faction == defenderFaction)
+            {
+                AddFleet(fleet, defenderFleetNames, defenderTokens);
+            }
+        }
 
-        defenderHasShipyard = attacker.currentPlanet != null && attacker.currentPlanet.hasCapitalShipyard;
-        defenderShipyardSurvived = true;
-        defenderHasBattleStation = attacker.currentPlanet != null && attacker.currentPlanet.hasBattleStation;
-        defenderBattleStationSurvived = true;
+        hasDefender = defenderFleetNames.Count > 0;
+        attackerRoster = RosterOf(attackerTokens);
+        defenderRoster = RosterOf(defenderTokens);
+
+        destinationPlanetName = planet != null ? planet.planetName : null;
+
+        defenderHasShipyard = planet != null && planet.hasCapitalShipyard;
+        defenderHasBattleStation = planet != null && planet.hasBattleStation;
 
         attackerStartPower = Strength.Of(attackerRoster);
         defenderStartPower = Strength.Of(defenderRoster);
@@ -68,39 +100,114 @@ public class BattleContext : MonoBehaviour
         defenderStartRoster = new List<Ship>(defenderRoster);
     }
 
-    public void ReportLoss(bool attackerSide, Ship ship)
+    private static List<GalacticFleet> FleetsAt(Planet planet)
     {
-        if (ship == null) return;
+        List<GalacticFleet> fleets = new List<GalacticFleet>();
+        if (planet == null) return fleets;
 
-        if (attackerSide)
+        for (int slot = 0; slot < Planet.FleetSlotCount; slot++)
         {
-            attackerRoster.Remove(ship);
+            GalacticFleet fleet = planet.GetFleetInSlot(slot);
+            if (fleet != null && fleet.IsPresentAt(planet) && !fleets.Contains(fleet))
+            {
+                fleets.Add(fleet);
+            }
         }
-        else
+        return fleets;
+    }
+
+    private static void AddFleet(GalacticFleet fleet, List<string> names, List<ShipToken> tokens)
+    {
+        if (fleet == null || names.Contains(fleet.gameObject.name)) return;
+
+        int index = names.Count;
+        names.Add(fleet.gameObject.name);
+        foreach (Ship ship in fleet.roster)
         {
-            defenderRoster.Remove(ship);
+            if (ship != null)
+            {
+                tokens.Add(new ShipToken { ship = ship, fleet = index });
+            }
         }
+    }
+
+    private static List<Ship> RosterOf(List<ShipToken> tokens)
+    {
+        List<Ship> roster = new List<Ship>();
+        foreach (ShipToken token in tokens)
+        {
+            if (!token.lost) roster.Add(token.ship);
+        }
+        return roster;
+    }
+
+    public int Claim(bool attackerSide, Ship ship)
+    {
+        List<ShipToken> tokens = attackerSide ? attackerTokens : defenderTokens;
+        for (int i = 0; i < tokens.Count; i++)
+        {
+            if (!tokens[i].claimed && !tokens[i].lost && tokens[i].ship == ship)
+            {
+                tokens[i].claimed = true;
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public List<Ship> SurvivorsOf(bool attackerSide, int fleet)
+    {
+        List<Ship> survivors = new List<Ship>();
+        foreach (ShipToken token in attackerSide ? attackerTokens : defenderTokens)
+        {
+            if (token.fleet == fleet && !token.lost) survivors.Add(token.ship);
+        }
+        return survivors;
+    }
+
+    public void Lock()
+    {
+        IsLocked = true;
+    }
+
+    public void ReportLoss(bool attackerSide, Ship ship, int token = -1)
+    {
+        if (ship == null || IsLocked) return;
+
+        List<ShipToken> tokens = attackerSide ? attackerTokens : defenderTokens;
+        if (token < 0 || token >= tokens.Count || tokens[token].lost || tokens[token].ship != ship)
+        {
+            token = tokens.FindIndex(t => !t.lost && t.ship == ship);
+        }
+        if (token < 0) return;
+
+        tokens[token].lost = true;
+        (attackerSide ? attackerRoster : defenderRoster).Remove(ship);
     }
 
     public void ReportShipyardDestroyed()
     {
+        if (IsLocked) return;
         defenderShipyardSurvived = false;
     }
 
     public void ReportBattleStationDestroyed()
     {
+        if (IsLocked) return;
         defenderBattleStationSurvived = false;
     }
 
     public void Clear()
     {
         hasPendingBattle = false;
-        attackerFleetName = null;
         attackerFaction = null;
+        attackerFleetNames.Clear();
+        attackerTokens.Clear();
         attackerRoster.Clear();
         hasDefender = false;
-        defenderFleetName = null;
         defenderFaction = null;
+        defenderFleetNames.Clear();
+        defenderTokens.Clear();
         defenderRoster.Clear();
         destinationPlanetName = null;
         defenderHasShipyard = false;
@@ -111,5 +218,10 @@ public class BattleContext : MonoBehaviour
         defenderStartPower = 0f;
         attackerStartRoster.Clear();
         defenderStartRoster.Clear();
+        attackerLost = false;
+        defenderLost = false;
+        attackerRetreated = false;
+        defenderRetreated = false;
+        IsLocked = false;
     }
 }

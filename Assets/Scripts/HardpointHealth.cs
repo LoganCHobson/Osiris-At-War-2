@@ -29,6 +29,8 @@ public class HardpointHealth : MonoBehaviour, IPointerEnterHandler, IPointerExit
 
     public void DealDamage(float value)
     {
+        if (GameManager.CombatOver) return;
+
         if(currentHealth - value > 0)
         {
             dealDamage.Invoke();

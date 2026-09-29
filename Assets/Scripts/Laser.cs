@@ -49,6 +49,12 @@ public class Laser : MonoBehaviour
     {
         if (spent) return;
 
+        if (GameManager.CombatOver)
+        {
+            Recycle();
+            return;
+        }
+
         transform.position += velocity * Time.fixedDeltaTime;
 
         if (CheckHit(lastPos, transform.position)) return;

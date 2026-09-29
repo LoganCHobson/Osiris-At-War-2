@@ -96,6 +96,7 @@ public class PlacementManager : MonoBehaviour
 
     private static bool CanDeploy()
     {
+        if (PlayerSpaceManager.PlayerRetreating) return false;
         return GameManager.Instance == null || GameManager.Instance.CanDeployPlayerShip();
     }
 

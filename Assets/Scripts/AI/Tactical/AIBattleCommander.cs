@@ -126,9 +126,74 @@ public class AIBattleCommander : MonoBehaviour
 
         ComputeGeometry();
         EvaluateStance();
+
+        if (Retreating)
+        {
+            AssignTargets();
+            return;
+        }
+
+        ConsiderRetreat();
+        if (Retreating)
+        {
+            AssignTargets();
+            return;
+        }
+
         Reinforce();
         AssignTargets();
         Maneuver();
+    }
+
+    public bool Retreating => RetreatManager.Instance != null && RetreatManager.Instance.IsRetreating(IsAttackerSide);
+    public bool Abandoning { get; private set; }
+    public float Outlook { get; private set; } = 1f;
+
+    private bool EnemyRetreating => RetreatManager.Instance != null && RetreatManager.Instance.IsRetreating(!IsAttackerSide);
+
+    private void ConsiderRetreat()
+    {
+        RetreatManager retreat = RetreatManager.Instance;
+        if (retreat == null || !personality.canRetreat) return;
+
+        float ours = 0f;
+        foreach (Unit unit in units)
+        {
+            ours += (unit.ship != null ? unit.ship.combatPower : Strength.DefaultShipPower) * HealthFraction(unit.health);
+        }
+        foreach (Ship ship in reserve)
+        {
+            ours += ship != null ? ship.combatPower : Strength.DefaultShipPower;
+        }
+        foreach (UnitHealthManager defense in friendlyDefenses)
+        {
+            ours += BasePower(defense) * HealthFraction(defense);
+        }
+
+        float theirs = 0f;
+        foreach (Contact contact in enemies)
+        {
+            theirs += contact.power;
+        }
+
+        float ratio = theirs <= 0f ? 10f : ours / theirs;
+        Outlook = Mathf.Lerp(Outlook, ratio, 0.5f);
+
+        float threshold = personality.retreatRatio * (friendlyDefenses.Count > 0 ? personality.defendedRetreatFactor : 1f);
+        if (Outlook >= threshold)
+        {
+            Abandoning = false;
+            return;
+        }
+
+        if (retreat.CanRetreat(IsAttackerSide))
+        {
+            retreat.BeginRetreat(IsAttackerSide);
+        }
+        else if (retreat.IsBlocked(IsAttackerSide) && reserve.Count > 0)
+        {
+            Abandoning = true;
+        }
     }
 
     private void PruneUnits()
@@ -263,7 +328,7 @@ public class AIBattleCommander : MonoBehaviour
 
     private void Reinforce()
     {
-        if (reserve.Count == 0 || units.Count >= maxShipsOnField || Time.time < reinforceReadyAt) return;
+        if (Abandoning || reserve.Count == 0 || units.Count >= maxShipsOnField || Time.time < reinforceReadyAt) return;
 
         int count = Mathf.Min(maxShipsOnField - units.Count, reserve.Count);
         Vector3 drop = ChooseDropZone();
@@ -325,6 +390,8 @@ public class AIBattleCommander : MonoBehaviour
 
     private void AssignTargets()
     {
+        bool enemyRetreating = EnemyRetreating;
+
         foreach (Contact contact in enemies)
         {
             contact.incomingDps = 0f;
@@ -337,6 +404,11 @@ public class AIBattleCommander : MonoBehaviour
             if (contact.health.IsDefense && HasEnemyShips())
             {
                 contact.priority *= 0.35f;
+            }
+
+            if (enemyRetreating && !contact.health.IsDefense)
+            {
+                contact.priority *= LiveEngine(contact.hardpoints) != null ? 4f : 0.25f;
             }
         }
 
@@ -382,9 +454,32 @@ public class AIBattleCommander : MonoBehaviour
         return nearest;
     }
 
+    private static HardpointHealth LiveEngine(HardpointManager hardpoints)
+    {
+        if (hardpoints == null) return null;
+
+        foreach (HardpointHealth hardpoint in hardpoints.hardpoints)
+        {
+            if (hardpoint != null && hardpoint.GetComponent<EngineHardpoint>() != null) return hardpoint;
+        }
+        return null;
+    }
+
     private void AimAt(Unit unit, Contact contact)
     {
         List<HardpointHealth> alive = contact.hardpoints.hardpoints;
+        HardpointHealth engine = EnemyRetreating ? LiveEngine(contact.hardpoints) : null;
+
+        if (engine != null)
+        {
+            if (unit.target == contact.health && unit.aimPoint == engine.transform) return;
+
+            unit.target = contact.health;
+            unit.aimPoint = engine.transform;
+            unit.hardpoints.AssignTarget(engine.transform);
+            return;
+        }
+
         if (unit.target == contact.health && unit.aimPoint != null && alive.Exists(h => h != null && h.transform == unit.aimPoint)) return;
 
         HardpointHealth pick = null;

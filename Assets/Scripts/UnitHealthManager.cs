@@ -21,6 +21,7 @@ public class UnitHealthManager : MonoBehaviour
     public bool isAttackerSide;
     public bool isShipyardBonus;
     public bool isBattleStation;
+    public int battleToken = -1;
 
     public bool IsDead => dead;
     public bool IsDefense => isShipyardBonus || isBattleStation;
@@ -85,6 +86,8 @@ public class UnitHealthManager : MonoBehaviour
 
     public void DealRandomDamage(float damage) //Just to ensure the game doesn't go on FOREVER.
     {
+        if (GameManager.CombatOver) return;
+
         if (hardpointManager.hardpoints.Count > 0)
         {
             int rand = Random.Range(0, hardpointManager.hardpoints.Count);
@@ -110,7 +113,7 @@ public class UnitHealthManager : MonoBehaviour
             }
             else
             {
-                BattleContext.Instance?.ReportLoss(isAttackerSide, sourceShip);
+                BattleContext.Instance?.ReportLoss(isAttackerSide, sourceShip, battleToken);
             }
 
             Destroy(gameObject, 5);

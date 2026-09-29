@@ -8,6 +8,9 @@ public class BattleResult
     public bool planetCaptured;
     public bool planetLost;
     public bool autoResolved;
+    public bool playerRetreated;
+    public bool enemyRetreated;
+    public string retreatedTo;
 
     public List<Ship> playerLosses = new List<Ship>();
     public List<Ship> enemyLosses = new List<Ship>();

@@ -102,9 +102,19 @@ public class BattleReportPanel : MonoBehaviour
     private static string Subtitle(BattleResult result)
     {
         string resolution = result.autoResolved ? "Auto-resolved" : "Tactical engagement";
-        if (result.planetCaptured) return $"{result.planetName} captured  -  {resolution}";
-        if (result.planetLost) return MapText.Tint($"{result.planetName} has fallen", MapText.Bad) + $"  -  {resolution}";
-        return MapText.Tint(resolution, MapText.Muted);
+        string retreat = RetreatLine(result);
+        if (result.planetCaptured) return $"{result.planetName} captured  -  {retreat}{resolution}";
+        if (result.planetLost) return MapText.Tint($"{result.planetName} has fallen", MapText.Bad) + $"  -  {retreat}{resolution}";
+        return retreat + MapText.Tint(resolution, MapText.Muted);
+    }
+
+    private static string RetreatLine(BattleResult result)
+    {
+        if (!result.playerRetreated && !result.enemyRetreated) return "";
+
+        string who = result.playerRetreated ? "Your fleet" : "The enemy";
+        string where = string.IsNullOrEmpty(result.retreatedTo) ? " was lost with nowhere to run" : $" retreated to {result.retreatedTo}";
+        return MapText.Tint(who + where, result.playerRetreated ? MapText.Warning : MapText.Good) + "  -  ";
     }
 
     private bool FillColumn(Transform container, List<Ship> ships, List<string> structures)

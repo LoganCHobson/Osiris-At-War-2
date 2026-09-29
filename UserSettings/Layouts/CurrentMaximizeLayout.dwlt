@@ -99,7 +99,7 @@ MonoBehaviour:
     m_HSlider: 0
     m_VSlider: 0
     m_IgnoreScrollWheelUntilClicked: 0
-    m_EnableMouseInput: 1
+    m_EnableMouseInput: 0
     m_EnableSliderZoomHorizontal: 0
     m_EnableSliderZoomVertical: 0
     m_UniformScale: 1
@@ -778,9 +778,9 @@ MonoBehaviour:
   m_AudioPlay: 0
   m_DebugDrawModesUseInteractiveLightBakingData: 0
   m_Position:
-    m_Target: {x: 25.097065, y: 34.452682, z: 39.86631}
+    m_Target: {x: 25.467766, y: 31.041214, z: 43.810513}
     speed: 2
-    m_Value: {x: 25.097065, y: 34.452682, z: 39.86631}
+    m_Value: {x: 25.467766, y: 31.041214, z: 43.810513}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -968,8 +968,8 @@ MonoBehaviour:
       - m_Data: -1292
       m_RenameOverlay:
         m_UserAcceptedRename: 0
-        m_Name: 
-        m_OriginalName: 
+        m_Name: Engines
+        m_OriginalName: Engines
         m_EditFieldRect:
           serializedVersion: 2
           x: 0
@@ -977,10 +977,10 @@ MonoBehaviour:
           width: 0
           height: 0
         m_UserData:
-          m_Data: 0
+          m_Data: 538544
         m_IsWaitingForDelay: 0
         m_IsRenaming: 0
-        m_OriginalEventType: 11
+        m_OriginalEventType: 0
         m_IsRenamingFilename: 0
         m_TrimLeadingAndTrailingWhitespace: 0
         m_ClientGUIView: {fileID: 7}
@@ -1093,6 +1093,7 @@ MonoBehaviour:
     - m_Data: 65010
     - m_Data: 65012
     - m_Data: 65014
+    - m_Data: 65170
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 

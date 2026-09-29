@@ -49,6 +49,8 @@ public class TurretController : MonoBehaviour
 
     void Update()
     {
+        ValidateTarget();
+
         if (target == null && Time.time >= nextSearchAt)
         {
             nextSearchAt = Time.time + targetSearchInterval * Random.Range(0.8f, 1.2f);
@@ -87,6 +89,35 @@ public class TurretController : MonoBehaviour
         }
     }
 
+
+    private Transform validatedTarget;
+    private UnitHealthManager targetShip;
+    private HardpointManager targetShipHardpoints;
+    private HardpointHealth targetHardpoint;
+
+    void ValidateTarget()
+    {
+        if (target == null) return;
+
+        if (target != validatedTarget)
+        {
+            validatedTarget = target;
+            targetShip = target.GetComponentInParent<UnitHealthManager>();
+            targetShipHardpoints = targetShip != null ? targetShip.GetComponent<HardpointManager>() : null;
+            targetHardpoint = target.GetComponentInParent<HardpointHealth>();
+        }
+
+        if (targetShip != null && targetShip.IsDead)
+        {
+            target = null;
+            return;
+        }
+
+        bool hardpointGone = targetHardpoint != null && targetShipHardpoints != null && !targetShipHardpoints.hardpoints.Contains(targetHardpoint);
+        if (target.gameObject.activeInHierarchy && !hardpointGone) return;
+
+        target = targetShipHardpoints != null ? targetShipHardpoints.GetRandomHardpoint() : null;
+    }
 
     void AcquireTarget()
     {
@@ -134,6 +165,8 @@ public class TurretController : MonoBehaviour
 
     void Shoot()
     {
+        if (GameManager.CombatOver) return;
+
         if (Time.time - lastFiredTime >= fireRate)
         {
             onFire.Invoke();

@@ -460,6 +460,11 @@ namespace SolarStudios
 
         public void ClearDestinations()
         {
+            if (ownAgent != null && ownAgent.isOnNavMesh && ownAgent.hasPath)
+            {
+                ownAgent.ResetPath();
+            }
+
             destinations.Clear();
             hasActiveDestination = false;
             hasFacing = false;
