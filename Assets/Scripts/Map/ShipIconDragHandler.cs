@@ -19,19 +19,12 @@ public class ShipIconDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandle
         Ship = ship;
         SourceRow = sourceRow;
 
-        if (iconImage == null || ship.icon == null) return;
+        if (iconImage == null) return;
 
-        Image sourceImage = ship.icon.GetComponentInChildren<Image>();
-        if (sourceImage != null && sourceImage.sprite != null)
+        Sprite sprite = ship.IconSprite;
+        if (sprite != null)
         {
-            iconImage.sprite = sourceImage.sprite;
-            return;
-        }
-
-        RawImage sourceRawImage = ship.icon.GetComponentInChildren<RawImage>();
-        if (sourceRawImage != null && sourceRawImage.texture is Texture2D texture2D)
-        {
-            iconImage.sprite = Sprite.Create(texture2D, new Rect(0, 0, texture2D.width, texture2D.height), new Vector2(0.5f, 0.5f));
+            iconImage.sprite = sprite;
         }
     }
 

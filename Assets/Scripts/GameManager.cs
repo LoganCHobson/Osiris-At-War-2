@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -27,6 +28,7 @@ public class GameManager : MonoBehaviour
 
     [Header("Battle Rules")]
     public int maxShipsPerSide = 5;
+    public float battleEndDelay = 3f;
 
     public bool PlayerIsAttacker { get; private set; } = true;
 
@@ -100,13 +102,18 @@ public class GameManager : MonoBehaviour
 
         if (attackerDefeated || defenderDefeated)
         {
-            EndBattle();
+            bool attackerWon = !attackerDefeated;
+            StartCoroutine(EndBattle(PlayerIsAttacker == attackerWon));
         }
     }
 
-    private void EndBattle()
+    private IEnumerator EndBattle(bool playerWon)
     {
         battleEnded = true;
+        BattleEndBanner.Instance?.Show(playerWon);
+
+        yield return new WaitForSecondsRealtime(battleEndDelay);
+
         GameSpeed.Reset();
         SceneManager.LoadScene("GalacticMap");
     }

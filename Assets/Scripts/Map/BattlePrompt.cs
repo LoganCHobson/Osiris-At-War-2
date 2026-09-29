@@ -12,7 +12,7 @@ public class BattlePrompt : MonoBehaviour
     }
 
     public static BattlePrompt Instance { get; private set; }
-    public static bool IsOpen => Instance != null && Instance.current != null;
+    public static bool IsOpen => (Instance != null && Instance.current != null) || BattleReportPanel.IsOpen;
 
     [Header("Prompt")]
     public GameObject promptPanel;
@@ -20,14 +20,8 @@ public class BattlePrompt : MonoBehaviour
     public TMP_Text detailText;
     public Button battleNowButton;
 
-    [Header("Result")]
-    public GameObject resultPanel;
-    public TMP_Text resultText;
-    public float resultDisplayTime = 5f;
-
     private readonly Queue<PendingBattle> queue = new Queue<PendingBattle>();
     private PendingBattle current;
-    private float hideResultAt;
 
     public static void Request(GalacticFleet attacker, Planet planet)
     {
@@ -45,7 +39,6 @@ public class BattlePrompt : MonoBehaviour
     {
         Instance = this;
         promptPanel.SetActive(false);
-        resultPanel.SetActive(false);
     }
 
     private void OnDestroy()
@@ -54,14 +47,6 @@ public class BattlePrompt : MonoBehaviour
 
         Instance = null;
         GameSpeed.SetSuspended(false);
-    }
-
-    private void Update()
-    {
-        if (resultPanel.activeSelf && Time.unscaledTime >= hideResultAt)
-        {
-            resultPanel.SetActive(false);
-        }
     }
 
     private void Enqueue(GalacticFleet attacker, Planet planet)
@@ -74,7 +59,7 @@ public class BattlePrompt : MonoBehaviour
 
         queue.Enqueue(new PendingBattle { attacker = attacker, planet = planet });
 
-        if (current == null)
+        if (current == null && !BattleReportPanel.IsOpen)
         {
             ShowNext();
         }
@@ -104,7 +89,6 @@ public class BattlePrompt : MonoBehaviour
             {
                 battleNowButton.interactable = BattleContext.Instance != null;
             }
-            resultPanel.SetActive(false);
             promptPanel.SetActive(true);
             return;
         }
@@ -164,23 +148,44 @@ public class BattlePrompt : MonoBehaviour
             involved.Add(battle.attacker);
         }
 
-        int playerBefore = CountShips(involved, true);
-        int enemyBefore = CountShips(involved, false);
+        Planet planet = battle.planet;
         bool playerAttacking = Strength.IsPlayer(battle.attacker.faction);
+        GalacticFleet defender = battle.attacker.FindOpposingFleet(planet);
+        Faction enemy = playerAttacking ? (defender != null ? defender.faction : planet.owner) : battle.attacker.faction;
 
-        bool attackerWon = battle.attacker.ResolveAutomatically(battle.planet);
+        List<Ship> playerBefore = ShipsOf(involved, true);
+        List<Ship> enemyBefore = ShipsOf(involved, false);
+        Faction ownerBefore = planet.owner;
+        bool ownerIsPlayer = Strength.IsPlayer(ownerBefore);
+        bool hadShipyard = planet.hasCapitalShipyard;
+        bool hadBattleStation = planet.hasBattleStation;
 
-        int playerLost = playerBefore - CountShips(involved, true);
-        int enemyLost = enemyBefore - CountShips(involved, false);
+        bool attackerWon = battle.attacker.ResolveAutomatically(planet);
         bool playerWon = playerAttacking == attackerWon;
 
-        string outcome = playerWon ? "<color=#7CFC7C>VICTORY</color>" : "<color=#FF6060>DEFEAT</color>";
-        string captured = attackerWon && playerAttacking ? $" - {battle.planet.planetName} captured" : "";
-        resultText.text = $"{outcome} at {battle.planet.planetName}{captured}\n<size=80%>You lost {playerLost} ship{(playerLost == 1 ? "" : "s")}   |   Enemy lost {enemyLost} ship{(enemyLost == 1 ? "" : "s")}</size>";
-        resultPanel.SetActive(true);
-        hideResultAt = Time.unscaledTime + resultDisplayTime;
+        BattleResult result = new BattleResult
+        {
+            planetName = planet.planetName,
+            enemy = enemy,
+            playerWon = playerWon,
+            planetCaptured = playerAttacking && attackerWon && planet.owner != ownerBefore,
+            planetLost = !playerAttacking && attackerWon && ownerIsPlayer,
+            autoResolved = true,
+            playerLosses = BattleResult.Missing(playerBefore, ShipsOf(involved, true)),
+            enemyLosses = BattleResult.Missing(enemyBefore, ShipsOf(involved, false))
+        };
 
-        ShowNext();
+        if (hadShipyard && !planet.hasCapitalShipyard)
+        {
+            result.AddStructureLoss(ownerIsPlayer, BattleResult.ShipyardName);
+        }
+
+        if (hadBattleStation && !planet.hasBattleStation)
+        {
+            result.AddStructureLoss(ownerIsPlayer, BattleResult.BattleStationName);
+        }
+
+        BattleReportPanel.Show(result, ShowNext);
     }
 
     private static float OpposingPower(GalacticFleet attacker, Planet planet)
@@ -210,17 +215,17 @@ public class BattlePrompt : MonoBehaviour
         return fleets;
     }
 
-    private static int CountShips(List<GalacticFleet> fleets, bool player)
+    private static List<Ship> ShipsOf(List<GalacticFleet> fleets, bool player)
     {
-        int count = 0;
+        List<Ship> ships = new List<Ship>();
         foreach (GalacticFleet fleet in fleets)
         {
             if (fleet != null && Strength.IsPlayer(fleet.faction) == player)
             {
-                count += fleet.roster.Count;
+                ships.AddRange(fleet.roster);
             }
         }
-        return count;
+        return ships;
     }
 
     private static string Colored(Faction faction)

@@ -14,6 +14,7 @@ public class PathVisualization : MonoBehaviour
 
     void Start()
     {
+        
         stateMachine = GetComponentInChildren<PlayerUnitStateMachine>();
         moveState = GetComponentInChildren<PlayerUnitMoveState>();
         agent = GetComponent<NavMeshAgent>();

@@ -99,6 +99,8 @@ public class GalacticMapManager : MonoBehaviour
             attackerWon = attackerSurvived && defenderDefeated
         });
 
+        BattleReportPanel.Show(BuildBattleResult(context, destinationPlanet, attackerSurvived && defenderDefeated));
+
         if (attackerSurvived && defenderDefeated && destinationPlanet != null)
         {
             destinationPlanet.Capture(context.attackerFaction);
@@ -118,6 +120,40 @@ public class GalacticMapManager : MonoBehaviour
         }
 
         context.Clear();
+    }
+
+    private static BattleResult BuildBattleResult(BattleContext context, Planet planet, bool attackerWon)
+    {
+        bool playerAttacking = Strength.IsPlayer(context.attackerFaction);
+        bool playerDefending = !playerAttacking && Strength.IsPlayer(context.defenderFaction);
+        if (!playerAttacking && !playerDefending) return null;
+
+        List<Ship> attackerLosses = BattleResult.Missing(context.attackerStartRoster, context.attackerRoster);
+        List<Ship> defenderLosses = BattleResult.Missing(context.defenderStartRoster, context.defenderRoster);
+        bool captured = attackerWon && planet != null && planet.owner != context.attackerFaction;
+
+        BattleResult result = new BattleResult
+        {
+            planetName = planet != null ? planet.planetName : context.destinationPlanetName,
+            enemy = playerAttacking ? context.defenderFaction : context.attackerFaction,
+            playerWon = playerAttacking == attackerWon,
+            planetCaptured = playerAttacking && captured,
+            planetLost = playerDefending && captured,
+            playerLosses = playerAttacking ? attackerLosses : defenderLosses,
+            enemyLosses = playerAttacking ? defenderLosses : attackerLosses
+        };
+
+        if (context.defenderHasShipyard && !context.defenderShipyardSurvived)
+        {
+            result.AddStructureLoss(playerDefending, BattleResult.ShipyardName);
+        }
+
+        if (context.defenderHasBattleStation && !context.defenderBattleStationSurvived)
+        {
+            result.AddStructureLoss(playerDefending, BattleResult.BattleStationName);
+        }
+
+        return result;
     }
 
     private GalacticFleet ApplyFleetResult(string fleetName, List<Ship> survivingRoster, Planet moveToPlanet)

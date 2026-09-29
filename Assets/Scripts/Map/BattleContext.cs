@@ -26,6 +26,9 @@ public class BattleContext : MonoBehaviour
     public float attackerStartPower;
     public float defenderStartPower;
 
+    public List<Ship> attackerStartRoster = new List<Ship>();
+    public List<Ship> defenderStartRoster = new List<Ship>();
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -60,6 +63,9 @@ public class BattleContext : MonoBehaviour
 
         attackerStartPower = Strength.Of(attackerRoster);
         defenderStartPower = Strength.Of(defenderRoster);
+
+        attackerStartRoster = new List<Ship>(attackerRoster);
+        defenderStartRoster = new List<Ship>(defenderRoster);
     }
 
     public void ReportLoss(bool attackerSide, Ship ship)
@@ -103,5 +109,7 @@ public class BattleContext : MonoBehaviour
         defenderBattleStationSurvived = true;
         attackerStartPower = 0f;
         defenderStartPower = 0f;
+        attackerStartRoster.Clear();
+        defenderStartRoster.Clear();
     }
 }
