@@ -54,7 +54,7 @@ public class AIDirector : MonoBehaviour
         if (!MapIsActive) return;
 
         World.EnsurePlanets();
-        if (!aiEnabled) return;
+        if (!aiEnabled || BattlePrompt.IsOpen) return;
 
         GalacticTime += Time.deltaTime;
 

@@ -107,6 +107,7 @@ public class GameManager : MonoBehaviour
     private void EndBattle()
     {
         battleEnded = true;
+        GameSpeed.Reset();
         SceneManager.LoadScene("GalacticMap");
     }
 

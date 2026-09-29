@@ -124,11 +124,13 @@ public class PlanetBuildPanel : MonoBehaviour
 
         if (capitalShipyardButton != null)
         {
-            capitalShipyardButton.interactable = canBuild && !currentPlanet.hasCapitalShipyard && currency >= Planet.CapitalShipyardCost;
+            capitalShipyardButton.interactable = canBuild && currentPlanet.canBuildCapitalShipyard && !currentPlanet.hasCapitalShipyard && currency >= Planet.CapitalShipyardCost;
         }
         if (capitalShipyardLabel != null)
         {
-            capitalShipyardLabel.text = currentPlanet.hasCapitalShipyard ? "Capital Shipyard (built)" : $"Build Capital Shipyard (${Planet.CapitalShipyardCost})";
+            capitalShipyardLabel.text = currentPlanet.hasCapitalShipyard ? "Capital Shipyard (built)"
+                : !currentPlanet.canBuildCapitalShipyard ? "No Shipyard Site"
+                : $"Build Capital Shipyard (${Planet.CapitalShipyardCost})";
         }
 
         if (battleStationButton != null)
@@ -159,6 +161,7 @@ public class PlanetBuildPanel : MonoBehaviour
 
     public void BuildCapitalShipyard()
     {
+        if (currentPlanet == null || !currentPlanet.canBuildCapitalShipyard || currentPlanet.hasCapitalShipyard) return;
         if (!TrySpend(Planet.CapitalShipyardCost)) return;
         currentPlanet.hasCapitalShipyard = true;
     }

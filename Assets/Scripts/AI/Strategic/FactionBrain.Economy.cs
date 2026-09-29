@@ -257,7 +257,7 @@ public partial class FactionBrain
 
         foreach (Planet planet in owned)
         {
-            if (planet.hasCapitalShipyard) continue;
+            if (planet.hasCapitalShipyard || !planet.canBuildCapitalShipyard) continue;
 
             int depth = HostileDepth(planet);
             float placement = depth == int.MaxValue ? 0.5f : 1f / (1f + Mathf.Abs(depth - 2));

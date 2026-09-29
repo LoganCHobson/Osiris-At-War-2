@@ -17,6 +17,7 @@ public class GalacticFleet : MonoBehaviour
 
     public bool IsTraveling { get; private set; }
     public bool IsHolding => holdTimer > 0f;
+    public bool AwaitingBattle { get; set; }
     public Planet Destination => IsTraveling && route.Count > 0 ? route[route.Count - 1] : null;
 
     public bool IsPresentAt(Planet planet)
@@ -53,6 +54,8 @@ public class GalacticFleet : MonoBehaviour
 
     private void Update()
     {
+        if (AwaitingBattle) return;
+
         if (holdTimer > 0f)
         {
             holdTimer -= Time.deltaTime;
@@ -215,38 +218,56 @@ public class GalacticFleet : MonoBehaviour
         routeIndex++;
     }
 
+    public bool HasBattleAt(Planet planet)
+    {
+        bool planetIsDefended = planet.owner != faction && (planet.hasCapitalShipyard || planet.hasBattleStation);
+        return FindOpposingFleet(planet) != null || planetIsDefended;
+    }
+
     private bool TryStartBattle(Planet planet)
     {
-        GalacticFleet defender = FindOpposingFleet(planet);
-        bool planetIsHostile = planet.owner != faction;
-        bool planetIsDefended = planetIsHostile && (planet.hasCapitalShipyard || planet.hasBattleStation);
-
-        if (defender == null && !planetIsDefended)
+        if (!HasBattleAt(planet))
         {
             return false;
         }
 
+        GalacticFleet defender = FindOpposingFleet(planet);
         Faction defendingFaction = defender != null ? defender.faction : planet.owner;
         if (!Strength.IsPlayer(faction) && !Strength.IsPlayer(defendingFaction))
         {
-            if (AutoResolver.ResolveAll(this, planet))
-            {
-                HaltAt(planet);
-                HoldAfterBattle();
-            }
+            ResolveAutomatically(planet);
             return true;
         }
+
+        AwaitingBattle = true;
+        BattlePrompt.Request(this, planet);
+        return true;
+    }
+
+    public bool ResolveAutomatically(Planet planet)
+    {
+        AwaitingBattle = false;
+
+        if (!AutoResolver.ResolveAll(this, planet)) return false;
+
+        HaltAt(planet);
+        HoldAfterBattle();
+        return true;
+    }
+
+    public void LaunchBattle(Planet planet)
+    {
+        AwaitingBattle = false;
 
         if (BattleContext.Instance == null)
         {
             Debug.LogWarning("No BattleContext in scene - can't hand off fleets to BattleScene.");
-            return false;
+            return;
         }
 
         GalacticState.Instance?.CaptureFromScene();
-        BattleContext.Instance.BeginBattle(this, defender);
+        BattleContext.Instance.BeginBattle(this, FindOpposingFleet(planet));
         SceneManager.LoadScene("BattleScene");
-        return true;
     }
 
     private void TryCapturePlanet(Planet planet)

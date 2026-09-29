@@ -36,6 +36,7 @@ public class GalacticMapManager : MonoBehaviour
     {
         cam = Camera.main;
         Cursor.visible = true;
+        GameSpeed.Reset();
 
         DrawHyperspaceLanes();
 
@@ -151,6 +152,16 @@ public class GalacticMapManager : MonoBehaviour
 
     private void Update()
     {
+        if (BattlePrompt.IsOpen)
+        {
+            isDragging = false;
+            if (orderLinePreview != null)
+            {
+                orderLinePreview.positionCount = 0;
+            }
+            return;
+        }
+
         if (Input.GetMouseButtonDown(0))
         {
             HandlePress();

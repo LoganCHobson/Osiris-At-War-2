@@ -18,10 +18,13 @@ public class Planet : MonoBehaviour
     public const int CapitalShipyardCost = 1000;
     public const int BattleStationCost = 2000;
 
+    public bool canBuildCapitalShipyard = true;
     public bool hasTaxOffice;
     public bool hasCapitalShipyard;
     public bool hasBattleStation;
     public List<ShipBuildOrder> shipBuildQueue = new List<ShipBuildOrder>();
+
+    public bool IsShipyardSite => canBuildCapitalShipyard || hasCapitalShipyard;
 
     private readonly GalacticFleet[] fleetSlots = new GalacticFleet[FleetSlotCount];
 
@@ -133,6 +136,12 @@ public class Planet : MonoBehaviour
     {
         Gizmos.color = owner != null ? owner.color : Color.gray;
         Gizmos.DrawWireSphere(transform.position, 1f);
+
+        if (IsShipyardSite)
+        {
+            Gizmos.color = new Color(1f, 0.6f, 0f, 0.9f);
+            Gizmos.DrawWireCube(transform.position, Vector3.one * 2.4f);
+        }
 
         Gizmos.color = new Color(0f, 1f, 1f, 0.4f);
         foreach (Planet connection in connections)

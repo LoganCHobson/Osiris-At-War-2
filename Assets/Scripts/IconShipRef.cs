@@ -30,11 +30,14 @@ public class IconShipRef : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndD
         {
             iconImage.raycastTarget = false;
         }
+
+        PlacementManager.Instance?.BeginPreview(ship);
     }
 
     public void OnDrag(PointerEventData eventData)
     {
         rect.position = eventData.position;
+        PlacementManager.Instance?.UpdatePreview(eventData.position);
     }
 
     public void OnEndDrag(PointerEventData eventData)

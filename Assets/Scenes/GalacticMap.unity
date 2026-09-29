@@ -184,6 +184,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1224176147}
@@ -279,6 +283,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -382,6 +390,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 2018920133}
@@ -473,6 +485,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -572,6 +588,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1701023479}
@@ -667,6 +687,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -895,6 +919,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1248745686}
@@ -988,6 +1016,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 355428565}
@@ -1079,6 +1111,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -1182,6 +1218,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1085710264}
@@ -1269,6 +1309,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -1364,6 +1408,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 944009780}
@@ -1455,6 +1503,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -1554,6 +1606,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 490373641}
@@ -1651,6 +1707,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 846522972}
@@ -1742,6 +1802,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -1845,6 +1909,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1597374767}
@@ -1932,6 +2000,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -2031,6 +2103,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1073688609}
@@ -2128,6 +2204,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 2228302}
@@ -2219,6 +2299,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -2314,6 +2398,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 853898868}
@@ -2407,6 +2495,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1276075677}
@@ -2494,6 +2586,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -2587,6 +2683,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -2684,6 +2784,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -2787,6 +2891,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 846522972}
@@ -2882,6 +2990,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -2981,6 +3093,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 710609656}
@@ -3072,6 +3188,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -3300,6 +3420,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 192089721}
@@ -3387,6 +3511,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -3486,6 +3614,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1241011721}
@@ -3583,6 +3715,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 2038393250}
@@ -3674,6 +3810,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -3862,6 +4002,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1737807276}
@@ -3959,6 +4103,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 307963182}
@@ -4050,6 +4198,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -4153,6 +4305,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 902347324}
@@ -4246,6 +4402,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1889843138}
@@ -4337,6 +4497,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -4533,6 +4697,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1863163274}
@@ -4624,6 +4792,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -4816,6 +4988,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 669505088}
@@ -4913,6 +5089,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 408260087}
@@ -5004,6 +5184,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -5099,6 +5283,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 326928998}
@@ -5190,6 +5378,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -5289,6 +5481,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1990792179}
@@ -5382,6 +5578,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1486904039}
@@ -5473,6 +5673,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -5570,6 +5774,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -5766,6 +5974,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 109008217}
@@ -5859,6 +6071,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1057570698}
@@ -5946,6 +6162,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -6085,6 +6305,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -6300,6 +6524,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 323298342}
@@ -6397,6 +6625,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1718937143}
@@ -6490,6 +6722,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 362210604}
@@ -6581,6 +6817,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -6680,6 +6920,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1645970047}
@@ -6769,6 +7013,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 2095819}
@@ -6856,6 +7104,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -6949,6 +7201,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -7052,6 +7308,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1428398180}
@@ -7143,6 +7403,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -7242,6 +7506,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1632603118}
@@ -7339,6 +7607,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1737807276}
@@ -7430,6 +7702,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -7525,6 +7801,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1605893710}
@@ -7612,6 +7892,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -7715,6 +7999,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 2095819}
@@ -7812,6 +8100,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1608822944}
@@ -7903,6 +8195,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -8004,6 +8300,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -8200,6 +8500,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1412261596}
@@ -8297,6 +8601,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1712798543}
@@ -8384,6 +8692,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -8701,6 +9013,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1120195482}
@@ -8788,6 +9104,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -8902,6 +9222,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1939909224}
@@ -8989,6 +9313,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -9181,6 +9509,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1924079797}
@@ -9275,6 +9607,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
@@ -9702,6 +10038,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1810220909}
@@ -9797,6 +10137,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -9898,6 +10242,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -10092,6 +10440,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 870312023}
@@ -10183,6 +10535,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -10280,6 +10636,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -10395,6 +10755,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 689989926}
@@ -10486,6 +10850,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -10583,6 +10951,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -10686,6 +11058,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1616064688}
@@ -10777,6 +11153,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -10874,6 +11254,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -10977,6 +11361,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 138104950}
@@ -11072,6 +11460,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -11175,6 +11567,10 @@ PrefabInstance:
       value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 287036632}
@@ -11276,6 +11672,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 2146255764}
@@ -11367,6 +11767,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -11464,6 +11868,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -11611,6 +12019,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1058061750}
@@ -11702,6 +12114,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -11944,6 +12360,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1015117250}
@@ -12063,6 +12483,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 223933366}
@@ -12154,6 +12578,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -12253,6 +12681,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 787904204}
@@ -12344,6 +12776,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -12443,6 +12879,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1402620143}
@@ -12534,6 +12974,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -12657,6 +13101,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -12885,6 +13333,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1827732783}
@@ -12982,6 +13434,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1252464497}
@@ -13069,6 +13525,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -13166,6 +13626,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -13295,6 +13759,10 @@ PrefabInstance:
       value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 982417750}
@@ -13396,6 +13864,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1038847099}
@@ -13483,6 +13955,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -13582,6 +14058,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 858301557}
@@ -13675,6 +14155,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1501384498}
@@ -13766,6 +14250,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -13872,6 +14360,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 807968584}
@@ -13963,6 +14455,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -14066,6 +14562,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 31205357}
@@ -14159,6 +14659,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 399541890}
@@ -14250,6 +14754,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -14349,6 +14857,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1632603118}
@@ -14442,6 +14954,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 858301557}
@@ -14533,6 +15049,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -14632,6 +15152,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 950799072}
@@ -14727,6 +15251,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -14826,6 +15354,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 377865774}
@@ -14913,6 +15445,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -15029,6 +15565,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 127701106}
@@ -15120,6 +15660,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -15282,6 +15826,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1899193360}
@@ -15379,6 +15927,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1793828950}
@@ -15466,6 +16018,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -15584,6 +16140,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 454153972}
@@ -15671,6 +16231,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -15766,6 +16330,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 164687357}
@@ -15832,10 +16400,10 @@ MonoBehaviour:
   moveWithKeyboad: 1
   moveWithEdgeScrolling: 1
   moveWithMouseDrag: 1
-  fastSpeed: 0.1
-  normalSpeed: 0.04
-  movementSensitivity: 1
-  edgeSize: 50
+  fastSpeed: 2
+  normalSpeed: 1
+  movementSensitivity: 2
+  edgeSize: 40
   cursorArrowUp: {fileID: 2800000, guid: 92e4ace040027e5458d43229c9131806, type: 3}
   cursorArrowDown: {fileID: 2800000, guid: 17fafc9ab021d6547aab1b7cd95eba22, type: 3}
   cursorArrowLeft: {fileID: 2800000, guid: cf000c3efeb66ba4195b5b919a320fb0, type: 3}
@@ -15922,6 +16490,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -16017,6 +16589,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1501384498}
@@ -16108,6 +16684,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -16336,6 +16916,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 276795520}
@@ -16431,6 +17015,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -16530,6 +17118,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 266000533}
@@ -16627,6 +17219,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1737807276}
@@ -16718,6 +17314,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -16817,6 +17417,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 848210330}
@@ -16908,6 +17512,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -17007,6 +17615,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1975450025}
@@ -17100,6 +17712,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 2134680845}
@@ -17189,6 +17805,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1058061750}
@@ -17276,6 +17896,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -17375,6 +17999,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 231317612}
@@ -17466,6 +18094,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -17565,6 +18197,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 602907663}
@@ -17662,6 +18298,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 174393803}
@@ -17753,6 +18393,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -17848,6 +18492,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 2135391592}
@@ -17935,6 +18583,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -18034,6 +18686,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 543374904}
@@ -18127,6 +18783,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1241011721}
@@ -18218,6 +18878,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -18400,6 +19064,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 310182372}
@@ -18487,6 +19155,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -18715,6 +19387,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1742879866}
@@ -18742,6 +19418,212 @@ MonoBehaviour:
 Transform:
   m_CorrespondingSourceObject: {fileID: 3766891761663077674, guid: 78043eec782b41d48975adbd07015c89, type: 3}
   m_PrefabInstance: {fileID: 1164662343}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &1167966053
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1330369679}
+    m_Modifications:
+    - target: {fileID: 100, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_Name
+      value: SpeedControlsCanvas
+      objectReference: {fileID: 0}
+    - target: {fileID: 101, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_Pivot.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 101, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_Pivot.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 101, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 101, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 101, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 101, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 101, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 101, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 101, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 101, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 101, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 101, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 101, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 101, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 101, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 101, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 101, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 101, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 101, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 101, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 201, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 201, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 301, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 301, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 301, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 301, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 301, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 301, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 301, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 301, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 321, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 321, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 321, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 321, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 321, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 321, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 321, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 321, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 341, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 341, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 341, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 341, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 341, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 341, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 341, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 341, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+--- !u!224 &1167966054 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 101, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
+  m_PrefabInstance: {fileID: 1167966053}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1189017723
 PrefabInstance:
@@ -18806,6 +19688,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -18905,6 +19791,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 231317612}
@@ -18996,6 +19886,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -19091,6 +19985,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1551081440}
@@ -19178,6 +20076,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -19281,6 +20183,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 88958466}
@@ -19372,6 +20278,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -19471,6 +20381,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1559753540}
@@ -19568,6 +20482,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 2084527369}
@@ -19655,6 +20573,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -19750,6 +20672,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1921121948}
@@ -19841,6 +20767,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -19944,6 +20874,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 139465424}
@@ -20037,6 +20971,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1292898157}
@@ -20128,6 +21066,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -20364,6 +21306,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1190172630}
@@ -20451,6 +21397,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -20550,6 +21500,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 740366737}
@@ -20640,6 +21594,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
@@ -20825,6 +21783,10 @@ PrefabInstance:
       value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1120195482}
@@ -20892,6 +21854,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1755159783}
+  - {fileID: 1167966054}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1330369680
@@ -20984,6 +21947,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 945323172}
@@ -21073,6 +22040,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1372828640}
@@ -21160,6 +22131,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -21396,6 +22371,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1108599782}
@@ -21487,6 +22466,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -21582,6 +22565,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 492505886}
@@ -21673,6 +22660,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -21772,6 +22763,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1156320222}
@@ -21859,6 +22854,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -21958,6 +22957,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1829487780}
@@ -22049,6 +23052,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -22152,6 +23159,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1668460614}
@@ -22247,6 +23258,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -22350,6 +23365,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1577759994}
@@ -22445,6 +23464,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -22548,6 +23571,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 930486759}
@@ -22643,6 +23670,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -22839,6 +23870,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 138104950}
@@ -23027,6 +24062,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -23227,6 +24266,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1502246502}
@@ -23322,6 +24365,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -23421,6 +24468,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1233621728}
@@ -23516,6 +24567,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -23615,6 +24670,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1428398180}
@@ -23706,6 +24765,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -23801,6 +24864,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 372555132}
@@ -23892,6 +24959,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -23991,6 +25062,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 72457341}
@@ -24082,6 +25157,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -24177,6 +25256,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1271385102}
@@ -24268,6 +25351,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -24363,6 +25450,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 120578028}
@@ -24454,6 +25545,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -24553,6 +25648,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1499971233}
@@ -24644,6 +25743,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -24743,6 +25846,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 47945566}
@@ -24838,6 +25945,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -24997,6 +26108,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1742879866}
@@ -25088,6 +26203,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -25191,6 +26310,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1075034982}
@@ -25286,6 +26409,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -25385,6 +26512,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 653164372}
@@ -25476,6 +26607,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -25579,6 +26714,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1672834132}
@@ -25676,6 +26815,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 937065866}
@@ -25767,6 +26910,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -25937,6 +27084,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 853898868}
@@ -26032,6 +27183,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -26131,6 +27286,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1416125073}
@@ -26222,6 +27381,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -26321,6 +27484,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1644132190}
@@ -26416,6 +27583,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -26608,6 +27779,10 @@ PrefabInstance:
       value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 224709326}
@@ -26709,6 +27884,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 223338512}
@@ -26800,6 +27979,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -26899,6 +28082,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 399219260}
@@ -26992,6 +28179,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 149416344}
@@ -27083,6 +28274,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -27184,6 +28379,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -27289,6 +28488,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -27497,6 +28700,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 367026555}
@@ -27584,6 +28791,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -27677,6 +28888,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -27778,6 +28993,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -27970,6 +29189,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 94061585}
@@ -28061,6 +29284,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -28156,6 +29383,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 47945566}
@@ -28247,6 +29478,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -28342,6 +29577,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 223338512}
@@ -28433,6 +29672,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -28659,6 +29902,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1889697511}
@@ -28746,6 +29993,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -28845,6 +30096,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1499971233}
@@ -28938,6 +30193,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 69526830}
@@ -29025,6 +30284,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -29128,6 +30391,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 109008217}
@@ -29219,6 +30486,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -29314,6 +30585,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 326928998}
@@ -29407,6 +30682,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 2134680845}
@@ -29498,6 +30777,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -29694,6 +30977,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 771090344}
@@ -29789,6 +31076,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -29892,6 +31183,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 2040692563}
@@ -29983,6 +31278,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -30175,6 +31474,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1292898157}
@@ -30268,6 +31571,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1496526303}
@@ -30355,6 +31662,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -30454,6 +31765,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 315187254}
@@ -30549,6 +31864,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -30730,6 +32049,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 155891522}
@@ -30821,6 +32144,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -30924,6 +32251,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 916121979}
@@ -31011,6 +32342,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -31104,6 +32439,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -31207,6 +32546,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1050645042}
@@ -31300,6 +32643,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1605893710}
@@ -31389,6 +32736,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1972768192}
@@ -31476,6 +32827,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -31668,6 +33023,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1922440508}
@@ -31763,6 +33122,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -32105,6 +33468,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 596500917}
@@ -32291,6 +33658,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1935744395}
@@ -32386,6 +33757,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -32578,6 +33953,10 @@ PrefabInstance:
       value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 989483694}
@@ -32677,6 +34056,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -32909,6 +34292,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1073688609}
@@ -33002,6 +34389,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
       value: 
       objectReference: {fileID: 1570826680}
@@ -33089,6 +34480,10 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: connections.Array.size
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
+      propertyPath: canBuildCapitalShipyard
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: 'connections.Array.data[0]'
@@ -33196,6 +34591,19 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 43e7de14d4281f64a82c4f7e426dc769, type: 3}
+--- !u!1001 &7700000000000000001
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications: []
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 2aff6649a6c44d6c94820f120e409faa, type: 3}
 --- !u!1001 &8790440248434551054
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -33282,3 +34690,4 @@ SceneRoots:
   - {fileID: 8790440248434551054}
   - {fileID: 1002201860}
   - {fileID: 590209670}
+  - {fileID: 7700000000000000001}

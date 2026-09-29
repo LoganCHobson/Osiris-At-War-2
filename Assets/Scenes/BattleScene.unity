@@ -1350,7 +1350,7 @@ Transform:
   m_GameObject: {fileID: 938436640}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -177, y: 0, z: 177}
+  m_LocalPosition: {x: -268, y: 0, z: 225}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1404,6 +1404,8 @@ MonoBehaviour:
   prefab: {fileID: 1349032318270045980, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
   cost: 0
   buildTime: 20
+  combatPower: 100
+  strongAgainst: 
 --- !u!1 &1057846723
 GameObject:
   m_ObjectHideFlags: 0
@@ -1479,7 +1481,7 @@ Transform:
   m_GameObject: {fileID: 1138445454}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 181, y: 0, z: -186}
+  m_LocalPosition: {x: 308, y: 0, z: -314}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1517,7 +1519,7 @@ MonoBehaviour:
   allFriendlyUnits: []
   UnitsListUI: {fileID: 1972480120}
   attackerShipSpawnPoint: {fileID: 1138445455}
-  defenderShipSpawnPoint: {fileID: 9300000000000002}
+  defenderShipSpawnPoint: {fileID: 938436641}
   defenderSpawnSpacing: 15
   shipyardDefenderPrefab: {fileID: 2832949738976322946, guid: c746c64acf071c14784772d62c3080b8, type: 3}
   battleStationPrefab: {fileID: 7428256618577930067, guid: 4b72e6c27a56beb4284bb16d44cc66eb, type: 3}
@@ -1528,6 +1530,7 @@ MonoBehaviour:
   playerProjectilePrefab: {fileID: 9062178426813273101, guid: e8ccb87e282fd7f459d64b69aa39cadf, type: 3}
   enemyProjectilePrefab: {fileID: 9062178426813273101, guid: c35cd167db47fd049b45319467d5858c, type: 3}
   fleet: {fileID: 1057846725}
+  maxShipsPerSide: 5
 --- !u!4 &1345970854
 Transform:
   m_ObjectHideFlags: 0
@@ -1659,17 +1662,17 @@ MonoBehaviour:
   moveWithKeyboad: 1
   moveWithEdgeScrolling: 1
   moveWithMouseDrag: 1
-  fastSpeed: 0.1
-  normalSpeed: 0.04
-  movementSensitivity: 1
-  edgeSize: 50
+  fastSpeed: 2
+  normalSpeed: 1
+  movementSensitivity: 2
+  edgeSize: 40
   cursorArrowUp: {fileID: 2800000, guid: 92e4ace040027e5458d43229c9131806, type: 3}
   cursorArrowDown: {fileID: 2800000, guid: 17fafc9ab021d6547aab1b7cd95eba22, type: 3}
   cursorArrowLeft: {fileID: 2800000, guid: cf000c3efeb66ba4195b5b919a320fb0, type: 3}
   cursorArrowRight: {fileID: 2800000, guid: 783584260d4822641a0d0207575b0a14, type: 3}
-  zoomSpeed: 8
+  zoomSpeed: 25
   minZoom: 5
-  maxZoom: 50
+  maxZoom: 200
 --- !u!1001 &1802817593
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1900,7 +1903,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 50, y: 1, z: 50}
+  m_LocalScale: {x: 100, y: 1, z: 100}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -1935,7 +1938,7 @@ MonoBehaviour:
   m_OverrideVoxelSize: 0
   m_VoxelSize: 12.34
   m_MinRegionArea: 2
-  m_NavMeshData: {fileID: 23800000, guid: 59fce296176958846a2b40f9b9edc7d5, type: 2}
+  m_NavMeshData: {fileID: 23800000, guid: f72ecfe1222cf9a4fa133c7a60386229, type: 2}
   m_BuildHeightMesh: 0
 --- !u!1 &2012470192
 GameObject:
@@ -2111,37 +2114,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 211a61f89ebdcbb4c9aaf0cc8248cb5c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
---- !u!1 &9300000000000001
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 9300000000000002}
-  m_Layer: 0
-  m_Name: DefenderStart
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &9300000000000002
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9300000000000001}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0.92387956, z: 0, w: 0.38268343}
-  m_LocalPosition: {x: -164.7, y: 1.298, z: 171.3}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 135, z: 0}
+  hologramMaterial: {fileID: 2100000, guid: cd8d812a4652483fa0af017ec7af56e9, type: 2}
+  validColor: {r: 0.3, g: 0.85, b: 1, a: 0.35}
+  invalidColor: {r: 1, g: 0.3, b: 0.3, a: 0.35}
+  emissionStrength: 1.5
 --- !u!1001 &7704120674275380904
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2207,12 +2183,24 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+--- !u!1001 &7700000000000000002
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications: []
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 0c584674bcac4c6899849bd1a410f61f, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 1138445455}
-  - {fileID: 9300000000000002}
   - {fileID: 938436641}
   - {fileID: 410087041}
   - {fileID: 832575519}
@@ -2235,3 +2223,4 @@ SceneRoots:
   - {fileID: 980424901}
   - {fileID: 512422330}
   - {fileID: 2012470194}
+  - {fileID: 7700000000000000002}

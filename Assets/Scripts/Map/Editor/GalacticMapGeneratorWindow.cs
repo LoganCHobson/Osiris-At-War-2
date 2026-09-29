@@ -57,6 +57,9 @@ public class GalacticMapGeneratorWindow : EditorWindow
 
     private List<FactionTerritoryConfig> factionTerritories = new List<FactionTerritoryConfig>();
 
+    private int shipyardSiteCount = 6;
+    private bool shipyardSitePerFaction = true;
+
     [MenuItem("Osiris/Galactic Map Generator")]
     public static void Open()
     {
@@ -137,6 +140,11 @@ public class GalacticMapGeneratorWindow : EditorWindow
         }
 
         EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Capital Shipyard Sites", EditorStyles.boldLabel);
+        shipyardSiteCount = EditorGUILayout.IntField("Site Count (0 = every planet)", shipyardSiteCount);
+        shipyardSitePerFaction = EditorGUILayout.Toggle("Guarantee One Per Faction", shipyardSitePerFaction);
+
+        EditorGUILayout.Space();
         EditorGUILayout.LabelField("Core Marker", EditorStyles.boldLabel);
         spawnCoreMarker = EditorGUILayout.Toggle("Spawn Black Hole Marker", spawnCoreMarker);
         if (spawnCoreMarker)
@@ -208,6 +216,11 @@ public class GalacticMapGeneratorWindow : EditorWindow
 
         ConnectPlanets(planets);
         AssignFactionTerritories(planets);
+
+        if (shipyardSiteCount > 0)
+        {
+            ShipyardSitePlanner.Distribute(planets, shipyardSiteCount, shipyardSitePerFaction, seed);
+        }
 
         foreach (Planet planet in planets)
         {

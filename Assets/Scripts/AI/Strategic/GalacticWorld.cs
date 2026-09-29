@@ -76,6 +76,7 @@ public class GalacticWorld
         float value = 1f + ChokeScore(planet) * 2f + (IsArticulation(planet) ? 1f : 0f) + planet.connections.Count * 0.1f;
         if (planet.hasTaxOffice) value += 1f;
         if (planet.hasCapitalShipyard) value += 2f;
+        else if (planet.canBuildCapitalShipyard) value += 1f;
         if (planet.hasBattleStation) value += 1.5f;
         return value;
     }

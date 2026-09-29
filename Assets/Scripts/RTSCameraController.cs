@@ -170,7 +170,7 @@ public class RTSCameraController : MonoBehaviour
             }
         }
 
-        transform.position = Vector3.Lerp(transform.position, newPosition, Time.deltaTime * movementSensitivity);
+        transform.position = Vector3.Lerp(transform.position, newPosition, Time.unscaledDeltaTime * movementSensitivity);
 
         Cursor.lockState = CursorLockMode.Confined; //If we have an extra monitor we don't want to exit screen bounds
     }
@@ -242,6 +242,6 @@ public class RTSCameraController : MonoBehaviour
         targetZoom = Mathf.Clamp(targetZoom, minZoom, maxZoom);
 
         Vector3 zoomVector = new Vector3(cameraTransform.localPosition.x, targetZoom, cameraTransform.localPosition.z);
-        cameraTransform.localPosition = Vector3.Lerp(cameraTransform.localPosition, zoomVector, Time.deltaTime * zoomSpeed);
+        cameraTransform.localPosition = Vector3.Lerp(cameraTransform.localPosition, zoomVector, Time.unscaledDeltaTime * zoomSpeed);
     }
 }

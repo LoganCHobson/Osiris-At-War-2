@@ -5,6 +5,7 @@ public static class AutoResolver
 {
     public const float RollVariance = 0.25f;
     public const float WinnerLossScale = 0.6f;
+    public const float MinWinnerCasualtyChance = 0.25f;
 
     public static bool ResolveAll(GalacticFleet attacker, Planet planet)
     {
@@ -49,7 +50,7 @@ public static class AutoResolver
 
         if (attackerWon)
         {
-            report.attackerLosses = ApplyLosses(attacker.roster, attackerPower * LossFraction(defenderRoll, attackerRoll));
+            report.attackerLosses = ApplyWinnerLosses(attacker.roster, attackerPower, attackerRoll, defenderRoll);
             report.defenderLosses = defenderPower;
 
             if (defender != null)
@@ -65,7 +66,7 @@ public static class AutoResolver
         }
         else
         {
-            report.defenderLosses = defender != null ? ApplyLosses(defender.roster, defenderFleetPower * LossFraction(attackerRoll, defenderRoll)) : 0f;
+            report.defenderLosses = defender != null ? ApplyWinnerLosses(defender.roster, defenderFleetPower, defenderRoll, attackerRoll) : 0f;
             report.attackerLosses = attackerPower;
 
             Eliminate(attacker);
@@ -81,9 +82,19 @@ public static class AutoResolver
         return Random.Range(1f - RollVariance, 1f + RollVariance);
     }
 
-    private static float LossFraction(float loserRoll, float winnerRoll)
+    private static float ApplyWinnerLosses(List<Ship> roster, float winnerPower, float winnerRoll, float loserRoll)
     {
-        return Mathf.Clamp01(loserRoll / Mathf.Max(winnerRoll, 1f)) * WinnerLossScale;
+        float closeness = Mathf.Clamp01(loserRoll / Mathf.Max(winnerRoll, 1f));
+        float lost = ApplyLosses(roster, winnerPower * closeness * WinnerLossScale);
+
+        if (lost <= 0f && roster.Count > 1 && Random.value < Mathf.Lerp(MinWinnerCasualtyChance, 1f, closeness))
+        {
+            int index = Random.Range(0, roster.Count);
+            lost += roster[index] != null ? roster[index].combatPower : 0f;
+            roster.RemoveAt(index);
+        }
+
+        return lost;
     }
 
     private static float ApplyLosses(List<Ship> roster, float lossPower)
