@@ -30,6 +30,7 @@ public partial class FactionBrain
         AddTaxOfficeOption();
         AddShipyardOption();
         AddBattleStationOption();
+        AddStationDemolishOption();
         economyOptions.Sort((a, b) => b.score.CompareTo(a.score));
 
         int currency = GalacticState.Instance.GetCurrency(faction);
@@ -278,39 +279,141 @@ public partial class FactionBrain
         });
     }
 
+    private readonly Dictionary<Planet, float> stationBuiltAt = new Dictionary<Planet, float>();
+
     private void AddBattleStationOption()
     {
         if (!personality.canBuildBattleStations || IncomePerMinute <= 0f) return;
 
+        int stations = CountOwnStations();
+        int desired = DesiredStations();
+        if (stations >= desired || stations >= faction.maxBattleStations) return;
+        if (Planet.BattleStationCost > IncomePerMinute * personality.stationPaybackMinutes) return;
+
+        Planet best = BestStationSite(out float bestScore);
+        if (best == null) return;
+
+        Planet target = best;
+        float urgency = 1f - 0.5f * stations / Mathf.Max(1f, desired);
+        economyOptions.Add(new EconomyOption
+        {
+            label = $"Battle Station @ {target.planetName}",
+            cost = Planet.BattleStationCost,
+            score = bestScore * personality.defensiveness * urgency,
+            execute = () =>
+            {
+                if (Planet.BattleStationLimitReached(faction)) return false;
+                if (!Build(target, "Battle Station", p => p.hasBattleStation = true, p => !p.hasBattleStation)) return false;
+                stationBuiltAt[target] = now;
+                return true;
+            }
+        });
+    }
+
+    private void AddStationDemolishOption()
+    {
+        int stations = CountOwnStations();
+        if (stations == 0) return;
+
+        Planet worst = null;
+        float worstScore = float.MaxValue;
+        foreach (Planet planet in owned)
+        {
+            if (!planet.hasBattleStation) continue;
+            if (stationBuiltAt.TryGetValue(planet, out float builtAt) && now - builtAt < personality.stationRelocateDelay) continue;
+
+            float score = StationSiteScore(planet, planet);
+            if (score < worstScore)
+            {
+                worstScore = score;
+                worst = planet;
+            }
+        }
+
+        if (worst == null) return;
+
+        Planet candidate = BestStationSite(out float candidateScore);
+        bool obsolete = worstScore < 0.3f;
+        bool betterSiteWaiting = candidate != null && candidateScore >= worstScore + 1f;
+        bool overBudget = stations > DesiredStations();
+        bool atLimit = stations >= faction.maxBattleStations;
+
+        if (!(obsolete && (overBudget || betterSiteWaiting)) && !(atLimit && betterSiteWaiting)) return;
+
+        Planet target = worst;
+        economyOptions.Add(new EconomyOption
+        {
+            label = $"Demolish Station @ {target.planetName}",
+            cost = 0,
+            score = 2.5f,
+            execute = () =>
+            {
+                if (target.owner != faction || !target.DemolishBattleStation()) return false;
+                stationBuiltAt.Remove(target);
+                Log($"Demolished Battle Station at {target.planetName} to relocate");
+                return true;
+            }
+        });
+    }
+
+    private int CountOwnStations()
+    {
+        int count = 0;
+        foreach (Planet planet in owned)
+        {
+            if (planet.hasBattleStation) count++;
+        }
+        return count;
+    }
+
+    private int DesiredStations()
+    {
+        int wanted = Mathf.CeilToInt(owned.Count * personality.battleStationShare * personality.defensiveness);
+        return Mathf.Clamp(wanted, 1, Mathf.Max(1, faction.maxBattleStations));
+    }
+
+    private Planet BestStationSite(out float bestScore)
+    {
         Planet best = null;
-        float bestNeed = 0f;
+        bestScore = 0f;
 
         foreach (Planet planet in owned)
         {
             if (planet.hasBattleStation) continue;
 
-            int depth = HostileDepth(planet);
-            float need = (world.IsChokepoint(planet) && depth <= 1 ? 1f : 0f)
-                + (planet.hasCapitalShipyard && depth <= 2 ? 1f : 0f)
-                + (ThreatAt(planet) > 0f ? 0.5f : 0f);
-
-            if (need > bestNeed)
+            float score = StationSiteScore(planet, null);
+            if (score >= personality.minStationSiteScore && score > bestScore)
             {
-                bestNeed = need;
+                bestScore = score;
                 best = planet;
             }
         }
 
-        if (best == null) return;
+        return best;
+    }
 
-        Planet target = best;
-        economyOptions.Add(new EconomyOption
+    private float StationSiteScore(Planet planet, Planet ignoredStation)
+    {
+        int depth = HostileDepth(planet);
+        float score = depth == 1 ? 1f : depth == 2 ? 0.4f : 0f;
+
+        if (world.IsChokepoint(planet) && depth <= 2) score += 1f;
+        if (planet.hasCapitalShipyard && depth <= 3) score += depth <= 2 ? 1f : 0.5f;
+        if (ThreatAt(planet) > OwnPowerAt(planet)) score += 0.5f;
+
+        float value = world.PlanetValue(planet) - (planet.hasBattleStation ? 1.5f : 0f);
+        score += Mathf.Clamp01((value - 1f) * 0.15f);
+
+        foreach (Planet neighbor in planet.connections)
         {
-            label = $"Battle Station @ {target.planetName}",
-            cost = Planet.BattleStationCost,
-            score = bestNeed * personality.defensiveness * 1.2f,
-            execute = () => Build(target, "Battle Station", p => p.hasBattleStation = true, p => !p.hasBattleStation)
-        });
+            if (neighbor != null && neighbor != ignoredStation && neighbor.owner == faction && neighbor.hasBattleStation)
+            {
+                score *= 0.4f;
+                break;
+            }
+        }
+
+        return score;
     }
 
     private bool Build(Planet planet, string building, Action<Planet> apply, Func<Planet, bool> stillValid)

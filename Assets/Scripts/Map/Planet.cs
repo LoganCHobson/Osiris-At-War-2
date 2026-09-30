@@ -5,6 +5,8 @@ public class Planet : MonoBehaviour
 {
     public const int FleetSlotCount = 3;
 
+    public static readonly List<Planet> All = new List<Planet>();
+
     public string planetName;
     public Faction owner;
     public float fleetSlotRadius = 3f;
@@ -17,6 +19,7 @@ public class Planet : MonoBehaviour
     public const int TaxOfficeIncome = 100;
     public const int CapitalShipyardCost = 1000;
     public const int BattleStationCost = 2000;
+    public const int BattleStationRefund = BattleStationCost / 10;
 
     public bool canBuildCapitalShipyard = true;
     public bool hasTaxOffice;
@@ -35,9 +38,43 @@ public class Planet : MonoBehaviour
     private static readonly int ColorID = Shader.PropertyToID("_Color");
     private MaterialPropertyBlock ringProperties;
 
+    private void OnEnable()
+    {
+        All.Add(this);
+    }
+
+    private void OnDisable()
+    {
+        All.Remove(this);
+    }
+
     private void Start()
     {
         UpdateOwnershipVisual();
+    }
+
+    public static int CountBattleStations(Faction faction)
+    {
+        int count = 0;
+        foreach (Planet planet in All)
+        {
+            if (planet.hasBattleStation && planet.owner == faction) count++;
+        }
+        return count;
+    }
+
+    public static bool BattleStationLimitReached(Faction faction)
+    {
+        return faction == null || CountBattleStations(faction) >= faction.maxBattleStations;
+    }
+
+    public bool DemolishBattleStation()
+    {
+        if (!hasBattleStation) return false;
+
+        hasBattleStation = false;
+        GalacticState.Instance?.AddCurrency(owner, BattleStationRefund);
+        return true;
     }
 
     private void OnValidate()

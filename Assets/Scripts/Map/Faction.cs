@@ -16,6 +16,9 @@ public class Faction : ScriptableObject
     public GameObject projectilePrefab;
     public Material shipMaterial;
 
+    [Header("Structures")]
+    [Min(0)] public int maxBattleStations = 50;
+
     [TextArea]
     public string description;
 

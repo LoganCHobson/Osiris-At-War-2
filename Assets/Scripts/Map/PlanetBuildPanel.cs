@@ -16,6 +16,7 @@ public class PlanetBuildPanel : MonoBehaviour
     public Button taxOfficeButton;
     public Button capitalShipyardButton;
     public Button battleStationButton;
+    public Button demolishBattleStationButton;
 
     [Header("Ship Construction")]
     public Transform shipButtonContainer;
@@ -29,6 +30,7 @@ public class PlanetBuildPanel : MonoBehaviour
     private TMP_Text taxOfficeLabel;
     private TMP_Text capitalShipyardLabel;
     private TMP_Text battleStationLabel;
+    private TMP_Text demolishBattleStationLabel;
 
     private Planet currentPlanet;
     private int lastQueueCount = -1;
@@ -46,6 +48,7 @@ public class PlanetBuildPanel : MonoBehaviour
         taxOfficeLabel = taxOfficeButton != null ? taxOfficeButton.GetComponentInChildren<TMP_Text>() : null;
         capitalShipyardLabel = capitalShipyardButton != null ? capitalShipyardButton.GetComponentInChildren<TMP_Text>() : null;
         battleStationLabel = battleStationButton != null ? battleStationButton.GetComponentInChildren<TMP_Text>() : null;
+        demolishBattleStationLabel = demolishBattleStationButton != null ? demolishBattleStationButton.GetComponentInChildren<TMP_Text>() : null;
     }
 
     private void Update()
@@ -136,13 +139,25 @@ public class PlanetBuildPanel : MonoBehaviour
                 : $"Build Capital Shipyard (${Planet.CapitalShipyardCost})";
         }
 
+        bool stationLimitReached = canBuild && currentPlanet.owner != null && Planet.BattleStationLimitReached(currentPlanet.owner);
         if (battleStationButton != null)
         {
-            battleStationButton.interactable = canBuild && !currentPlanet.hasBattleStation && currency >= Planet.BattleStationCost;
+            battleStationButton.interactable = canBuild && !currentPlanet.hasBattleStation && !stationLimitReached && currency >= Planet.BattleStationCost;
         }
         if (battleStationLabel != null)
         {
-            battleStationLabel.text = known && currentPlanet.hasBattleStation ? "Battle Station (built)" : $"Build Battle Station (${Planet.BattleStationCost})";
+            battleStationLabel.text = known && currentPlanet.hasBattleStation ? "Battle Station (built)"
+                : stationLimitReached ? $"Station Limit ({currentPlanet.owner.maxBattleStations})"
+                : $"Build Battle Station (${Planet.BattleStationCost})";
+        }
+
+        if (demolishBattleStationButton != null)
+        {
+            demolishBattleStationButton.interactable = canBuild && currentPlanet.hasBattleStation;
+        }
+        if (demolishBattleStationLabel != null)
+        {
+            demolishBattleStationLabel.text = $"Demolish Station (+${Planet.BattleStationRefund})";
         }
 
         bool shipyardReady = canBuild && currentPlanet.hasCapitalShipyard;
@@ -171,8 +186,16 @@ public class PlanetBuildPanel : MonoBehaviour
 
     public void BuildBattleStation()
     {
+        if (currentPlanet == null || currentPlanet.hasBattleStation) return;
+        if (currentPlanet.owner != null && Planet.BattleStationLimitReached(currentPlanet.owner)) return;
         if (!TrySpend(Planet.BattleStationCost)) return;
         currentPlanet.hasBattleStation = true;
+    }
+
+    public void DemolishBattleStation()
+    {
+        if (!CanBuildHere() || !currentPlanet.hasBattleStation) return;
+        currentPlanet.DemolishBattleStation();
     }
 
     private bool TrySpend(int amount)

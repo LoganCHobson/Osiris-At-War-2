@@ -42,6 +42,12 @@ public class AIPersonality : ScriptableObject
     public float saveUpWindow = 45f;
     public float counterWeight = 0.5f;
 
+    [Header("Battle Stations")]
+    [Range(0f, 1f)] public float battleStationShare = 0.2f;
+    public float minStationSiteScore = 1.2f;
+    public float stationPaybackMinutes = 10f;
+    public float stationRelocateDelay = 180f;
+
     [Header("Battle")]
     public float pressAdvantageRatio = 1.25f;
     public float fallBackRatio = 0.7f;
