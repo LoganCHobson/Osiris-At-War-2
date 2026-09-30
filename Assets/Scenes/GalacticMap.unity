@@ -1698,7 +1698,7 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: owner
       value: 
-      objectReference: {fileID: 11400000, guid: 3abca19e0bae48d79acbf4ffba0e65b9, type: 2}
+      objectReference: {fileID: 11400000, guid: 5e19f2026b1f44468191065423398376, type: 2}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: planetName
       value: Mustafar Minor
@@ -14914,7 +14914,7 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: owner
       value: 
-      objectReference: {fileID: 11400000, guid: 8862c06a9ce5483ba31c7f842dc4e6b2, type: 2}
+      objectReference: {fileID: 11400000, guid: c604a5a639a54f4b992a31a977a1e46a, type: 2}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: planetName
       value: Naboo Outpost
@@ -15915,12 +15915,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BattleContext
   hasPendingBattle: 0
-  attackerFleetName: 
   attackerFaction: {fileID: 0}
+  attackerFleetNames: []
+  attackerTokens: []
   attackerRoster: []
   hasDefender: 0
-  defenderFleetName: 
   defenderFaction: {fileID: 0}
+  defenderFleetNames: []
+  defenderTokens: []
   defenderRoster: []
   destinationPlanetName: 
   defenderHasShipyard: 0
@@ -15929,6 +15931,12 @@ MonoBehaviour:
   defenderBattleStationSurvived: 1
   attackerStartPower: 0
   defenderStartPower: 0
+  attackerStartRoster: []
+  defenderStartRoster: []
+  attackerLost: 0
+  defenderLost: 0
+  attackerRetreated: 0
+  defenderRetreated: 0
 --- !u!1001 &982417749
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -22045,8 +22053,6 @@ MonoBehaviour:
   capitalShipyardButton: {fileID: 1159310466}
   battleStationButton: {fileID: 174654111}
   demolishBattleStationButton: {fileID: 8800000000000009004}
-  buildableShips:
-  - {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
   shipButtonContainer: {fileID: 361768880}
   shipButtonPrefab: {fileID: 1000002, guid: 07d6ed0089eb413283fa4e2e3989efca, type: 3}
   queueListContainer: {fileID: 1942770382}
@@ -26572,7 +26578,7 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: owner
       value: 
-      objectReference: {fileID: 11400000, guid: 8862c06a9ce5483ba31c7f842dc4e6b2, type: 2}
+      objectReference: {fileID: 11400000, guid: c604a5a639a54f4b992a31a977a1e46a, type: 2}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: planetName
       value: Bespin Outpost
@@ -26976,7 +26982,7 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: owner
       value: 
-      objectReference: {fileID: 11400000, guid: 8862c06a9ce5483ba31c7f842dc4e6b2, type: 2}
+      objectReference: {fileID: 11400000, guid: 5e19f2026b1f44468191065423398376, type: 2}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: planetName
       value: Geonosis Outpost
@@ -32210,7 +32216,7 @@ PrefabInstance:
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: owner
       value: 
-      objectReference: {fileID: 11400000, guid: 3abca19e0bae48d79acbf4ffba0e65b9, type: 2}
+      objectReference: {fileID: 11400000, guid: 5e19f2026b1f44468191065423398376, type: 2}
     - target: {fileID: 6768616798481818217, guid: 78043eec782b41d48975adbd07015c89, type: 3}
       propertyPath: planetName
       value: Hoth Nadir
@@ -34871,6 +34877,44 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!222 &8800000000000009002
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8800000000000009000}
+  m_CullTransparentMesh: 1
+--- !u!114 &8800000000000009003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8800000000000009000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
+  m_Type: 1
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
 --- !u!114 &8800000000000009004
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -34927,44 +34971,6 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
---- !u!114 &8800000000000009003
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8800000000000009000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
-  m_PreserveAspect: 0
-  m_FillCenter: 1
-  m_FillMethod: 4
-  m_FillAmount: 1
-  m_FillClockwise: 1
-  m_FillOrigin: 0
-  m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
---- !u!222 &8800000000000009002
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8800000000000009000}
-  m_CullTransparentMesh: 1
 --- !u!1 &8800000000000009005
 GameObject:
   m_ObjectHideFlags: 0
@@ -35002,6 +35008,14 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!222 &8800000000000009007
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8800000000000009005}
+  m_CullTransparentMesh: 1
 --- !u!114 &8800000000000009008
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -35023,8 +35037,6 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_text: Demolish Station
-
-'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -35033,8 +35045,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4281479730
-  m_fontColor: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
+    rgba: 4294967295
+  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -35051,15 +35063,15 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 24
-  m_fontSizeBase: 24
+  m_fontSize: 36
+  m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 0
-  m_HorizontalAlignment: 2
-  m_VerticalAlignment: 512
+  m_HorizontalAlignment: 1
+  m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
   m_characterHorizontalScale: 1
@@ -35096,14 +35108,6 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
---- !u!222 &8800000000000009007
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8800000000000009005}
-  m_CullTransparentMesh: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

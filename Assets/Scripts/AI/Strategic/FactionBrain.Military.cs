@@ -40,7 +40,18 @@ public partial class FactionBrain
     private readonly List<GalacticFleet> idle = new List<GalacticFleet>();
     private readonly List<string> expiredKeys = new List<string>();
 
-    private float ShipPower => BuildShip != null ? BuildShip.combatPower : Strength.DefaultShipPower;
+    private float ShipPower
+    {
+        get
+        {
+            float best = 0f;
+            foreach (Ship ship in faction.roster)
+            {
+                if (ship != null && ship.fleetRole == FleetRole.Line) best = Mathf.Max(best, ship.combatPower);
+            }
+            return best > 0f ? best : Strength.DefaultShipPower;
+        }
+    }
 
     private void UpdateCampaigns()
     {
@@ -93,10 +104,14 @@ public partial class FactionBrain
             }
         }
 
-        while (campaigns.Count < personality.maxCampaigns && !CampaignsSuspended)
+        float surplus = Mathf.Max(0f, TotalPower - RequiredPower) / Mathf.Max(1f, ShipPower * personality.strikeMinShips);
+        float startThreshold = personality.campaignStartThreshold / (1f + surplus);
+        int campaignLimit = personality.maxCampaigns + (surplus >= 3f ? 1 : 0);
+
+        while (campaigns.Count < campaignLimit && !CampaignsSuspended)
         {
             Faction candidate = BestUntargetedFaction(out float candidateScore);
-            if (candidate == null || candidateScore < personality.campaignStartThreshold) break;
+            if (candidate == null || candidateScore < startThreshold) break;
 
             StartCampaign(candidate);
         }

@@ -31,7 +31,7 @@ public class ShipGuard : MonoBehaviour
         List<SpaceUnit> escorts = new List<SpaceUnit>();
         foreach (SpaceUnit guard in guards)
         {
-            if (guard != null && guard.gameObject != ward.gameObject) escorts.Add(guard);
+            if (guard != null && guard.IsMobile && guard.gameObject != ward.gameObject) escorts.Add(guard);
         }
         if (escorts.Count == 0) return;
 
@@ -150,6 +150,8 @@ public class ShipGuard : MonoBehaviour
 
     private static bool IsAttacking(UnitHealthManager attacker, UnitHealthManager victim)
     {
+        if (attacker.TryGetComponent(out Squadron squadron) && squadron.Engaging && squadron.CurrentTarget == victim) return true;
+
         HardpointManager attackerHardpoints = attacker.GetComponent<HardpointManager>();
         if (attackerHardpoints == null) return false;
 

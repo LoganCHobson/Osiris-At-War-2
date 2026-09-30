@@ -34,6 +34,16 @@ public class TurretController : MonoBehaviour
     private float timeOutOfLOS = 0f;
     public float maxTimeWithoutLOS = 3f;
 
+    public enum TargetFilter { Any, CapitalShipsOnly, FightersOnly }
+
+    [Header("Role")]
+    public TargetFilter targetFilter = TargetFilter.Any;
+    public float fighterAccuracyMultiplier = 3f;
+    public float fighterDamageMultiplier = 1f;
+    public bool preferCapitalShips = true;
+    public bool leadFighters;
+    public float shotLifetimeRangeMultiplier = 1.5f;
+
     [Header("Performance")]
     public float targetSearchInterval = 0.25f;
     public float lineOfSightInterval = 0.2f;
@@ -94,6 +104,24 @@ public class TurretController : MonoBehaviour
     private UnitHealthManager targetShip;
     private HardpointManager targetShipHardpoints;
     private HardpointHealth targetHardpoint;
+    private Fighter targetFighter;
+
+    public bool Accepts(Transform candidate)
+    {
+        if (candidate == null) return false;
+        if (targetFilter == TargetFilter.Any) return true;
+
+        UnitHealthManager ship = candidate.GetComponentInParent<UnitHealthManager>();
+        return ship != null && AcceptsShip(ship.gameObject);
+    }
+
+    private bool AcceptsShip(GameObject ship)
+    {
+        if (targetFilter == TargetFilter.Any) return true;
+
+        bool isSquadron = ship.TryGetComponent(out Squadron _);
+        return targetFilter == TargetFilter.FightersOnly ? isSquadron : !isSquadron;
+    }
 
     void ValidateTarget()
     {
@@ -105,9 +133,10 @@ public class TurretController : MonoBehaviour
             targetShip = target.GetComponentInParent<UnitHealthManager>();
             targetShipHardpoints = targetShip != null ? targetShip.GetComponent<HardpointManager>() : null;
             targetHardpoint = target.GetComponentInParent<HardpointHealth>();
+            targetFighter = target.GetComponent<Fighter>();
         }
 
-        if (targetShip != null && targetShip.IsDead)
+        if ((targetShip != null && targetShip.IsDead) || (targetShip != null && !AcceptsShip(targetShip.gameObject)))
         {
             target = null;
             return;
@@ -123,23 +152,37 @@ public class TurretController : MonoBehaviour
     {
         int count = Physics.OverlapSphereNonAlloc(transform.position, range, overlapBuffer, targetLayer);
 
-        float closestDistanceSqr = Mathf.Infinity;
-        HardpointManager closestManager = null;
+        float closestShipSqr = Mathf.Infinity;
+        float closestSquadronSqr = Mathf.Infinity;
+        HardpointManager closestShip = null;
+        HardpointManager closestSquadron = null;
 
         for (int i = 0; i < count; i++)
         {
             Transform potentialTarget = overlapBuffer[i].transform;
-            float distanceSqr = (potentialTarget.position - transform.position).sqrMagnitude;
-            if (distanceSqr >= closestDistanceSqr) continue;
+            if (!potentialTarget.root.TryGetComponent(out HardpointManager manager) || !AcceptsShip(manager.gameObject)) continue;
 
-            if (potentialTarget.root.TryGetComponent(out HardpointManager manager))
+            float distanceSqr = (potentialTarget.position - transform.position).sqrMagnitude;
+            if (manager.TryGetComponent(out Squadron _))
             {
-                closestDistanceSqr = distanceSqr;
-                closestManager = manager;
+                if (distanceSqr < closestSquadronSqr)
+                {
+                    closestSquadronSqr = distanceSqr;
+                    closestSquadron = manager;
+                }
+            }
+            else if (distanceSqr < closestShipSqr)
+            {
+                closestShipSqr = distanceSqr;
+                closestShip = manager;
             }
         }
 
-        target = closestManager != null ? closestManager.GetRandomHardpoint() : null;
+        HardpointManager chosen;
+        if (preferCapitalShips && targetFilter == TargetFilter.Any && closestShip != null) chosen = closestShip;
+        else chosen = closestShipSqr <= closestSquadronSqr ? closestShip : closestSquadron;
+
+        target = chosen != null ? chosen.GetRandomHardpoint() : null;
     }
     void Traverse()
     {
@@ -193,7 +236,14 @@ public class TurretController : MonoBehaviour
     {
         if (target == null) return;
 
-        Vector3 direction = (target.position - firingPoint.position).normalized;
+        Vector3 aimPoint = target.position;
+        if (leadFighters && targetFighter != null && target == validatedTarget)
+        {
+            float travel = Vector3.Distance(firingPoint.position, aimPoint) / Mathf.Max(1f, projectileSpeed);
+            aimPoint += targetFighter.Velocity * travel;
+        }
+
+        Vector3 direction = (aimPoint - firingPoint.position).normalized;
         float accuracyMultiplier = GetAccuracyMultiplier(target);
         Vector3 inaccuracyOffset = Random.insideUnitSphere * accuracyMultiplier;
         Vector3 finalDirection = (direction + inaccuracyOffset).normalized;
@@ -206,8 +256,9 @@ public class TurretController : MonoBehaviour
         if (temp == null) return;
 
         Laser laser = temp.GetComponent<Laser>();
-        laser.damage = damage;
+        laser.damage = targetFighter != null && target == validatedTarget ? damage * fighterDamageMultiplier : damage;
         laser.layer = targetLayer;
+        laser.timeOut = Mathf.Max(0.5f, range * shotLifetimeRangeMultiplier / Mathf.Max(1f, projectileSpeed));
         laser.SetSourcePool(pool);
         laser.Launch(temp.transform.forward * laser.speed + finalDirection * projectileSpeed);
     }
@@ -238,7 +289,7 @@ public class TurretController : MonoBehaviour
             case ShipType.Corvette:
                 return baseAccuracy * 1.5f; 
             case ShipType.Fighter:
-                return baseAccuracy * 3f + rangeFalloff;
+                return baseAccuracy * fighterAccuracyMultiplier + rangeFalloff * Mathf.Min(1f, fighterAccuracyMultiplier / 3f);
             default:
                 return baseAccuracy;
         }

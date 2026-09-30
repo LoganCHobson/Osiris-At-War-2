@@ -186857,6 +186857,12 @@ MonoBehaviour:
   projectilePrefab: {fileID: 9062178426813273101, guid: e8ccb87e282fd7f459d64b69aa39cadf, type: 3}
   damage: 2
   maxTimeWithoutLOS: 1
+  targetFilter: 0
+  fighterAccuracyMultiplier: 6
+  fighterDamageMultiplier: 0.35
+  preferCapitalShips: 1
+  leadFighters: 0
+  shotLifetimeRangeMultiplier: 1.5
 --- !u!114 &7131148162251498535
 MonoBehaviour:
   m_ObjectHideFlags: 0

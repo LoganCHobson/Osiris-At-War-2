@@ -19,6 +19,7 @@ namespace SolarStudios
         private NavMeshAgent agent;
 
         public List<Vector3> destinations = new List<Vector3>();
+        public bool airborne;
         public float tiltMultiplier;
         public int maxTilt;
         public GameObject gfx;
@@ -144,7 +145,7 @@ namespace SolarStudios
         {
             if (!hasActiveDestination || activeDestination != destinations[0])
             {
-                if (!priorityMove && detourPoints == 0 && routeChecks < MaxRouteChecks)
+                if (!airborne && !priorityMove && detourPoints == 0 && routeChecks < MaxRouteChecks)
                 {
                     PlanAroundParkedShips();
                     if (destinations.Count == 0) return;
@@ -153,7 +154,7 @@ namespace SolarStudios
                 IssueDestination(destinations[0]);
             }
 
-            if (priorityMove && Time.time >= nextYieldCheck)
+            if (priorityMove && !airborne && Time.time >= nextYieldCheck)
             {
                 nextYieldCheck = Time.time + yieldCheckInterval;
                 ClearPathAhead();
@@ -243,13 +244,10 @@ namespace SolarStudios
             List<PlayerUnitMoveState> obstacles = new List<PlayerUnitMoveState>();
             foreach (PlayerUnitMoveState other in All)
             {
-                if (other == this || other.ownAgent == null || !other.ownAgent.enabled || other.IsDead) continue;
+                if (other == this || other.airborne || other.ownAgent == null || !other.ownAgent.enabled || other.IsDead) continue;
                 if (ignoredObstacle != null && other.ownAgent.transform.IsChildOf(ignoredObstacle)) continue;
-                if (!other.IsParked)
-                {
-                    if (orderGroup != 0 && other.orderGroup == orderGroup) continue;
-                    if (Vector3.Dot(other.TravelDirection, heading) > sameDirectionThreshold) continue;
-                }
+                if (orderGroup != 0 && other.orderGroup == orderGroup) continue;
+                if (!other.IsParked && Vector3.Dot(other.TravelDirection, heading) > sameDirectionThreshold) continue;
                 if (Flat(other.Position - start).magnitude < BlockRadius(other, selfRadius)) continue;
                 obstacles.Add(other);
             }
@@ -381,7 +379,7 @@ namespace SolarStudios
 
             foreach (PlayerUnitMoveState other in All)
             {
-                if (other == this || other.ownAgent == null || !other.IsParked || other.IsDead) continue;
+                if (other == this || other.airborne || other.ownAgent == null || !other.IsParked || other.IsDead) continue;
                 if (other.ownAgent.gameObject.layer != layer || !other.ownAgent.isOnNavMesh) continue;
 
                 Vector3 offset = Flat(other.ownAgent.transform.position - position);

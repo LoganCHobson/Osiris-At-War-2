@@ -189,12 +189,19 @@ public class AIDebugOverlay : MonoBehaviour
         if (brain.enemyComposition.Count > 0)
         {
             builder.AppendLine("<b>Enemy composition seen</b>");
-            foreach (KeyValuePair<ShipType, float> entry in brain.enemyComposition)
+            foreach (KeyValuePair<FleetRole, float> entry in brain.enemyComposition)
             {
                 builder.AppendLine($"  {entry.Key}: {entry.Value:0}");
             }
             builder.AppendLine();
         }
+
+        builder.AppendLine("<b>Desired composition</b>");
+        foreach (KeyValuePair<FleetRole, float> entry in brain.DesiredComposition())
+        {
+            builder.AppendLine($"  {entry.Key}: {entry.Value:P0}");
+        }
+        builder.AppendLine();
 
         builder.AppendLine($"<b>Fleet orders</b>  (required power {brain.RequiredPower:0})");
         foreach (FactionBrain.FleetOrder order in brain.orders.Values)

@@ -58,7 +58,7 @@ public partial class FactionBrain
     public readonly List<GalacticFleet> myFleets = new List<GalacticFleet>();
     public readonly Dictionary<Planet, float> threat = new Dictionary<Planet, float>();
     public readonly Dictionary<Planet, int> hostileDepth = new Dictionary<Planet, int>();
-    public readonly Dictionary<ShipType, float> enemyComposition = new Dictionary<ShipType, float>();
+    public readonly Dictionary<FleetRole, float> enemyComposition = new Dictionary<FleetRole, float>();
 
     public float nextThinkAt;
     public float TotalPower { get; private set; }
@@ -252,9 +252,8 @@ public partial class FactionBrain
         {
             if (ship == null) continue;
 
-            ShipType type = TypeOf(ship);
-            enemyComposition.TryGetValue(type, out float seen);
-            enemyComposition[type] = seen + ship.combatPower;
+            enemyComposition.TryGetValue(ship.fleetRole, out float seen);
+            enemyComposition[ship.fleetRole] = seen + ship.combatPower;
         }
     }
 
@@ -345,10 +344,10 @@ public partial class FactionBrain
             }
 
             float intelDecay = Mathf.Pow(0.5f, elapsed / Mathf.Max(1f, personality.intelMemory));
-            List<ShipType> types = new List<ShipType>(enemyComposition.Keys);
-            foreach (ShipType type in types)
+            List<FleetRole> roles = new List<FleetRole>(enemyComposition.Keys);
+            foreach (FleetRole role in roles)
             {
-                enemyComposition[type] *= intelDecay;
+                enemyComposition[role] *= intelDecay;
             }
 
             foreach (KeyValuePair<Faction, float> entry in borderPresence)

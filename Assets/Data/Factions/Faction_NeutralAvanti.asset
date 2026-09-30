@@ -18,6 +18,11 @@ MonoBehaviour:
   isNeutral: 1
   roster:
   - {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
+  - {fileID: 106, guid: d1f0a3b27c5e4f6a9b8c7d6e5f4a3b21, type: 3}
+  - {fileID: 3100000000000000001, guid: 1a7c3e5b9d2f4a6c8e0b2d4f6a8c0e12, type: 3}
+  - {fileID: 3100000000000000001, guid: 2b8d4f6a0c3e4b7d9f1a3c5e7b9d1f23, type: 3}
+  - {fileID: 106, guid: 5e1a7c9d3f6b4e0a2c4e6a8c0e2a4c56, type: 3}
+  - {fileID: 106, guid: 6f2b8d0e4a7c4f1b3d5f7b9d1f3b5d67, type: 3}
   buildTimeMultiplier: 0.125
   projectilePrefab: {fileID: 9062178426813273101, guid: c35cd167db47fd049b45319467d5858c, type: 3}
   shipMaterial: {fileID: 2100000, guid: f08f8a8e202ab3b40a94f7444c93f08d, type: 2}

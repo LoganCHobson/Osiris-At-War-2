@@ -92,6 +92,17 @@ public class PlayerSpaceManager : MonoBehaviour
                     TargetSelection(hit);
                 }
             }
+            else if (TrySquadronIcon(ray, out hit, out bool hostileSquadron))
+            {
+                if (!hostileSquadron)
+                {
+                    PlayerSelection(hit);
+                }
+                else if (selectedUnits.Count > 0)
+                {
+                    TargetSelection(hit);
+                }
+            }
             else if (Physics.Raycast(ray, out hit, Mathf.Infinity, enemyUnitLayer))
             {
                 if (selectedUnits.Count > 0)
@@ -134,6 +145,27 @@ public class PlayerSpaceManager : MonoBehaviour
         return bestDistance < float.MaxValue;
     }
 
+    private bool TrySquadronIcon(Ray ray, out RaycastHit best, out bool hostile)
+    {
+        best = default;
+        hostile = false;
+        float bestDistance = float.MaxValue;
+
+        foreach (RaycastHit candidate in Physics.RaycastAll(ray, Mathf.Infinity, uiLayer))
+        {
+            if (candidate.distance >= bestDistance) continue;
+
+            Squadron squadron = candidate.collider.GetComponentInParent<Squadron>();
+            if (squadron == null || squadron.Health == null || squadron.Health.IsDead) continue;
+
+            best = candidate;
+            bestDistance = candidate.distance;
+            hostile = (enemyUnitLayer.value & (1 << squadron.gameObject.layer)) != 0;
+        }
+
+        return bestDistance < float.MaxValue;
+    }
+
     public void BeginCommand(CommandMode mode)
     {
         if (PlayerRetreating) mode = CommandMode.None;
@@ -171,7 +203,8 @@ public class PlayerSpaceManager : MonoBehaviour
 
         if (Mode == CommandMode.Guard)
         {
-            if (Physics.Raycast(ray, out hit, Mathf.Infinity, friendlyUnitLayer))
+            bool squadronIcon = TrySquadronIcon(ray, out hit, out bool hostileIcon) && !hostileIcon;
+            if (squadronIcon || Physics.Raycast(ray, out hit, Mathf.Infinity, friendlyUnitLayer))
             {
                 UnitHealthManager ward = hit.collider.GetComponentInParent<UnitHealthManager>();
                 if (ward != null && !ward.IsDead)
@@ -215,7 +248,7 @@ public class PlayerSpaceManager : MonoBehaviour
 
             ShipGuard.Cancel(unit);
             unit.GetComponent<HardpointManager>().AssignTarget(aimPoint);
-            attackers.Add(unit);
+            if (unit.IsMobile) attackers.Add(unit);
         }
 
         if (attackers.Count == 0) return;
@@ -250,6 +283,8 @@ public class PlayerSpaceManager : MonoBehaviour
 
     private static void BeginMoving(SpaceUnit unit)
     {
+        if (!unit.IsMobile) return;
+
         if ((Object)unit.stateMachine.currentState != unit.moveState)
         {
             unit.stateMachine.SetState(unit.moveState);
@@ -290,22 +325,24 @@ public class PlayerSpaceManager : MonoBehaviour
     private void PlayerLocation(RaycastHit hit, bool priority = false)
     {
         PruneSelection();
-        if (selectedUnits.Count == 0) return;
+        List<SpaceUnit> movers = selectedUnits.FindAll(unit => unit.IsMobile);
+        if (movers.Count == 0) return;
 
         bool queue = Input.GetKey(KeyCode.LeftShift);
 
         List<Vector3> origins = new List<Vector3>();
-        foreach (SpaceUnit unit in selectedUnits)
+        foreach (SpaceUnit unit in movers)
         {
             origins.Add(queue ? unit.moveState.LastQueuedPosition : unit.transform.position);
         }
 
-        FleetFormation.Slot[] slots = FleetFormation.Move(selectedUnits, origins, hit.point);
+        FleetFormation.Slot[] slots = FleetFormation.Move(movers, origins, hit.point);
         int group = SolarStudios.PlayerUnitMoveState.NextOrderGroup();
-        for (int i = 0; i < selectedUnits.Count; i++)
+        for (int i = 0; i < movers.Count; i++)
         {
-            SpaceUnit unit = selectedUnits[i];
+            SpaceUnit unit = movers[i];
             ShipGuard.Cancel(unit);
+            if (unit.TryGetComponent(out Squadron squadron)) squadron.ClearTarget();
             if (!queue)
             {
                 unit.moveState.ClearDestinations();

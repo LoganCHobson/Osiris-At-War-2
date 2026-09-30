@@ -16,7 +16,8 @@ public class HardpointManager : MonoBehaviour
         {
             foreach (HardpointHealth health in hardpoints)
             {
-                health.gameObject.GetComponentInChildren<Canvas>().worldCamera = Camera.main;
+                Canvas canvas = health.gameObject.GetComponentInChildren<Canvas>(true);
+                if (canvas != null) canvas.worldCamera = Camera.main;
             }
         }
     }
@@ -51,10 +52,14 @@ public class HardpointManager : MonoBehaviour
     {
         if (target == null) return;
 
-        Debug.Log("Target Assigned: " + target.gameObject.name);
+        if (TryGetComponent(out Squadron squadron))
+        {
+            squadron.AssignTarget(target);
+        }
+
         foreach (HardpointHealth health in hardpoints)
         {
-            if(health.gameObject.TryGetComponent(out TurretController turret))
+            if(health.gameObject.TryGetComponent(out TurretController turret) && turret.Accepts(target))
             {
                 turret.target = target;
             }
@@ -83,7 +88,10 @@ public class HardpointManager : MonoBehaviour
 
     public void ToggleHighlight(bool value)
     {
-        unitHealthManager.healthSlider.gameObject.SetActive(value);
+        if (unitHealthManager != null && unitHealthManager.healthSlider != null)
+        {
+            unitHealthManager.healthSlider.gameObject.SetActive(value);
+        }
         foreach (HardpointHealth hardpointHealth in hardpoints)
         {
             hardpointHealth.ToggleVisual(value);

@@ -22,7 +22,7 @@ public class HardpointHealth : MonoBehaviour, IPointerEnterHandler, IPointerExit
     private Color red = new Color(1f, 0f, 0f); // Red
     private void Start()
     {
-        healthVisual.color = green;
+        if (healthVisual != null) healthVisual.color = green;
         currentHealth = maxHealth;
         healthManager = GetComponentInParent<UnitHealthManager>();
     }
@@ -68,6 +68,8 @@ public class HardpointHealth : MonoBehaviour, IPointerEnterHandler, IPointerExit
 
     public void ToggleVisual(bool value)
     {
+        if (healthVisual == null) return;
+
         if(healthVisual.enabled != value)
         {
             healthVisual.enabled = value;
@@ -77,7 +79,7 @@ public class HardpointHealth : MonoBehaviour, IPointerEnterHandler, IPointerExit
 
     public void OnPointerEnter(PointerEventData eventData)
     {
-        if(gameObject.layer == 8)
+        if(healthVisual != null && gameObject.layer == 8)
         {
             healthVisual.rectTransform.sizeDelta = new Vector2(15, 15);
         }
@@ -85,7 +87,7 @@ public class HardpointHealth : MonoBehaviour, IPointerEnterHandler, IPointerExit
 
     public void OnPointerExit(PointerEventData eventData)
     {
-        if (gameObject.layer == 8)
+        if (healthVisual != null && gameObject.layer == 8)
         {
             healthVisual.rectTransform.sizeDelta = new Vector2(10, 10);
         }

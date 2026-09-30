@@ -19,6 +19,7 @@ public class PlacementManager : MonoBehaviour
     private Renderer[] hologramRenderers;
     private MaterialPropertyBlock hologramProperties;
     private int shownValidity = -1;
+    private Ship previewShip;
 
     private void Awake()
     {
@@ -42,7 +43,7 @@ public class PlacementManager : MonoBehaviour
         EndPreview();
 
         if (ship == null || ship.prefab == null) return false;
-        if (!CanDeploy()) return false;
+        if (!CanDeploy(ship)) return false;
         if (!TryGetPlacementPoint(screenPosition, out Vector3 point)) return false;
 
         GameObject spawned = Instantiate(ship.prefab, point, Quaternion.identity);
@@ -60,6 +61,7 @@ public class PlacementManager : MonoBehaviour
         hologram = BuildHologram(ship.prefab);
         hologramRenderers = hologram.GetComponentsInChildren<Renderer>(true);
         shownValidity = -1;
+        previewShip = ship;
     }
 
     public void UpdatePreview(Vector2 screenPosition)
@@ -75,7 +77,7 @@ public class PlacementManager : MonoBehaviour
 
         hologram.transform.SetPositionAndRotation(point, Quaternion.identity);
 
-        int validity = CanDeploy() ? 1 : 0;
+        int validity = CanDeploy(previewShip) ? 1 : 0;
         if (validity != shownValidity)
         {
             shownValidity = validity;
@@ -94,10 +96,10 @@ public class PlacementManager : MonoBehaviour
         hologramRenderers = null;
     }
 
-    private static bool CanDeploy()
+    private static bool CanDeploy(Ship ship)
     {
         if (PlayerSpaceManager.PlayerRetreating) return false;
-        return GameManager.Instance == null || GameManager.Instance.CanDeployPlayerShip();
+        return GameManager.Instance == null || GameManager.Instance.CanDeployPlayerShip(ship);
     }
 
     private static bool TryGetPlacementPoint(Vector2 screenPosition, out Vector3 point)

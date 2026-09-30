@@ -40,7 +40,8 @@ public class AIPersonality : ScriptableObject
     public float planetsPerShipyard = 5f;
     public int reserveShips = 2;
     public float saveUpWindow = 45f;
-    public float counterWeight = 0.5f;
+    [Range(0f, 1f)] public float minLineShare = 0.4f;
+    [Range(0f, 1f)] public float maxFighterShare = 0.35f;
 
     [Header("Battle Stations")]
     [Range(0f, 1f)] public float battleStationShare = 0.2f;
@@ -51,6 +52,7 @@ public class AIPersonality : ScriptableObject
     [Header("Battle")]
     public float pressAdvantageRatio = 1.25f;
     public float fallBackRatio = 0.7f;
+    [Range(0f, 1f)] public float patience = 0.1f;
     public float reinforcementDelay = 2.5f;
     public float retreatRatio = 0.35f;
     [Range(0.1f, 1f)] public float defendedRetreatFactor = 0.6f;

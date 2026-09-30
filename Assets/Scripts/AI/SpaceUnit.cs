@@ -25,6 +25,9 @@ public class SpaceUnit : MonoBehaviour
     public ShipType shipType;
 
     public float maxRange;
+
+    public bool IsMobile => moveState != null && stateMachine != null;
+
     void Start()
     {
         GetMaxRange();

@@ -90,35 +90,150 @@ public partial class FactionBrain
 
         if (candidates.Count == 0) return BuildShip;
 
-        float seenTotal = 0f;
-        foreach (float power in enemyComposition.Values)
+        Dictionary<FleetRole, float> desired = DesiredComposition();
+        Dictionary<FleetRole, float> current = OwnComposition(out float ownTotal);
+
+        List<FleetRole> byNeed = new List<FleetRole>(desired.Keys);
+        byNeed.Sort((a, b) => Shortfall(b, desired, current, ownTotal).CompareTo(Shortfall(a, desired, current, ownTotal)));
+
+        foreach (FleetRole role in byNeed)
         {
-            seenTotal += power;
+            Ship pick = BestInRole(candidates, role);
+            if (pick != null) return pick;
         }
 
-        Ship best = null;
-        float bestScore = float.MinValue;
+        return candidates[0];
+    }
 
+    private static float Shortfall(FleetRole role, Dictionary<FleetRole, float> desired, Dictionary<FleetRole, float> current, float ownTotal)
+    {
+        float share = ownTotal > 0f && current.TryGetValue(role, out float power) ? power / ownTotal : 0f;
+        return desired[role] - share;
+    }
+
+    private static Ship BestInRole(List<Ship> candidates, FleetRole role)
+    {
+        Ship best = null;
+        float bestValue = float.MinValue;
         foreach (Ship ship in candidates)
         {
-            float countered = 0f;
-            if (seenTotal > 0f)
-            {
-                foreach (ShipType type in ship.strongAgainst)
-                {
-                    if (enemyComposition.TryGetValue(type, out float power)) countered += power;
-                }
-                countered /= seenTotal;
-            }
+            if (ship.fleetRole != role) continue;
 
-            float score = ship.combatPower / Mathf.Max(1, ship.cost) * (1f + personality.counterWeight * countered);
-            if (score > bestScore)
+            float value = ship.combatPower / Mathf.Max(1, ship.cost);
+            if (value > bestValue)
             {
-                bestScore = score;
+                bestValue = value;
                 best = ship;
             }
         }
         return best;
+    }
+
+    public Dictionary<FleetRole, float> DesiredComposition()
+    {
+        Dictionary<FleetRole, float> mix = new Dictionary<FleetRole, float>
+        {
+            { FleetRole.Line, 0.6f },
+            { FleetRole.Screen, 0.1f },
+            { FleetRole.Carrier, 0.1f },
+            { FleetRole.Fighter, 0.1f },
+            { FleetRole.Interceptor, 0.05f },
+            { FleetRole.Bomber, 0.05f }
+        };
+
+        float seen = 0f;
+        foreach (float power in enemyComposition.Values) seen += power;
+
+        if (seen > 0f)
+        {
+            float strike = (Seen(FleetRole.Fighter) + Seen(FleetRole.Interceptor) + Seen(FleetRole.Bomber)) / seen;
+            float bombers = Seen(FleetRole.Bomber) / seen;
+            float capital = (Seen(FleetRole.Line) + Seen(FleetRole.Carrier)) / seen;
+
+            mix[FleetRole.Screen] += 0.35f * strike + 0.3f * bombers;
+            mix[FleetRole.Interceptor] += 0.25f * strike;
+            mix[FleetRole.Carrier] += 0.15f * capital;
+            mix[FleetRole.Bomber] += 0.2f * capital;
+            mix[FleetRole.Fighter] += 0.1f * capital;
+        }
+
+        Normalize(mix);
+
+        float squadrons = mix[FleetRole.Fighter] + mix[FleetRole.Interceptor] + mix[FleetRole.Bomber];
+        if (squadrons > personality.maxFighterShare && squadrons > 0f)
+        {
+            float scale = personality.maxFighterShare / squadrons;
+            float freed = squadrons - personality.maxFighterShare;
+            mix[FleetRole.Fighter] *= scale;
+            mix[FleetRole.Interceptor] *= scale;
+            mix[FleetRole.Bomber] *= scale;
+            mix[FleetRole.Line] += freed;
+        }
+
+        if (mix[FleetRole.Line] < personality.minLineShare)
+        {
+            float others = 1f - mix[FleetRole.Line];
+            float scale = others > 0f ? (1f - personality.minLineShare) / others : 0f;
+            List<FleetRole> roles = new List<FleetRole>(mix.Keys);
+            foreach (FleetRole role in roles)
+            {
+                if (role != FleetRole.Line) mix[role] *= scale;
+            }
+            mix[FleetRole.Line] = personality.minLineShare;
+        }
+
+        return mix;
+    }
+
+    private float Seen(FleetRole role)
+    {
+        return enemyComposition.TryGetValue(role, out float power) ? power : 0f;
+    }
+
+    private static void Normalize(Dictionary<FleetRole, float> mix)
+    {
+        float total = 0f;
+        foreach (float share in mix.Values) total += share;
+        if (total <= 0f) return;
+
+        List<FleetRole> roles = new List<FleetRole>(mix.Keys);
+        foreach (FleetRole role in roles)
+        {
+            mix[role] /= total;
+        }
+    }
+
+    private Dictionary<FleetRole, float> OwnComposition(out float total)
+    {
+        Dictionary<FleetRole, float> composition = new Dictionary<FleetRole, float>();
+        total = 0f;
+
+        foreach (GalacticFleet fleet in myFleets)
+        {
+            foreach (Ship ship in fleet.roster)
+            {
+                AddPower(composition, ship, ref total);
+            }
+        }
+
+        foreach (Planet planet in owned)
+        {
+            foreach (ShipBuildOrder order in planet.shipBuildQueue)
+            {
+                AddPower(composition, order.ship, ref total);
+            }
+        }
+
+        return composition;
+    }
+
+    private static void AddPower(Dictionary<FleetRole, float> composition, Ship ship, ref float total)
+    {
+        if (ship == null) return;
+
+        composition.TryGetValue(ship.fleetRole, out float power);
+        composition[ship.fleetRole] = power + ship.combatPower;
+        total += ship.combatPower;
     }
 
     private int CountTaxOffices()
@@ -156,7 +271,7 @@ public partial class FactionBrain
         if (capacity == 0) return;
 
         float reserve = ShipPower * personality.reserveShips * personality.aggression;
-        float deficit = RequiredPower + reserve - (TotalPower + queuedPower);
+        float deficit = BuildTarget() + reserve - (TotalPower + queuedPower);
         bool nearCap = GalacticState.Instance.GetCurrency(faction) > GalacticState.Instance.currencyCap * 0.6f;
 
         int wanted = deficit > 0f ? Mathf.CeilToInt(deficit / ShipPower) : (nearCap ? 1 : 0);
@@ -173,6 +288,18 @@ public partial class FactionBrain
                 execute = QueueShip
             });
         }
+    }
+
+    private float BuildTarget()
+    {
+        float rival = TotalThreat;
+        foreach (Faction other in targetScores.Keys)
+        {
+            rival = Mathf.Max(rival, EstimatedFactionPower(other));
+        }
+
+        float ceiling = rival * personality.attackPowerMargin + ShipPower * personality.strikeMinShips;
+        return Mathf.Min(RequiredPower, ceiling);
     }
 
     private bool QueueShip()
@@ -196,7 +323,20 @@ public partial class FactionBrain
 
         if (best == null) return false;
 
-        best.shipBuildQueue.Add(new ShipBuildOrder { ship = BuildShip, remainingTime = faction.BuildTime(BuildShip) });
+        Ship ship = ChooseShip();
+        if (ship == null) ship = BuildShip;
+
+        int difference = ship.cost - BuildShip.cost;
+        if (difference > 0 && !GalacticState.Instance.TrySpend(faction, difference))
+        {
+            ship = BuildShip;
+        }
+        else if (difference < 0)
+        {
+            GalacticState.Instance.AddCurrency(faction, -difference);
+        }
+
+        best.shipBuildQueue.Add(new ShipBuildOrder { ship = ship, remainingTime = faction.BuildTime(ship) });
         return true;
     }
 

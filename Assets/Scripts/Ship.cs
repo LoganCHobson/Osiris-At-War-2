@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+public enum FleetRole { Line, Screen, Carrier, Fighter, Interceptor, Bomber }
+
 [System.Serializable]
 public class Ship : MonoBehaviour
 {
@@ -12,7 +14,8 @@ public class Ship : MonoBehaviour
     public int cost;
     public float buildTime = 20f;
     public float combatPower = 100f;
-    public List<ShipType> strongAgainst = new List<ShipType>();
+    [Min(0)] public int populationCost = 2;
+    public FleetRole fleetRole = FleetRole.Line;
 
     private Sprite cachedIconSprite;
 
