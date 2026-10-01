@@ -748,7 +748,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SolarStudios.ObjectPool
   prefab: {fileID: 9062178426813273101, guid: e8ccb87e282fd7f459d64b69aa39cadf, type: 3}
-  poolSize: 1000
+  poolSize: 2000
+  canGrow: 1
   objectPool: []
   onSpawn:
     m_PersistentCalls:
@@ -1862,7 +1863,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SolarStudios.ObjectPool
   prefab: {fileID: 9062178426813273101, guid: c35cd167db47fd049b45319467d5858c, type: 3}
-  poolSize: 1000
+  poolSize: 2000
+  canGrow: 1
   objectPool: []
   onSpawn:
     m_PersistentCalls:

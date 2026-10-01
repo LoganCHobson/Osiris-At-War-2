@@ -16,16 +16,22 @@ MonoBehaviour:
   color: {r: 0.0786757, g: 0.13073961, b: 0.9811321, a: 1}
   isPlayerFaction: 1
   isNeutral: 0
+  personality: {fileID: 0}
   roster:
-  - {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
-  - {fileID: 106, guid: d1f0a3b27c5e4f6a9b8c7d6e5f4a3b21, type: 3}
-  - {fileID: 3100000000000000001, guid: 1a7c3e5b9d2f4a6c8e0b2d4f6a8c0e12, type: 3}
-  - {fileID: 3100000000000000001, guid: 2b8d4f6a0c3e4b7d9f1a3c5e7b9d1f23, type: 3}
-  - {fileID: 106, guid: 5e1a7c9d3f6b4e0a2c4e6a8c0e2a4c56, type: 3}
-  - {fileID: 106, guid: 6f2b8d0e4a7c4f1b3d5f7b9d1f3b5d67, type: 3}
+  - {fileID: 4070770581223776680, guid: ab16c94c71b2a0d4987493779bd2f394, type: 3}
+  - {fileID: 3733638079725394797, guid: 765e36141e917804e96d21afae077d09, type: 3}
+  - {fileID: 4140597807176112194, guid: b62a886a3c08bf3469e2e42f79d9c9bd, type: 3}
+  - {fileID: 8977808692944948520, guid: 915daa59460939942be7070acc0dde6c, type: 3}
+  - {fileID: 8477653126113182015, guid: cfde1b32d06cdc545a99450197ed282f, type: 3}
+  - {fileID: 6785728524989157621, guid: 365ed2d8a327ee949a03650d78709968, type: 3}
+  - {fileID: 4122393281200905895, guid: 3b8c427f2d80f4844a2bdc2073d69673, type: 3}
+  - {fileID: 2687120357630453375, guid: a9d1642d563f88a45858c48142775faa, type: 3}
   buildTimeMultiplier: 1
   projectilePrefab: {fileID: 9062178426813273101, guid: e8ccb87e282fd7f459d64b69aa39cadf, type: 3}
   shipMaterial: {fileID: 2100000, guid: e80ac5bd71fb46c4b8edf423929223ec, type: 2}
+  maxBattleStations: 50
+  capitalShipyardPrefab: {fileID: 8716381926612168526, guid: 74f9109af68f774488335dc22271c338, type: 3}
+  battleStationPrefab: {fileID: 4661567290556253336, guid: 57fdbb30655657c428918b2bf1d3060a, type: 3}
   description: Human interlopers who arrived in Osiris mid-conquest and refused to
     look away. Disgusted by Avanti slaving and feudal savagery, they intend to break
     every warlord and take the galaxy for its people.

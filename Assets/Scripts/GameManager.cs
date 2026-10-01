@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.SceneManagement;
 using UnityEngine.Serialization;
 
@@ -20,6 +21,8 @@ public class GameManager : MonoBehaviour
     public GameObject battleStationPrefab;
     public Vector3 battleStationLocalOffset = new Vector3(100f, 0f, -120f);
     public Vector3 shipyardLocalOffset = new Vector3(-100f, 0f, -260f);
+    public float defenseLineClearance = 60f;
+    public float defenseSideClearance = 25f;
 
     [Header("Allegiance")]
     public int playerLayer = 7;
@@ -30,7 +33,7 @@ public class GameManager : MonoBehaviour
     public Fleet fleet;
 
     [Header("Battle Rules")]
-    public int populationCap = 10;
+    public int populationCap = 30;
     public float battleEndDelay = 3f;
 
     public bool PlayerIsAttacker { get; private set; } = true;
@@ -84,12 +87,12 @@ public class GameManager : MonoBehaviour
 
         if (context.defenderHasShipyard)
         {
-            SpawnPlanetDefense(shipyardDefenderPrefab, shipyardLocalOffset, isShipyardBonus: true, isBattleStation: false);
+            SpawnPlanetDefense(DefensePrefab(context.defenderFaction, shipyard: true), shipyardLocalOffset, isShipyardBonus: true, isBattleStation: false);
         }
 
         if (context.defenderHasBattleStation)
         {
-            SpawnPlanetDefense(battleStationPrefab, battleStationLocalOffset, isShipyardBonus: false, isBattleStation: true);
+            SpawnPlanetDefense(DefensePrefab(context.defenderFaction, shipyard: false), battleStationLocalOffset, isShipyardBonus: false, isBattleStation: true);
         }
     }
 
@@ -270,19 +273,43 @@ public class GameManager : MonoBehaviour
         return population;
     }
 
+    private static float DefenseRadius(GameObject prefab)
+    {
+        float scale = prefab.transform.localScale.x;
+        if (prefab.TryGetComponent(out NavMeshObstacle obstacle))
+        {
+            return Mathf.Max(obstacle.size.x, obstacle.size.z) * 0.5f * scale;
+        }
+        return 30f;
+    }
+
+    private GameObject DefensePrefab(Faction faction, bool shipyard)
+    {
+        GameObject own = faction == null ? null : shipyard ? faction.capitalShipyardPrefab : faction.battleStationPrefab;
+        if (own != null) return own;
+        return shipyard ? shipyardDefenderPrefab : battleStationPrefab;
+    }
+
     private void SpawnPlanetDefense(GameObject prefab, Vector3 localOffset, bool isShipyardBonus, bool isBattleStation)
     {
         if (prefab == null)
         {
-            Debug.LogWarning("Planet has a defense building but no matching prefab is assigned on GameManager - skipping its battle spawn.");
+            Debug.LogWarning("Planet has a defense building but no prefab is assigned on its Faction or on GameManager - skipping its battle spawn.");
             return;
         }
 
         Vector3 basePosition = defenderShipSpawnPoint != null ? defenderShipSpawnPoint.position : Vector3.zero;
         Quaternion rotation = defenderShipSpawnPoint != null ? defenderShipSpawnPoint.rotation : Quaternion.identity;
-        Vector3 offset = rotation * localOffset;
 
-        GameObject spawned = Instantiate(prefab, basePosition + offset, rotation);
+        float radius = DefenseRadius(prefab);
+        Vector3 local = localOffset;
+        local.z = Mathf.Min(local.z, -(radius + defenseLineClearance));
+        if (Mathf.Abs(local.x) < radius + defenseSideClearance)
+        {
+            local.x = (isBattleStation ? 1f : -1f) * (radius + defenseSideClearance);
+        }
+
+        GameObject spawned = Instantiate(prefab, basePosition + rotation * local, rotation);
         UnitHealthManager health = spawned.GetComponent<UnitHealthManager>();
         health?.ConfigureSpecial(isShipyardBonus, isBattleStation);
 

@@ -184,16 +184,29 @@ public class TurretController : MonoBehaviour
 
         target = chosen != null ? chosen.GetRandomHardpoint() : null;
     }
+    private bool restCaptured;
+    private Quaternion baseRest;
+    private Quaternion barrelRest;
+
     void Traverse()
     {
-        Vector3 targetDirection = target.position - turretBase.position;
+        if (!restCaptured)
+        {
+            baseRest = turretBase.localRotation;
+            barrelRest = turretBarrel.localRotation;
+            restCaptured = true;
+        }
+
+        Transform mount = turretBase.parent;
+        Quaternion mountFrame = (mount != null ? mount.rotation : Quaternion.identity) * baseRest;
+        Vector3 targetDirection = Quaternion.Inverse(mountFrame) * (target.position - turretBase.position);
 
 
         Vector3 targetDirectionFlat = new Vector3(targetDirection.x, 0, targetDirection.z);
         if (targetDirectionFlat.sqrMagnitude > 0.01f)
         {
-            Quaternion targetAzimuthRotation = Quaternion.LookRotation(targetDirectionFlat);
-            turretBase.rotation = Quaternion.Slerp(turretBase.rotation, targetAzimuthRotation, rotationSpeed * Time.deltaTime);
+            Quaternion targetAzimuthRotation = baseRest * Quaternion.LookRotation(targetDirectionFlat);
+            turretBase.localRotation = Quaternion.Slerp(turretBase.localRotation, targetAzimuthRotation, rotationSpeed * Time.deltaTime);
         }
 
 
@@ -202,8 +215,8 @@ public class TurretController : MonoBehaviour
         targetElevationAngle = Mathf.Clamp(targetElevationAngle, minElevationAngle, maxElevationAngle);
 
 
-        Quaternion targetElevationRotation = Quaternion.Euler(targetElevationAngle, turretBase.eulerAngles.y, 0);
-        turretBarrel.rotation = Quaternion.Slerp(turretBarrel.rotation, targetElevationRotation, elevationSpeed * Time.deltaTime);
+        Quaternion targetElevationRotation = barrelRest * Quaternion.Euler(targetElevationAngle, 0, 0);
+        turretBarrel.localRotation = Quaternion.Slerp(turretBarrel.localRotation, targetElevationRotation, elevationSpeed * Time.deltaTime);
     }
 
     void Shoot()
@@ -222,15 +235,26 @@ public class TurretController : MonoBehaviour
         }
     }
 
+    private static readonly RaycastHit[] losBuffer = new RaycastHit[16];
+
     bool HasLineOfSight(Transform firingPoint)
     {
         Vector3 direction = (target.position - firingPoint.position).normalized;
-        RaycastHit hit;
-        if (Physics.Raycast(firingPoint.position, direction, out hit, range))
+        int count = Physics.RaycastNonAlloc(firingPoint.position, direction, losBuffer, range);
+        System.Array.Sort(losBuffer, 0, count, LosDistance.Instance);
+        for (int i = 0; i < count; i++)
         {
+            RaycastHit hit = losBuffer[i];
+            if (hit.transform.root == transform.root && hit.collider.GetComponentInParent<HardpointHealth>() != null) continue;
             return hit.transform == target || ((1 << hit.transform.gameObject.layer) & targetLayer) != 0;
         }
         return false;
+    }
+
+    private class LosDistance : IComparer<RaycastHit>
+    {
+        public static readonly LosDistance Instance = new LosDistance();
+        public int Compare(RaycastHit a, RaycastHit b) => a.distance.CompareTo(b.distance);
     }
     void FireProjectile(Transform firingPoint)
     {

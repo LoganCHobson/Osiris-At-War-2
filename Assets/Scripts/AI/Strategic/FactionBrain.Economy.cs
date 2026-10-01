@@ -276,6 +276,7 @@ public partial class FactionBrain
 
         int wanted = deficit > 0f ? Mathf.CeilToInt(deficit / ShipPower) : (nearCap ? 1 : 0);
         wanted = Mathf.Min(wanted, capacity);
+        wanted = Mathf.Min(wanted, Manpower.Free(faction) / Mathf.Max(1, BuildShip.populationCost));
 
         for (int i = 0; i < wanted; i++)
         {
@@ -324,7 +325,8 @@ public partial class FactionBrain
         if (best == null) return false;
 
         Ship ship = ChooseShip();
-        if (ship == null) ship = BuildShip;
+        if (ship == null || !Manpower.CanAfford(faction, ship)) ship = BuildShip;
+        if (!Manpower.CanAfford(faction, ship)) return false;
 
         int difference = ship.cost - BuildShip.cost;
         if (difference > 0 && !GalacticState.Instance.TrySpend(faction, difference))

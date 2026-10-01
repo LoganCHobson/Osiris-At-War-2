@@ -106,7 +106,9 @@ public class PlanetBuildPanel : MonoBehaviour
             int currency = currentPlanet.owner != null && GalacticState.Instance != null
                 ? GalacticState.Instance.GetCurrency(currentPlanet.owner)
                 : 0;
-            currencyText.text = $"${currency}";
+            currencyText.text = currentPlanet.owner != null
+                ? $"${currency}   Manpower {Manpower.Used(currentPlanet.owner)}/{Manpower.Cap(currentPlanet.owner)}"
+                : $"${currency}";
         }
     }
 
@@ -161,13 +163,14 @@ public class PlanetBuildPanel : MonoBehaviour
         }
 
         bool shipyardReady = canBuild && currentPlanet.hasCapitalShipyard;
+        int freeManpower = debugBuildOnAnyPlanet ? int.MaxValue : Manpower.Free(currentPlanet.owner);
         for (int i = 0; i < spawnedShipButtons.Count && i < shownShips.Count; i++)
         {
             Ship ship = shownShips[i];
             Button button = spawnedShipButtons[i].GetComponent<Button>();
             if (button == null || ship == null) continue;
 
-            button.interactable = shipyardReady && currency >= ship.cost;
+            button.interactable = shipyardReady && currency >= ship.cost && ship.populationCost <= freeManpower;
         }
     }
 
@@ -210,6 +213,7 @@ public class PlanetBuildPanel : MonoBehaviour
     private void QueueShip(Ship ship)
     {
         if (ship == null || !CanBuildHere() || !currentPlanet.hasCapitalShipyard) return;
+        if (!debugBuildOnAnyPlanet && !Manpower.CanAfford(currentPlanet.owner, ship)) return;
         if (!TrySpend(ship.cost)) return;
 
         currentPlanet.shipBuildQueue.Add(new ShipBuildOrder { ship = ship, remainingTime = BuildTime(ship) });
@@ -242,11 +246,35 @@ public class PlanetBuildPanel : MonoBehaviour
             TMP_Text label = button.GetComponentInChildren<TMP_Text>();
             if (label != null)
             {
-                label.text = $"{ship.name} (${ship.cost}, {BuildTime(ship):0}s)";
+                label.text = $"{ship.name} (${ship.cost}, {ship.populationCost} MP, {BuildTime(ship):0}s)";
             }
+            AddShipIcon(button, label, ship.IconSprite);
 
             spawnedShipButtons.Add(button.gameObject);
             shownShips.Add(ship);
+        }
+    }
+
+    private static void AddShipIcon(Button button, TMP_Text label, Sprite sprite)
+    {
+        if (sprite == null) return;
+
+        const float size = 54f;
+        var iconObject = new GameObject("Icon", typeof(RectTransform), typeof(Image));
+        var rect = (RectTransform)iconObject.transform;
+        rect.SetParent(button.transform, false);
+        rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0f, 0.5f);
+        rect.sizeDelta = new Vector2(size, size);
+        rect.anchoredPosition = new Vector2(4f, 0f);
+
+        Image image = iconObject.GetComponent<Image>();
+        image.sprite = sprite;
+        image.preserveAspect = true;
+        image.raycastTarget = false;
+
+        if (label != null)
+        {
+            label.rectTransform.offsetMin += new Vector2(size + 8f, 0f);
         }
     }
 

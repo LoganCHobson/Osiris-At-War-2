@@ -18,6 +18,8 @@ public class Faction : ScriptableObject
 
     [Header("Structures")]
     [Min(0)] public int maxBattleStations = 50;
+    public GameObject capitalShipyardPrefab;
+    public GameObject battleStationPrefab;
 
     [TextArea]
     public string description;

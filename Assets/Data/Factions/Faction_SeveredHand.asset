@@ -16,15 +16,21 @@ MonoBehaviour:
   color: {r: 0.25, g: 0.75, b: 0.35, a: 1}
   isPlayerFaction: 0
   isNeutral: 0
+  personality: {fileID: 0}
   roster:
-  - {fileID: 3100000000000000001, guid: e22e6567dc62a66458ec1a50863a1c08, type: 3}
-  - {fileID: 106, guid: d1f0a3b27c5e4f6a9b8c7d6e5f4a3b21, type: 3}
-  - {fileID: 3100000000000000001, guid: 1a7c3e5b9d2f4a6c8e0b2d4f6a8c0e12, type: 3}
-  - {fileID: 3100000000000000001, guid: 2b8d4f6a0c3e4b7d9f1a3c5e7b9d1f23, type: 3}
-  - {fileID: 106, guid: 5e1a7c9d3f6b4e0a2c4e6a8c0e2a4c56, type: 3}
-  - {fileID: 106, guid: 6f2b8d0e4a7c4f1b3d5f7b9d1f3b5d67, type: 3}
+  - {fileID: 3466308565701566188, guid: 652e2a7fce363e14986a4506735efd46, type: 3}
+  - {fileID: 7452550017821143588, guid: d8430ca257d3e864f819d53d159e6037, type: 3}
+  - {fileID: 6281069376581182748, guid: 4b0786f13a1b9364fa10cbc527dd0480, type: 3}
+  - {fileID: 6660783180543366288, guid: 08b1fe6dc40b2794599d2b31e8fc2f8a, type: 3}
+  - {fileID: 7175962660239937593, guid: 4290234659f2030449d9b3304f224b13, type: 3}
+  - {fileID: 4819380882359283254, guid: 744e24da998d73e439911d53ed002a68, type: 3}
+  - {fileID: 85880824319540216, guid: b8f67d3bb95b21842bae2a4fbaf6d67f, type: 3}
+  - {fileID: 4099940172879622571, guid: 6e6c08869ce4a8448aca6a8b0c829a87, type: 3}
   buildTimeMultiplier: 0.125
   projectilePrefab: {fileID: 9062178426813273101, guid: c35cd167db47fd049b45319467d5858c, type: 3}
   shipMaterial: {fileID: 2100000, guid: f08f8a8e202ab3b40a94f7444c93f08d, type: 2}
+  maxBattleStations: 50
+  capitalShipyardPrefab: {fileID: 7886890329125972385, guid: c2a1b398ef5a43b4a8bdb8d2dcf1d190, type: 3}
+  battleStationPrefab: {fileID: 235726955036474397, guid: 00236b2199d774e4fa4e3ad582a02989, type: 3}
   description: Mutinied Imperial Guard officers running a strict, disciplined military
     junta. The most professional and dangerous of the warlords.
