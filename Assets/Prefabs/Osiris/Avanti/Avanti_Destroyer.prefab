@@ -39,7 +39,7 @@ Transform:
   - {fileID: 1502906923686228992}
   - {fileID: 787020047286811240}
   - {fileID: 932446731960186119}
-  - {fileID: 563289601085135033}
+  - {fileID: 1743246898314849866}
   - {fileID: 3368542301569845972}
   - {fileID: 8709480170175781846}
   - {fileID: 3401629033240927794}
@@ -30561,6 +30561,8 @@ GameObject:
   - component: {fileID: 5007248618078573234}
   - component: {fileID: 4819380882359283254}
   - component: {fileID: 8473375949647466634}
+  - component: {fileID: 8440859711930445133}
+  - component: {fileID: 7753366144289625447}
   m_Layer: 7
   m_Name: Avanti_Destroyer
   m_TagString: Untagged
@@ -30725,18 +30727,7 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-      - m_Target: {fileID: 239539593987502571}
-        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
-        m_MethodName: SetActive
-        m_Mode: 6
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+  destroyDelay: 5
   sourceShip: {fileID: 0}
   isAttackerSide: 0
   isShipyardBonus: 0
@@ -30912,6 +30903,35 @@ MonoBehaviour:
   components:
   - {fileID: 7332633487614041446}
   - {fileID: 1003238727695577905}
+--- !u!114 &8440859711930445133
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6196290951039935178}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf14f1f497a82944aa60748468fda6e3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HullDamage
+  profile: {fileID: 11400000, guid: 60ffb878c176ddf4fa607b86626771bc, type: 2}
+  gfxRoot: {fileID: 622459481820342014}
+--- !u!114 &7753366144289625447
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6196290951039935178}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ef8a81fed878fb45b7330edb758daf1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ShipDestruction
+  onBreakup:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &6318014227426418688
 GameObject:
   m_ObjectHideFlags: 0
@@ -41549,7 +41569,12 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 2453663694087616209}
   m_SourcePrefab: {fileID: 100100000, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
---- !u!1 &563289601085135032 stripped
+--- !u!4 &1743246898314849866 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2296964697691420413, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
+  m_PrefabInstance: {fileID: 563289601085135031}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &8984474546908273483 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 8898680857692750844, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
   m_PrefabInstance: {fileID: 563289601085135031}
@@ -41560,7 +41585,7 @@ SphereCollider:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 563289601085135032}
+  m_GameObject: {fileID: 8984474546908273483}
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -41575,11 +41600,6 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 2.75
   m_Center: {x: 0, y: 0, z: 0}
---- !u!4 &563289601085135033 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 2296964697691420413, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
-  m_PrefabInstance: {fileID: 563289601085135031}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &809259092559823613
 PrefabInstance:
   m_ObjectHideFlags: 0

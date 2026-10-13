@@ -592,6 +592,8 @@ GameObject:
   - component: {fileID: 2208520172596854642}
   - component: {fileID: 8977808692944948520}
   - component: {fileID: 4253517720596934441}
+  - component: {fileID: 1036162242993454803}
+  - component: {fileID: 1929717797534425978}
   m_Layer: 7
   m_Name: Human_Carrier
   m_TagString: Untagged
@@ -756,18 +758,7 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-      - m_Target: {fileID: 1273992270841338656}
-        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
-        m_MethodName: SetActive
-        m_Mode: 6
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+  destroyDelay: 5
   sourceShip: {fileID: 0}
   isAttackerSide: 0
   isShipyardBonus: 0
@@ -943,6 +934,35 @@ MonoBehaviour:
   components:
   - {fileID: 5575744971714700447}
   - {fileID: 1992065971555562887}
+--- !u!114 &1036162242993454803
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1074653739715707092}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf14f1f497a82944aa60748468fda6e3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HullDamage
+  profile: {fileID: 11400000, guid: 60ffb878c176ddf4fa607b86626771bc, type: 2}
+  gfxRoot: {fileID: 8997710417169561246}
+--- !u!114 &1929717797534425978
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1074653739715707092}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ef8a81fed878fb45b7330edb758daf1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ShipDestruction
+  onBreakup:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &1147676986128810677
 GameObject:
   m_ObjectHideFlags: 0
@@ -1167,7 +1187,7 @@ Transform:
   - {fileID: 9103762336933851884}
   - {fileID: 6551325874423421256}
   - {fileID: 4742282838204785018}
-  - {fileID: 1185511991212580185}
+  - {fileID: 1122449531891575717}
   - {fileID: 1920273453907100401}
   - {fileID: 8424998358290930169}
   - {fileID: 920543984990522936}
@@ -27307,7 +27327,7 @@ Transform:
   m_LocalScale: {x: 0.8333332, y: 0.8333331, z: 0.83333313}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1185511991212580186}
+  m_Father: {fileID: 90340672408157741}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &67202064830164483
 MeshFilter:
@@ -54400,7 +54420,7 @@ Transform:
   m_LocalScale: {x: 0.8333332, y: 0.8333331, z: 0.83333313}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1185511991212580186}
+  m_Father: {fileID: 90340672408157741}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &7251991457384219471
 MeshFilter:
@@ -59945,14 +59965,14 @@ PrefabInstance:
       addedObject: {fileID: 3994327417689895236}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
---- !u!4 &1185511991212580185 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 2296964697691420413, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
-  m_PrefabInstance: {fileID: 1185511991212580184}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &1185511991212580186 stripped
+--- !u!4 &90340672408157741 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1239400856308769653, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
+  m_PrefabInstance: {fileID: 1185511991212580184}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &1122449531891575717 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2296964697691420413, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
   m_PrefabInstance: {fileID: 1185511991212580184}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1224259048656667697

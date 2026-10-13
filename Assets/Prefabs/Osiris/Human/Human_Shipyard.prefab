@@ -2678,7 +2678,7 @@ Transform:
   m_LocalScale: {x: 0.83333296, y: 0.8333332, z: 0.8333331}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 6175046728412761681}
+  m_Father: {fileID: 4936245131727760698}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &6245635653966468232
 MeshFilter:
@@ -3144,7 +3144,7 @@ Transform:
   - {fileID: 5565072830480394586}
   - {fileID: 8480628749928914464}
   - {fileID: 2762576344032423085}
-  - {fileID: 6175046728412761680}
+  - {fileID: 5355441250339748018}
   - {fileID: 7480845843563289070}
   - {fileID: 889971326549469197}
   - {fileID: 8132574307743126946}
@@ -4085,7 +4085,7 @@ Transform:
   m_LocalScale: {x: 0.83333296, y: 0.8333332, z: 0.8333331}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 6175046728412761681}
+  m_Father: {fileID: 4936245131727760698}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &6832570041600687284
 MeshFilter:
@@ -5839,6 +5839,8 @@ GameObject:
   - component: {fileID: 4632598468209102126}
   - component: {fileID: 537909737096580826}
   - component: {fileID: 4817658981695815705}
+  - component: {fileID: 6770136234887411795}
+  - component: {fileID: 5302510744783537004}
   m_Layer: 8
   m_Name: Human_Shipyard
   m_TagString: Untagged
@@ -5919,6 +5921,7 @@ MonoBehaviour:
   onDie:
     m_PersistentCalls:
       m_Calls: []
+  destroyDelay: 5
   sourceShip: {fileID: 0}
   isAttackerSide: 0
   isShipyardBonus: 0
@@ -5940,6 +5943,35 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0.0000038146973, y: 2.2345104, z: 0}
   m_TimeToStationary: 0.5
+--- !u!114 &6770136234887411795
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8716381926612168526}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf14f1f497a82944aa60748468fda6e3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HullDamage
+  profile: {fileID: 11400000, guid: 60ffb878c176ddf4fa607b86626771bc, type: 2}
+  gfxRoot: {fileID: 8745681638447267820}
+--- !u!114 &5302510744783537004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8716381926612168526}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ef8a81fed878fb45b7330edb758daf1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ShipDestruction
+  onBreakup:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &8806922192569451115
 GameObject:
   m_ObjectHideFlags: 0
@@ -9520,14 +9552,14 @@ PrefabInstance:
       addedObject: {fileID: 7233256674708763371}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
---- !u!4 &6175046728412761680 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 2296964697691420413, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
-  m_PrefabInstance: {fileID: 6175046728412761679}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &6175046728412761681 stripped
+--- !u!4 &4936245131727760698 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1239400856308769653, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
+  m_PrefabInstance: {fileID: 6175046728412761679}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &5355441250339748018 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2296964697691420413, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
   m_PrefabInstance: {fileID: 6175046728412761679}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &7203623692965868632

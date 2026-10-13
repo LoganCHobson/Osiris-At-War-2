@@ -69,7 +69,7 @@ public class Laser : MonoBehaviour
 
     bool CheckHit(Vector3 from, Vector3 to)
     {
-        if (!Physics.Linecast(from, to, out RaycastHit hit, layer)) return false;
+        if (!Physics.Linecast(from, to, out RaycastHit hit, layer | WreckChunk.BlockingMask)) return false;
 
         if (particle != null)
         {
@@ -77,6 +77,12 @@ public class Laser : MonoBehaviour
         }
 
         Collider hitCollider = hit.collider;
+        if (hitCollider.gameObject.layer == WreckChunk.WreckLayer)
+        {
+            Recycle();
+            return true;
+        }
+
         if (hitCollider.TryGetComponent(out HardpointHealth hp)
             || (hp = hitCollider.GetComponentInChildren<HardpointHealth>()) != null
             || (hp = hitCollider.GetComponentInParent<HardpointHealth>()) != null)

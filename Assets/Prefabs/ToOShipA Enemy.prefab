@@ -29086,6 +29086,8 @@ GameObject:
   - component: {fileID: 936340755433948303}
   - component: {fileID: 7521270433268197202}
   - component: {fileID: 7672111596895754725}
+  - component: {fileID: 7659042093749776409}
+  - component: {fileID: 8699373805867309029}
   m_Layer: 8
   m_Name: ToOShipA Enemy
   m_TagString: Untagged
@@ -29214,22 +29216,41 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-      - m_Target: {fileID: 4546071596152241053}
-        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
-        m_MethodName: SetActive
-        m_Mode: 6
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+  destroyDelay: 5
   sourceShip: {fileID: 0}
   isAttackerSide: 0
   isShipyardBonus: 0
   isBattleStation: 0
+  battleToken: -1
+--- !u!114 &7659042093749776409
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3653413832275497961}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf14f1f497a82944aa60748468fda6e3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HullDamage
+  profile: {fileID: 11400000, guid: 60ffb878c176ddf4fa607b86626771bc, type: 2}
+  gfxRoot: {fileID: 7580877468360252159}
+--- !u!114 &8699373805867309029
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3653413832275497961}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ef8a81fed878fb45b7330edb758daf1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ShipDestruction
+  onBreakup:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &3688827846229628093
 GameObject:
   m_ObjectHideFlags: 0
@@ -29277,9 +29298,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SolarStudios.PlayerUnitMoveState
   destinations: []
+  airborne: 0
   tiltMultiplier: 10
   maxTilt: 10
   gfx: {fileID: 4546071596152241053}
+  arrivalTolerance: 4
+  stuckTime: 2
+  minProgress: 1
+  stuckRadiusMultiplier: 3
+  routeMargin: 6
+  stopShortRadii: 5
+  lineStandoff: 6
+  sameDirectionThreshold: 0.7
+  yieldCheckInterval: 0.25
+  yieldLookAheadRadii: 3
+  yieldMargin: 4
 --- !u!114 &3152814128648670537
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -55686,6 +55719,88 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2296964697691420413, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
   m_PrefabInstance: {fileID: 1852145861562244307}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &4730918265503917291
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 7580877468360252159}
+    m_Modifications:
+    - target: {fileID: 100, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
+      propertyPath: m_Name
+      value: EngineHardpoint
+      objectReference: {fileID: 0}
+    - target: {fileID: 100, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
+      propertyPath: m_Layer
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 101, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 101, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 101, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -44
+      objectReference: {fileID: 0}
+    - target: {fileID: 101, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 101, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 101, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 101, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 103, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
+      propertyPath: thrusterFlames.Array.size
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 103, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
+      propertyPath: 'thrusterFlames.Array.data[0]'
+      value: 
+      objectReference: {fileID: 7785842657944191784}
+    - target: {fileID: 103, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
+      propertyPath: 'thrusterFlames.Array.data[1]'
+      value: 
+      objectReference: {fileID: 6972757059835839223}
+    - target: {fileID: 103, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
+      propertyPath: 'thrusterFlames.Array.data[2]'
+      value: 
+      objectReference: {fileID: 7294625175102654151}
+    - target: {fileID: 103, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
+      propertyPath: 'thrusterFlames.Array.data[3]'
+      value: 
+      objectReference: {fileID: 373911581921377098}
+    - target: {fileID: 103, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
+      propertyPath: 'thrusterFlames.Array.data[4]'
+      value: 
+      objectReference: {fileID: 5047570234373076079}
+    - target: {fileID: 200, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
+      propertyPath: m_Layer
+      value: 8
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
+--- !u!4 &4730918265503917198 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 101, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
+  m_PrefabInstance: {fileID: 4730918265503917291}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &5086603141548740872
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -58555,86 +58670,4 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 2296964697691420413, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
   m_PrefabInstance: {fileID: 9195990507763744924}
-  m_PrefabAsset: {fileID: 0}
---- !u!1001 &4730918265503917291
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 7580877468360252159}
-    m_Modifications:
-    - target: {fileID: 103, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
-      propertyPath: thrusterFlames.Array.size
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 103, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
-      propertyPath: thrusterFlames.Array.data[0]
-      value: 
-      objectReference: {fileID: 7785842657944191784}
-    - target: {fileID: 103, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
-      propertyPath: thrusterFlames.Array.data[1]
-      value: 
-      objectReference: {fileID: 6972757059835839223}
-    - target: {fileID: 103, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
-      propertyPath: thrusterFlames.Array.data[2]
-      value: 
-      objectReference: {fileID: 7294625175102654151}
-    - target: {fileID: 103, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
-      propertyPath: thrusterFlames.Array.data[3]
-      value: 
-      objectReference: {fileID: 373911581921377098}
-    - target: {fileID: 103, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
-      propertyPath: thrusterFlames.Array.data[4]
-      value: 
-      objectReference: {fileID: 5047570234373076079}
-    - target: {fileID: 101, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 101, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 101, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 101, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 101, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 101, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: -44
-      objectReference: {fileID: 0}
-    - target: {fileID: 101, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 100, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
-      propertyPath: m_Name
-      value: EngineHardpoint
-      objectReference: {fileID: 0}
-    - target: {fileID: 100, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
-      propertyPath: m_Layer
-      value: 8
-      objectReference: {fileID: 0}
-    - target: {fileID: 200, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
-      propertyPath: m_Layer
-      value: 8
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
---- !u!4 &4730918265503917198 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 101, guid: 1310c18418004e8ab9ef4f2048434c19, type: 3}
-  m_PrefabInstance: {fileID: 4730918265503917291}
   m_PrefabAsset: {fileID: 0}

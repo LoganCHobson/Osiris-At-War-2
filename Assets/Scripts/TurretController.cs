@@ -57,6 +57,33 @@ public class TurretController : MonoBehaviour
     private Transform typedTarget;
     private ShipType targetType;
 
+    void Awake()
+    {
+        AlignMuzzleFlashes();
+    }
+
+    void AlignMuzzleFlashes()
+    {
+        int assigned = 0;
+        for (int i = 0; i < onFire.GetPersistentEventCount(); i++)
+        {
+            if (!(onFire.GetPersistentTarget(i) is ParticleSystem flash) || !flash.name.Contains("MF")) continue;
+
+            Transform point = assigned < firingPoints.Count ? firingPoints[assigned] : null;
+            if (point != null)
+            {
+                flash.transform.SetParent(point, true);
+                flash.transform.localPosition = Vector3.zero;
+                assigned++;
+            }
+            else
+            {
+                onFire.SetPersistentListenerState(i, UnityEventCallState.Off);
+                flash.gameObject.SetActive(false);
+            }
+        }
+    }
+
     void Update()
     {
         ValidateTarget();

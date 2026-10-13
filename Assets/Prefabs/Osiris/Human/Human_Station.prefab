@@ -756,7 +756,7 @@ Transform:
   - {fileID: 6396912716792928529}
   - {fileID: 2361201102579498417}
   - {fileID: 8271581301622338337}
-  - {fileID: 3301840169107169696}
+  - {fileID: 3616965660573030242}
   - {fileID: 116205578241337787}
   - {fileID: 1453977288537708510}
   - {fileID: 5244175207546059808}
@@ -2211,6 +2211,8 @@ GameObject:
   - component: {fileID: 5846573014846014409}
   - component: {fileID: 7604476923821747430}
   - component: {fileID: 1981038385604530439}
+  - component: {fileID: 2350278413512977349}
+  - component: {fileID: 2210171758214304064}
   m_Layer: 8
   m_Name: Human_Station
   m_TagString: Untagged
@@ -2291,6 +2293,7 @@ MonoBehaviour:
   onDie:
     m_PersistentCalls:
       m_Calls: []
+  destroyDelay: 5
   sourceShip: {fileID: 0}
   isAttackerSide: 0
   isShipyardBonus: 0
@@ -2312,6 +2315,35 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: -0.0000038146973, y: 4.875, z: 0}
   m_TimeToStationary: 0.5
+--- !u!114 &2350278413512977349
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4661567290556253336}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf14f1f497a82944aa60748468fda6e3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HullDamage
+  profile: {fileID: 11400000, guid: 60ffb878c176ddf4fa607b86626771bc, type: 2}
+  gfxRoot: {fileID: 2022655295590204051}
+--- !u!114 &2210171758214304064
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4661567290556253336}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ef8a81fed878fb45b7330edb758daf1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ShipDestruction
+  onBreakup:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &4691855924033000478
 GameObject:
   m_ObjectHideFlags: 0
@@ -3962,7 +3994,7 @@ Transform:
   m_LocalScale: {x: 3.0816748, y: 3.0816743, z: 3.0816743}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 3301840169107169697}
+  m_Father: {fileID: 4386860770456421098}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &1739467643663546798
 MeshFilter:
@@ -5859,7 +5891,7 @@ Transform:
   m_LocalScale: {x: 3.0816748, y: 3.0816743, z: 3.0816743}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 3301840169107169697}
+  m_Father: {fileID: 4386860770456421098}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &6789377189667421220
 MeshFilter:
@@ -8402,12 +8434,12 @@ PrefabInstance:
       addedObject: {fileID: 6061608259475983003}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
---- !u!4 &3301840169107169696 stripped
+--- !u!4 &3616965660573030242 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2296964697691420413, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
   m_PrefabInstance: {fileID: 3301840169107169695}
   m_PrefabAsset: {fileID: 0}
---- !u!4 &3301840169107169697 stripped
+--- !u!4 &4386860770456421098 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1239400856308769653, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
   m_PrefabInstance: {fileID: 3301840169107169695}

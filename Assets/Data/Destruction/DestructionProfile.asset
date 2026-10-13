@@ -1,0 +1,100 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 840e395c353970f4988842ec4f3bb377, type: 3}
+  m_Name: DestructionProfile
+  m_EditorClassIdentifier: Assembly-CSharp::DestructionProfile
+  smallShipSize: 10
+  largeShipSize: 70
+  referenceSize: 27
+  sizeScaleExponent: 0.7
+  smallExplosion: {fileID: 19800014, guid: 5332791ebce075d4a9e56f4581e7fb47, type: 3}
+  mediumExplosion: {fileID: 19800004, guid: b46890100828db6429ff69c322b45893, type: 3}
+  breakupExplosions:
+  - {fileID: 19800006, guid: e0609132424a24844b1d53ad3d704fd9, type: 3}
+  - {fileID: 19800006, guid: a49596ebf788acd4ab1281bffea444b1, type: 3}
+  smallExplosionScale: 2.5
+  mediumExplosionScale: 5
+  breakupExplosionScale: 13
+  explosionLifetime: 6
+  hullFires:
+  - {fileID: 19800002, guid: 002c8e66c11fe4048a8c3a08b7f0fe74, type: 3}
+  - {fileID: 19800000, guid: 5a4723eba1f3efd4e992d78be01cb3f0, type: 3}
+  - {fileID: 19800000, guid: a83e0ffec52c58a47a7af8081a1dab6d, type: 3}
+  breachVent: {fileID: 19800002, guid: 977bc30ff641de44bbf012f86491b775, type: 3}
+  fireScale: 2.5
+  breachVentScale: 4
+  effectsOnSmallShip: 2
+  effectsOnLargeShip: 9
+  firstDamageEffectAt: 0.85
+  secondaryExplosionsBelow: 0.6
+  secondaryExplosionInterval: {x: 7, y: 1.2}
+  scorchedBrightness: 0.5
+  lightsFlickerBelow: 0.4
+  hitMemory: 8
+  dyingDuration: {x: 1.6, y: 3.8}
+  chainInterval: {x: 0.45, y: 0.08}
+  driftSpeedFactor: 0.5
+  shudderStrength: 0.006
+  chainFireChance: 0.3
+  throeIntensity: 1
+  throeAngularAcceleration: 16
+  throeMaxAngularSpeed: 38
+  sinkAcceleration: {x: 0.4, y: 2.5}
+  maxSinkSpeed: 6
+  joltChance: 0.35
+  joltStrength: 14
+  interiorMaterial: {fileID: 2100000, guid: 2214e0559ee6dbf46983415185382525, type: 2}
+  pieceWeightsSmall:
+  - 0.3
+  - 0.5
+  - 0.2
+  - 0
+  pieceWeightsLarge:
+  - 0.15
+  - 0.35
+  - 0.35
+  - 0.15
+  cutTilt: 25
+  largePartFraction: 0.35
+  looseDebrisChance: 0.45
+  plateShards: {x: 3, y: 8}
+  plateShardRadius: {x: 0.04, y: 0.08}
+  separationSpeed: 2.5
+  debrisSpeed: 9
+  chunkSpin: 10
+  debrisSpin: {x: 60, y: 260}
+  wreckLifetime: 12
+  debrisLifetime: {x: 4, y: 7}
+  wreckFadeDuration: 2.5
+  wreckExplosionInterval: {x: 0.6, y: 2.5}
+  persistentWrecks: 1
+  burnDuration: {x: 35, y: 75}
+  wreckFires: {x: 1, y: 3}
+  maxPersistentChunks: 60
+  wreckDrag: 0.08
+  wreckSpinDrag: 0.06
+  residualSpin: 1.5
+  wrecksBlockLasers: 1
+  jostleStrength: 3
+  flashColor: {r: 1, g: 0.7, b: 0.4, a: 1}
+  flashIntensity: 8
+  flashDuration: 0.6
+  flashRange: 2.5
+  breakupShake: 1
+  chainShake: 0.15
+  smallBlastClips:
+  - {fileID: 8300000, guid: 760a7736320ee9243b379c2ac1fbdcc4, type: 3}
+  largeBlastClips:
+  - {fileID: 8300000, guid: 3ea4f4ac39e24ca4991855be02c158fe, type: 3}
+  mixer: {fileID: 0}
+  volume: 0.6
+  audibleRange: 400

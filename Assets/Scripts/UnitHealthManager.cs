@@ -13,6 +13,7 @@ public class UnitHealthManager : MonoBehaviour
     //private List<HardpointHealth> hardpoints = new List<HardpointHealth>();
     private HardpointManager hardpointManager;
     public UnityEvent onDie;
+    public float destroyDelay = 5f;
 
     private bool dead;
     private Camera cam;
@@ -122,7 +123,7 @@ public class UnitHealthManager : MonoBehaviour
                 BattleContext.Instance?.ReportLoss(isAttackerSide, sourceShip, battleToken);
             }
 
-            Destroy(gameObject, 5);
+            if (destroyDelay >= 0f) Destroy(gameObject, destroyDelay);
         }
 
         if(healthSlider != null && healthSlider.gameObject.activeInHierarchy)

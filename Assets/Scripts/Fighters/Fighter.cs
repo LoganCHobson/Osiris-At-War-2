@@ -26,12 +26,18 @@ public class Fighter : MonoBehaviour
     public float breakClimb = 18f;
     public float dogfightOvershoot = 8f;
 
+    [Header("Holding Formation")]
+    public float holdRadius = 14f;
+    public float holdSettleTime = 0.9f;
+    public float holdAnchorSpeed = 2f;
+
     [Header("Death")]
     public ParticleSystem deathEffect;
     public float deathEffectLifetime = 3f;
 
     public bool Alive => gameObject.activeInHierarchy && health != null && health.currentHealth > 0f;
-    public Vector3 Velocity => transform.forward * currentSpeed;
+    public Vector3 Velocity => holding ? holdVelocity : transform.forward * currentSpeed;
+    public bool IsHolding => holding;
 
     private enum Phase { Approach, Break }
 
@@ -50,6 +56,8 @@ public class Fighter : MonoBehaviour
     private bool hasPose;
     private Vector3 worldPosition;
     private Quaternion worldRotation;
+    private bool holding;
+    private Vector3 holdVelocity;
 
     private void Awake()
     {
@@ -94,6 +102,7 @@ public class Fighter : MonoBehaviour
 
         if (squadron.Engaging && WithinLeash())
         {
+            ReleaseHold();
             target = FightPoint();
         }
         else
@@ -101,10 +110,51 @@ public class Fighter : MonoBehaviour
             aim = null;
             prey = null;
             phase = Phase.Approach;
+            if (HoldFormation(dt)) return;
             target = FormationPoint(out throttle);
         }
 
         Steer(target, throttle, dt);
+    }
+
+    private bool HoldFormation(float dt)
+    {
+        Vector3 slot = squadron.transform.TransformPoint(formationOffset);
+        slot += Vector3.up * Mathf.Sin(Time.time * 0.8f + wobbleSeed) * 0.25f;
+        float distance = Vector3.Distance(transform.position, slot);
+
+        bool parked = !squadron.IsMoving && squadron.AnchorSpeed < holdAnchorSpeed;
+        if (!parked || distance > (holding ? holdRadius * 1.5f : holdRadius))
+        {
+            ReleaseHold();
+            return false;
+        }
+
+        if (!holding)
+        {
+            holding = true;
+            holdVelocity = Velocity;
+        }
+
+        transform.position = Vector3.SmoothDamp(transform.position, slot, ref holdVelocity, holdSettleTime, speed, dt);
+        currentSpeed = holdVelocity.magnitude;
+
+        bank = Mathf.Lerp(bank, 0f, dt * 3f);
+        Vector3 heading = Flat(squadron.transform.forward);
+        if (heading.sqrMagnitude < 0.001f) heading = Flat(transform.forward);
+        if (heading.sqrMagnitude > 0.001f)
+        {
+            Quaternion settled = Quaternion.LookRotation(heading.normalized) * Quaternion.Euler(0f, 0f, bank);
+            transform.rotation = Quaternion.Slerp(transform.rotation, settled, 1f - Mathf.Exp(-2.5f * dt));
+        }
+        return true;
+    }
+
+    private void ReleaseHold()
+    {
+        if (!holding) return;
+        holding = false;
+        currentSpeed = Mathf.Max(currentSpeed, speed * 0.35f);
     }
 
     private bool WithinLeash()

@@ -39,9 +39,13 @@ public class Squadron : MonoBehaviour
 
     public bool Engaging => CurrentTarget != null && !IsMoving && !Retreating && !GameManager.CombatOver;
 
+    public float AnchorSpeed { get; private set; }
+
     private Transform orderedAim;
     private UnitHealthManager orderedTarget;
     private float nextThinkAt;
+    private Vector3 lastAnchorPosition;
+    private bool hasAnchorPosition;
 
     private void Awake()
     {
@@ -104,6 +108,8 @@ public class Squadron : MonoBehaviour
 
     private void Update()
     {
+        TrackAnchor();
+
         if (Time.time < nextThinkAt || Health == null || Health.IsDead) return;
         nextThinkAt = Time.time + thinkInterval * Random.Range(0.85f, 1.15f);
 
@@ -121,6 +127,19 @@ public class Squadron : MonoBehaviour
 
         CurrentTarget = target;
         EnemySquadron = target != null ? target.GetComponent<Squadron>() : null;
+    }
+
+    private void TrackAnchor()
+    {
+        float dt = Time.deltaTime;
+        Vector3 position = transform.position;
+        if (hasAnchorPosition && dt > 0f)
+        {
+            float speed = (position - lastAnchorPosition).magnitude / dt;
+            AnchorSpeed = Mathf.Lerp(AnchorSpeed, speed, Mathf.Clamp01(dt * 6f));
+        }
+        lastAnchorPosition = position;
+        hasAnchorPosition = true;
     }
 
     private UnitHealthManager AcquireNearest()

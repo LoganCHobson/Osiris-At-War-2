@@ -21,8 +21,14 @@ public static class EffectPool
 
     public static void Play(string key, ParticleSystem template, Vector3 position, Quaternion rotation, float lifetime)
     {
+        Play(key, template, position, rotation, lifetime, template.transform.localScale);
+    }
+
+    public static void Play(string key, ParticleSystem template, Vector3 position, Quaternion rotation, float lifetime, Vector3 scale)
+    {
         PooledEffect effect = Take(key, template);
         effect.transform.SetPositionAndRotation(position, rotation);
+        effect.transform.localScale = scale;
         effect.gameObject.SetActive(true);
         effect.Begin(lifetime);
     }
@@ -51,6 +57,10 @@ public static class EffectPool
         }
 
         ParticleSystem instance = Object.Instantiate(template);
+        foreach (CFX_AutoDestructShuriken autoDestruct in instance.GetComponentsInChildren<CFX_AutoDestructShuriken>(true))
+        {
+            Object.Destroy(autoDestruct);
+        }
         PooledEffect effect = instance.gameObject.AddComponent<PooledEffect>();
         effect.Initialize(key, instance);
         return effect;

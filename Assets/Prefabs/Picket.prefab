@@ -4853,6 +4853,8 @@ GameObject:
   - component: {fileID: 6987555653774361858}
   - component: {fileID: 3100000000000000001}
   - component: {fileID: 3100000000000000002}
+  - component: {fileID: 8093019672799928207}
+  - component: {fileID: 4784469986581378788}
   m_Layer: 7
   m_Name: Picket
   m_TagString: Untagged
@@ -5017,22 +5019,12 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-      - m_Target: {fileID: 5872163994682467538}
-        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
-        m_MethodName: SetActive
-        m_Mode: 6
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+  destroyDelay: 5
   sourceShip: {fileID: 0}
   isAttackerSide: 0
   isShipyardBonus: 0
   isBattleStation: 0
+  battleToken: -1
 --- !u!114 &3472868453424715958
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5186,8 +5178,6 @@ MonoBehaviour:
   combatPower: 45
   populationCost: 1
   fleetRole: 1
-  strongAgainst:
-  - 6
 --- !u!114 &3100000000000000002
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5205,6 +5195,35 @@ MonoBehaviour:
   components:
   - {fileID: 3472868453424715958}
   - {fileID: 8691677585535979768}
+--- !u!114 &8093019672799928207
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1349032318270045980}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf14f1f497a82944aa60748468fda6e3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HullDamage
+  profile: {fileID: 11400000, guid: 60ffb878c176ddf4fa607b86626771bc, type: 2}
+  gfxRoot: {fileID: 247151758621435846}
+--- !u!114 &4784469986581378788
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1349032318270045980}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ef8a81fed878fb45b7330edb758daf1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ShipDestruction
+  onBreakup:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &1599326917611266086
 GameObject:
   m_ObjectHideFlags: 0
@@ -54479,6 +54498,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   destinations: []
+  airborne: 0
   tiltMultiplier: 10
   maxTilt: 10
   gfx: {fileID: 5872163994682467538}
@@ -54527,8 +54547,8 @@ PrefabInstance:
     m_TransformParent: {fileID: 247151758621435846}
     m_Modifications:
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
-      propertyPath: fighterDamageMultiplier
-      value: 1
+      propertyPath: range
+      value: 85
       objectReference: {fileID: 0}
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: damage
@@ -54539,24 +54559,12 @@ PrefabInstance:
       value: 0.12
       objectReference: {fileID: 0}
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
-      propertyPath: range
-      value: 85
-      objectReference: {fileID: 0}
-    - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
-      propertyPath: projectileSpeed
-      value: 220
+      propertyPath: leadFighters
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: targetFilter
       value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
-      propertyPath: fighterAccuracyMultiplier
-      value: 0.25
-      objectReference: {fileID: 0}
-    - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
-      propertyPath: leadFighters
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: rotationSpeed
@@ -54565,6 +54573,18 @@ PrefabInstance:
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: elevationSpeed
       value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
+      propertyPath: projectileSpeed
+      value: 220
+      objectReference: {fileID: 0}
+    - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
+      propertyPath: fighterDamageMultiplier
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
+      propertyPath: fighterAccuracyMultiplier
+      value: 0.25
       objectReference: {fileID: 0}
     - target: {fileID: 1147748035780323094, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: m_Enabled
@@ -54641,8 +54661,8 @@ PrefabInstance:
     m_TransformParent: {fileID: 247151758621435846}
     m_Modifications:
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
-      propertyPath: fighterDamageMultiplier
-      value: 1
+      propertyPath: range
+      value: 85
       objectReference: {fileID: 0}
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: damage
@@ -54653,24 +54673,12 @@ PrefabInstance:
       value: 0.12
       objectReference: {fileID: 0}
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
-      propertyPath: range
-      value: 85
-      objectReference: {fileID: 0}
-    - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
-      propertyPath: projectileSpeed
-      value: 220
+      propertyPath: leadFighters
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: targetFilter
       value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
-      propertyPath: fighterAccuracyMultiplier
-      value: 0.25
-      objectReference: {fileID: 0}
-    - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
-      propertyPath: leadFighters
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: rotationSpeed
@@ -54679,6 +54687,18 @@ PrefabInstance:
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: elevationSpeed
       value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
+      propertyPath: projectileSpeed
+      value: 220
+      objectReference: {fileID: 0}
+    - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
+      propertyPath: fighterDamageMultiplier
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
+      propertyPath: fighterAccuracyMultiplier
+      value: 0.25
       objectReference: {fileID: 0}
     - target: {fileID: 1147748035780323094, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: m_Enabled
@@ -54755,16 +54775,16 @@ PrefabInstance:
     m_TransformParent: {fileID: 247151758621435846}
     m_Modifications:
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
+      propertyPath: range
+      value: 110
+      objectReference: {fileID: 0}
+    - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: damage
       value: 0.6
       objectReference: {fileID: 0}
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: fireRate
       value: 1.2
-      objectReference: {fileID: 0}
-    - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
-      propertyPath: range
-      value: 110
       objectReference: {fileID: 0}
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: targetFilter
@@ -54845,16 +54865,16 @@ PrefabInstance:
     m_TransformParent: {fileID: 247151758621435846}
     m_Modifications:
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
+      propertyPath: range
+      value: 110
+      objectReference: {fileID: 0}
+    - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: damage
       value: 0.6
       objectReference: {fileID: 0}
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: fireRate
       value: 1.2
-      objectReference: {fileID: 0}
-    - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
-      propertyPath: range
-      value: 110
       objectReference: {fileID: 0}
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: targetFilter

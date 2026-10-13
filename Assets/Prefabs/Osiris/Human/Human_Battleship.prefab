@@ -31,7 +31,7 @@ Transform:
   m_LocalScale: {x: 0.8673621, y: 0.86736196, z: 0.867362}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 6783783565035300050}
+  m_Father: {fileID: 5699283023692203941}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &5652195116635800462
 MeshFilter:
@@ -539,7 +539,7 @@ Transform:
   - {fileID: 7636495711651545567}
   - {fileID: 6126713830571664156}
   - {fileID: 5217991740079848212}
-  - {fileID: 6783783565035300049}
+  - {fileID: 4739090883957068333}
   - {fileID: 195585275857964004}
   - {fileID: 567506414597550129}
   - {fileID: 1754114594432291455}
@@ -21224,7 +21224,7 @@ Transform:
   m_LocalScale: {x: 0.8673621, y: 0.86736196, z: 0.867362}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 6783783565035300050}
+  m_Father: {fileID: 5699283023692203941}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &5273654985904982810
 MeshFilter:
@@ -21300,6 +21300,8 @@ GameObject:
   - component: {fileID: 4304061393509787068}
   - component: {fileID: 4070770581223776680}
   - component: {fileID: 8386855924374495346}
+  - component: {fileID: 5704227801466950402}
+  - component: {fileID: 2480615855637366844}
   m_Layer: 7
   m_Name: Human_Battleship
   m_TagString: Untagged
@@ -21464,18 +21466,7 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-      - m_Target: {fileID: 766816011739045651}
-        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
-        m_MethodName: SetActive
-        m_Mode: 6
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+  destroyDelay: 5
   sourceShip: {fileID: 0}
   isAttackerSide: 0
   isShipyardBonus: 0
@@ -21651,6 +21642,35 @@ MonoBehaviour:
   components:
   - {fileID: 8372209802854766580}
   - {fileID: 1542436404317653818}
+--- !u!114 &5704227801466950402
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2790602224158037671}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf14f1f497a82944aa60748468fda6e3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HullDamage
+  profile: {fileID: 11400000, guid: 60ffb878c176ddf4fa607b86626771bc, type: 2}
+  gfxRoot: {fileID: 8798287796762031455}
+--- !u!114 &2480615855637366844
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2790602224158037671}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ef8a81fed878fb45b7330edb758daf1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ShipDestruction
+  onBreakup:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &2904577123820771728
 GameObject:
   m_ObjectHideFlags: 0
@@ -72742,12 +72762,12 @@ PrefabInstance:
       addedObject: {fileID: 7913817156327262677}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
---- !u!4 &6783783565035300049 stripped
+--- !u!4 &4739090883957068333 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2296964697691420413, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
   m_PrefabInstance: {fileID: 6783783565035300048}
   m_PrefabAsset: {fileID: 0}
---- !u!4 &6783783565035300050 stripped
+--- !u!4 &5699283023692203941 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1239400856308769653, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
   m_PrefabInstance: {fileID: 6783783565035300048}

@@ -103,6 +103,8 @@ GameObject:
   - component: {fileID: 6420647665727333486}
   - component: {fileID: 315429312755613983}
   - component: {fileID: 7373931630243922447}
+  - component: {fileID: 9071039894949405560}
+  - component: {fileID: 2090700214906966493}
   m_Layer: 8
   m_Name: Avanti_Station
   m_TagString: Untagged
@@ -183,6 +185,7 @@ MonoBehaviour:
   onDie:
     m_PersistentCalls:
       m_Calls: []
+  destroyDelay: 5
   sourceShip: {fileID: 0}
   isAttackerSide: 0
   isShipyardBonus: 0
@@ -204,6 +207,35 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: -0.000019073486, y: -0.07849884, z: 16.207104}
   m_TimeToStationary: 0.5
+--- !u!114 &9071039894949405560
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 235726955036474397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf14f1f497a82944aa60748468fda6e3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HullDamage
+  profile: {fileID: 11400000, guid: 60ffb878c176ddf4fa607b86626771bc, type: 2}
+  gfxRoot: {fileID: 2331725134631825453}
+--- !u!114 &2090700214906966493
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 235726955036474397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ef8a81fed878fb45b7330edb758daf1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ShipDestruction
+  onBreakup:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &331125236998479810
 GameObject:
   m_ObjectHideFlags: 0
@@ -1736,7 +1768,7 @@ Transform:
   - {fileID: 2514754921063519881}
   - {fileID: 5486811990334024761}
   - {fileID: 3484392927473129049}
-  - {fileID: 6562140810037616372}
+  - {fileID: 4967784254728611854}
   - {fileID: 2265201641436018069}
   - {fileID: 5428221098045799402}
   - {fileID: 6181881393132007177}
@@ -1784,7 +1816,7 @@ Transform:
   m_LocalScale: {x: 0.8333333, y: 0.8333334, z: 0.8333332}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 6562140810037616373}
+  m_Father: {fileID: 5341925358515764614}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &339734245433965058
 MeshFilter:
@@ -2623,7 +2655,7 @@ Transform:
   m_LocalScale: {x: 0.8333333, y: 0.8333334, z: 0.8333332}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 6562140810037616373}
+  m_Father: {fileID: 5341925358515764614}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &4297878643964496398
 MeshFilter:
@@ -7603,12 +7635,12 @@ PrefabInstance:
       addedObject: {fileID: 4307632870475056864}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
---- !u!4 &6562140810037616372 stripped
+--- !u!4 &4967784254728611854 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2296964697691420413, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
   m_PrefabInstance: {fileID: 6562140810037616371}
   m_PrefabAsset: {fileID: 0}
---- !u!4 &6562140810037616373 stripped
+--- !u!4 &5341925358515764614 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1239400856308769653, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
   m_PrefabInstance: {fileID: 6562140810037616371}

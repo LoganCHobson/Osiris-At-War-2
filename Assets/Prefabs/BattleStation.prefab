@@ -133359,8 +133359,17 @@ MonoBehaviour:
   target: {fileID: 0}
   fireRate: 1
   projectilePrefab: {fileID: 9062178426813273101, guid: e8ccb87e282fd7f459d64b69aa39cadf, type: 3}
+  projectileSpeed: 20
   damage: 2
   maxTimeWithoutLOS: 1
+  targetFilter: 0
+  fighterAccuracyMultiplier: 3
+  fighterDamageMultiplier: 1
+  preferCapitalShips: 1
+  leadFighters: 0
+  shotLifetimeRangeMultiplier: 1.5
+  targetSearchInterval: 0.25
+  lineOfSightInterval: 0.2
 --- !u!114 &8378361997033765526
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -177759,8 +177768,17 @@ MonoBehaviour:
   target: {fileID: 0}
   fireRate: 1
   projectilePrefab: {fileID: 9062178426813273101, guid: e8ccb87e282fd7f459d64b69aa39cadf, type: 3}
+  projectileSpeed: 20
   damage: 2
   maxTimeWithoutLOS: 1
+  targetFilter: 0
+  fighterAccuracyMultiplier: 3
+  fighterDamageMultiplier: 1
+  preferCapitalShips: 1
+  leadFighters: 0
+  shotLifetimeRangeMultiplier: 1.5
+  targetSearchInterval: 0.25
+  lineOfSightInterval: 0.2
 --- !u!114 &7693678799821082440
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -217369,8 +217387,17 @@ MonoBehaviour:
   target: {fileID: 0}
   fireRate: 1
   projectilePrefab: {fileID: 9062178426813273101, guid: e8ccb87e282fd7f459d64b69aa39cadf, type: 3}
+  projectileSpeed: 20
   damage: 2
   maxTimeWithoutLOS: 1
+  targetFilter: 0
+  fighterAccuracyMultiplier: 3
+  fighterDamageMultiplier: 1
+  preferCapitalShips: 1
+  leadFighters: 0
+  shotLifetimeRangeMultiplier: 1.5
+  targetSearchInterval: 0.25
+  lineOfSightInterval: 0.2
 --- !u!114 &6385229038680439706
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -266250,8 +266277,17 @@ MonoBehaviour:
   target: {fileID: 0}
   fireRate: 1
   projectilePrefab: {fileID: 9062178426813273101, guid: e8ccb87e282fd7f459d64b69aa39cadf, type: 3}
+  projectileSpeed: 20
   damage: 2
   maxTimeWithoutLOS: 1
+  targetFilter: 0
+  fighterAccuracyMultiplier: 3
+  fighterDamageMultiplier: 1
+  preferCapitalShips: 1
+  leadFighters: 0
+  shotLifetimeRangeMultiplier: 1.5
+  targetSearchInterval: 0.25
+  lineOfSightInterval: 0.2
 --- !u!114 &6069982403745525949
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -540940,8 +540976,17 @@ MonoBehaviour:
   target: {fileID: 0}
   fireRate: 1
   projectilePrefab: {fileID: 9062178426813273101, guid: e8ccb87e282fd7f459d64b69aa39cadf, type: 3}
+  projectileSpeed: 20
   damage: 2
   maxTimeWithoutLOS: 1
+  targetFilter: 0
+  fighterAccuracyMultiplier: 3
+  fighterDamageMultiplier: 1
+  preferCapitalShips: 1
+  leadFighters: 0
+  shotLifetimeRangeMultiplier: 1.5
+  targetSearchInterval: 0.25
+  lineOfSightInterval: 0.2
 --- !u!114 &3884143055121861620
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -658439,8 +658484,17 @@ MonoBehaviour:
   target: {fileID: 0}
   fireRate: 1
   projectilePrefab: {fileID: 9062178426813273101, guid: e8ccb87e282fd7f459d64b69aa39cadf, type: 3}
+  projectileSpeed: 20
   damage: 2
   maxTimeWithoutLOS: 1
+  targetFilter: 0
+  fighterAccuracyMultiplier: 3
+  fighterDamageMultiplier: 1
+  preferCapitalShips: 1
+  leadFighters: 0
+  shotLifetimeRangeMultiplier: 1.5
+  targetSearchInterval: 0.25
+  lineOfSightInterval: 0.2
 --- !u!114 &1386609390394177881
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -978046,8 +978100,17 @@ MonoBehaviour:
   target: {fileID: 0}
   fireRate: 1
   projectilePrefab: {fileID: 9062178426813273101, guid: e8ccb87e282fd7f459d64b69aa39cadf, type: 3}
+  projectileSpeed: 20
   damage: 2
   maxTimeWithoutLOS: 1
+  targetFilter: 0
+  fighterAccuracyMultiplier: 3
+  fighterDamageMultiplier: 1
+  preferCapitalShips: 1
+  leadFighters: 0
+  shotLifetimeRangeMultiplier: 1.5
+  targetSearchInterval: 0.25
+  lineOfSightInterval: 0.2
 --- !u!114 &1145521638283975507
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1500360,8 +1500423,17 @@ MonoBehaviour:
   target: {fileID: 0}
   fireRate: 1
   projectilePrefab: {fileID: 9062178426813273101, guid: e8ccb87e282fd7f459d64b69aa39cadf, type: 3}
+  projectileSpeed: 20
   damage: 2
   maxTimeWithoutLOS: 1
+  targetFilter: 0
+  fighterAccuracyMultiplier: 3
+  fighterDamageMultiplier: 1
+  preferCapitalShips: 1
+  leadFighters: 0
+  shotLifetimeRangeMultiplier: 1.5
+  targetSearchInterval: 0.25
+  lineOfSightInterval: 0.2
 --- !u!114 &4225342839061225822
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2262825,8 +2262897,17 @@ MonoBehaviour:
   target: {fileID: 0}
   fireRate: 1
   projectilePrefab: {fileID: 9062178426813273101, guid: e8ccb87e282fd7f459d64b69aa39cadf, type: 3}
+  projectileSpeed: 20
   damage: 2
   maxTimeWithoutLOS: 1
+  targetFilter: 0
+  fighterAccuracyMultiplier: 3
+  fighterDamageMultiplier: 1
+  preferCapitalShips: 1
+  leadFighters: 0
+  shotLifetimeRangeMultiplier: 1.5
+  targetSearchInterval: 0.25
+  lineOfSightInterval: 0.2
 --- !u!114 &8943901248492358837
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2406409,8 +2406490,17 @@ MonoBehaviour:
   target: {fileID: 0}
   fireRate: 1
   projectilePrefab: {fileID: 9062178426813273101, guid: e8ccb87e282fd7f459d64b69aa39cadf, type: 3}
+  projectileSpeed: 20
   damage: 2
   maxTimeWithoutLOS: 1
+  targetFilter: 0
+  fighterAccuracyMultiplier: 3
+  fighterDamageMultiplier: 1
+  preferCapitalShips: 1
+  leadFighters: 0
+  shotLifetimeRangeMultiplier: 1.5
+  targetSearchInterval: 0.25
+  lineOfSightInterval: 0.2
 --- !u!114 &2217614412296325488
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2475147,8 +2475237,17 @@ MonoBehaviour:
   target: {fileID: 0}
   fireRate: 1
   projectilePrefab: {fileID: 9062178426813273101, guid: e8ccb87e282fd7f459d64b69aa39cadf, type: 3}
+  projectileSpeed: 20
   damage: 2
   maxTimeWithoutLOS: 1
+  targetFilter: 0
+  fighterAccuracyMultiplier: 3
+  fighterDamageMultiplier: 1
+  preferCapitalShips: 1
+  leadFighters: 0
+  shotLifetimeRangeMultiplier: 1.5
+  targetSearchInterval: 0.25
+  lineOfSightInterval: 0.2
 --- !u!114 &9017602081947736372
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2780406,8 +2780505,17 @@ MonoBehaviour:
   target: {fileID: 0}
   fireRate: 1
   projectilePrefab: {fileID: 9062178426813273101, guid: e8ccb87e282fd7f459d64b69aa39cadf, type: 3}
+  projectileSpeed: 20
   damage: 2
   maxTimeWithoutLOS: 1
+  targetFilter: 0
+  fighterAccuracyMultiplier: 3
+  fighterDamageMultiplier: 1
+  preferCapitalShips: 1
+  leadFighters: 0
+  shotLifetimeRangeMultiplier: 1.5
+  targetSearchInterval: 0.25
+  lineOfSightInterval: 0.2
 --- !u!114 &7527622795309507045
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2824542,8 +2824650,17 @@ MonoBehaviour:
   target: {fileID: 0}
   fireRate: 1
   projectilePrefab: {fileID: 9062178426813273101, guid: e8ccb87e282fd7f459d64b69aa39cadf, type: 3}
+  projectileSpeed: 20
   damage: 2
   maxTimeWithoutLOS: 1
+  targetFilter: 0
+  fighterAccuracyMultiplier: 3
+  fighterDamageMultiplier: 1
+  preferCapitalShips: 1
+  leadFighters: 0
+  shotLifetimeRangeMultiplier: 1.5
+  targetSearchInterval: 0.25
+  lineOfSightInterval: 0.2
 --- !u!114 &57935725534351517
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2864860,8 +2864977,17 @@ MonoBehaviour:
   target: {fileID: 0}
   fireRate: 1
   projectilePrefab: {fileID: 9062178426813273101, guid: e8ccb87e282fd7f459d64b69aa39cadf, type: 3}
+  projectileSpeed: 20
   damage: 2
   maxTimeWithoutLOS: 1
+  targetFilter: 0
+  fighterAccuracyMultiplier: 3
+  fighterDamageMultiplier: 1
+  preferCapitalShips: 1
+  leadFighters: 0
+  shotLifetimeRangeMultiplier: 1.5
+  targetSearchInterval: 0.25
+  lineOfSightInterval: 0.2
 --- !u!114 &6473878245737018404
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2913807,8 +2913933,17 @@ MonoBehaviour:
   target: {fileID: 0}
   fireRate: 1
   projectilePrefab: {fileID: 9062178426813273101, guid: e8ccb87e282fd7f459d64b69aa39cadf, type: 3}
+  projectileSpeed: 20
   damage: 2
   maxTimeWithoutLOS: 1
+  targetFilter: 0
+  fighterAccuracyMultiplier: 3
+  fighterDamageMultiplier: 1
+  preferCapitalShips: 1
+  leadFighters: 0
+  shotLifetimeRangeMultiplier: 1.5
+  targetSearchInterval: 0.25
+  lineOfSightInterval: 0.2
 --- !u!114 &8277773262722818235
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2943275,6 +2943410,8 @@ GameObject:
   - component: {fileID: 5431117680236087750}
   - component: {fileID: 638136214484377786}
   - component: {fileID: -7567967302783665609}
+  - component: {fileID: 3470843498907346497}
+  - component: {fileID: 716666051530652589}
   m_Layer: 8
   m_Name: BattleStation
   m_TagString: Untagged
@@ -2943379,10 +2943516,12 @@ MonoBehaviour:
   onDie:
     m_PersistentCalls:
       m_Calls: []
+  destroyDelay: 5
   sourceShip: {fileID: 0}
   isAttackerSide: 0
   isShipyardBonus: 0
   isBattleStation: 0
+  battleToken: -1
 --- !u!208 &-7567967302783665609
 NavMeshObstacle:
   m_ObjectHideFlags: 0
@@ -2943399,6 +2943538,35 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 0, z: 0}
   m_TimeToStationary: 0.5
+--- !u!114 &3470843498907346497
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7428256618577930067}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf14f1f497a82944aa60748468fda6e3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HullDamage
+  profile: {fileID: 11400000, guid: 60ffb878c176ddf4fa607b86626771bc, type: 2}
+  gfxRoot: {fileID: 0}
+--- !u!114 &716666051530652589
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7428256618577930067}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ef8a81fed878fb45b7330edb758daf1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ShipDestruction
+  onBreakup:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &7434113768339324809
 GameObject:
   m_ObjectHideFlags: 0
@@ -3037531,8 +3037699,17 @@ MonoBehaviour:
   target: {fileID: 0}
   fireRate: 1
   projectilePrefab: {fileID: 9062178426813273101, guid: e8ccb87e282fd7f459d64b69aa39cadf, type: 3}
+  projectileSpeed: 20
   damage: 2
   maxTimeWithoutLOS: 1
+  targetFilter: 0
+  fighterAccuracyMultiplier: 3
+  fighterDamageMultiplier: 1
+  preferCapitalShips: 1
+  leadFighters: 0
+  shotLifetimeRangeMultiplier: 1.5
+  targetSearchInterval: 0.25
+  lineOfSightInterval: 0.2
 --- !u!114 &4729840413589396508
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3096607,8 +3096784,17 @@ MonoBehaviour:
   target: {fileID: 0}
   fireRate: 1
   projectilePrefab: {fileID: 9062178426813273101, guid: e8ccb87e282fd7f459d64b69aa39cadf, type: 3}
+  projectileSpeed: 20
   damage: 2
   maxTimeWithoutLOS: 1
+  targetFilter: 0
+  fighterAccuracyMultiplier: 3
+  fighterDamageMultiplier: 1
+  preferCapitalShips: 1
+  leadFighters: 0
+  shotLifetimeRangeMultiplier: 1.5
+  targetSearchInterval: 0.25
+  lineOfSightInterval: 0.2
 --- !u!114 &4295436782105828793
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3209818,8 +3210004,17 @@ MonoBehaviour:
   target: {fileID: 0}
   fireRate: 1
   projectilePrefab: {fileID: 9062178426813273101, guid: e8ccb87e282fd7f459d64b69aa39cadf, type: 3}
+  projectileSpeed: 20
   damage: 2
   maxTimeWithoutLOS: 1
+  targetFilter: 0
+  fighterAccuracyMultiplier: 3
+  fighterDamageMultiplier: 1
+  preferCapitalShips: 1
+  leadFighters: 0
+  shotLifetimeRangeMultiplier: 1.5
+  targetSearchInterval: 0.25
+  lineOfSightInterval: 0.2
 --- !u!114 &1669414010558790679
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3210048,8 +3210243,17 @@ MonoBehaviour:
   target: {fileID: 0}
   fireRate: 1
   projectilePrefab: {fileID: 9062178426813273101, guid: e8ccb87e282fd7f459d64b69aa39cadf, type: 3}
+  projectileSpeed: 20
   damage: 2
   maxTimeWithoutLOS: 1
+  targetFilter: 0
+  fighterAccuracyMultiplier: 3
+  fighterDamageMultiplier: 1
+  preferCapitalShips: 1
+  leadFighters: 0
+  shotLifetimeRangeMultiplier: 1.5
+  targetSearchInterval: 0.25
+  lineOfSightInterval: 0.2
 --- !u!114 &2941444887934306728
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3649003,6 +3649207,18 @@ PrefabInstance:
     m_TransformParent: {fileID: 8371212057256662883}
     m_Modifications:
     - target: {fileID: 101, guid: f3b2c5d49e7a4b8c9d0e1f2a3b4c5d43, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.04555897
+      objectReference: {fileID: 0}
+    - target: {fileID: 101, guid: f3b2c5d49e7a4b8c9d0e1f2a3b4c5d43, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.04555897
+      objectReference: {fileID: 0}
+    - target: {fileID: 101, guid: f3b2c5d49e7a4b8c9d0e1f2a3b4c5d43, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.04555897
+      objectReference: {fileID: 0}
+    - target: {fileID: 101, guid: f3b2c5d49e7a4b8c9d0e1f2a3b4c5d43, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
@@ -3649029,18 +3649245,6 @@ PrefabInstance:
     - target: {fileID: 101, guid: f3b2c5d49e7a4b8c9d0e1f2a3b4c5d43, type: 3}
       propertyPath: m_LocalRotation.z
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 101, guid: f3b2c5d49e7a4b8c9d0e1f2a3b4c5d43, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 0.0455589707572457
-      objectReference: {fileID: 0}
-    - target: {fileID: 101, guid: f3b2c5d49e7a4b8c9d0e1f2a3b4c5d43, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 0.0455589707572457
-      objectReference: {fileID: 0}
-    - target: {fileID: 101, guid: f3b2c5d49e7a4b8c9d0e1f2a3b4c5d43, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 0.0455589707572457
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
