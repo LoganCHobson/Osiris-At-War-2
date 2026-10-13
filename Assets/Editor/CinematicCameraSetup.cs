@@ -23,6 +23,7 @@ public static class CinematicCameraSetup
 
         cinematic.viewCamera = Camera.main;
         cinematic.spaceManager = spaceManager;
+        cinematic.squadronFraming = 10f;
         cinematic.disableWhileActive = controls.ToArray();
 
         List<Renderer> scenery = new List<Renderer>();

@@ -273,6 +273,12 @@ public class TurretController : MonoBehaviour
         {
             RaycastHit hit = losBuffer[i];
             if (hit.transform.root == transform.root && hit.collider.GetComponentInParent<HardpointHealth>() != null) continue;
+            if (hit.collider.gameObject.layer == ShieldGenerator.Layer)
+            {
+                ShieldGenerator shield = hit.collider.GetComponentInParent<ShieldGenerator>();
+                if (shield != null && ((1 << shield.gameObject.layer) & targetLayer) != 0) return true;
+                continue;
+            }
             return hit.transform == target || ((1 << hit.transform.gameObject.layer) & targetLayer) != 0;
         }
         return false;

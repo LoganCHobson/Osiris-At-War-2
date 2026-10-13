@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 [DefaultExecutionOrder(200)]
 public class BattleShowcase : MonoBehaviour
@@ -16,6 +17,7 @@ public class BattleShowcase : MonoBehaviour
     public float duration = 232f;
     public float attritionPerSecond = 0.004f;
     public int maxReinforcementWaves = 6;
+    public float shieldTelemetryInterval = 5f;
 
     static readonly (string key, int count)[] HumanFleet =
     {
@@ -45,6 +47,8 @@ public class BattleShowcase : MonoBehaviour
     private string outputDir;
     private Camera mainCamera;
     private Camera captureCamera;
+    private CinematicCamera cinematicCamera;
+    private Color32[] blackRow;
     private RenderTexture target;
     private Texture2D readback;
     private int frame;
@@ -90,6 +94,7 @@ public class BattleShowcase : MonoBehaviour
         yield return null;
 
         CinematicCamera cinematic = FindFirstObjectByType<CinematicCamera>();
+        cinematicCamera = cinematic;
         mainCamera = cinematic.viewCamera != null ? cinematic.viewCamera : Camera.main;
         SetupCapture();
 
@@ -97,6 +102,12 @@ public class BattleShowcase : MonoBehaviour
         UnitHealthManager opener = avanti.Where(u => IsAlive(u) && u.GetComponent<HullDamage>() != null).OrderByDescending(u => u.GetComponent<HullDamage>().Size).FirstOrDefault();
         cinematic.Spectate(opener);
         report.AppendLine($"grid hidden={GroundHidden()}");
+        yield return null;
+        UnityEngine.Rendering.VolumeManager.instance.Update(captureCamera.transform, captureCamera.GetUniversalAdditionalCameraData().volumeLayerMask);
+        ScreenSpaceLensFlare flare = UnityEngine.Rendering.VolumeManager.instance.stack.GetComponent<ScreenSpaceLensFlare>();
+        Bloom bloom = UnityEngine.Rendering.VolumeManager.instance.stack.GetComponent<Bloom>();
+        UniversalRenderPipelineAsset pipeline = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
+        report.AppendLine($"flare active={flare != null && flare.IsActive()} intensity={flare?.intensity.value} streaks={flare?.streaksIntensity.value} threshold={flare?.streaksThreshold.value} bloom={bloom?.intensity.value} pipelineSupport={pipeline?.supportScreenSpaceLensFlare} pipeline={pipeline?.name} quality={QualitySettings.names[QualitySettings.GetQualityLevel()]}");
 
         capturing = true;
         startedAt = Time.time;
@@ -301,11 +312,50 @@ public class BattleShowcase : MonoBehaviour
         }
     }
 
+    private readonly Dictionary<ShieldGenerator, float> shieldLevels = new Dictionary<ShieldGenerator, float>();
+    private readonly HashSet<ShieldGenerator> collapsedShields = new HashSet<ShieldGenerator>();
+    private float shieldAbsorbed;
+    private int shieldHits;
+    private int shieldCollapses;
+    private int spectatedShieldHits;
+
+    void Update()
+    {
+        if (!capturing) return;
+
+        foreach (UnitHealthManager unit in avanti)
+        {
+            if (!IsAlive(unit) || !unit.TryGetComponent(out ShieldGenerator shield) || shield.Capacity <= 0f) continue;
+
+            if (shieldLevels.TryGetValue(shield, out float previous) && shield.Current < previous - 0.01f)
+            {
+                shieldAbsorbed += previous - shield.Current;
+                shieldHits++;
+                lastShieldHit[unit] = Time.time;
+                if (cinematicCamera != null && cinematicCamera.Target == unit) spectatedShieldHits++;
+            }
+            shieldLevels[shield] = shield.Current;
+
+            if (!shield.IsUp && collapsedShields.Add(shield)) shieldCollapses++;
+            else if (shield.IsUp) collapsedShields.Remove(shield);
+        }
+    }
+
+    string ShieldStatus()
+    {
+        List<ShieldGenerator> shields = avanti.Where(u => IsAlive(u) && u.GetComponent<ShieldGenerator>() != null).Select(u => u.GetComponent<ShieldGenerator>()).ToList();
+        int up = shields.Count(s => s.IsUp);
+        float average = shields.Count > 0 ? shields.Average(s => s.Fraction) : 0f;
+        return $"shields up={up}/{shields.Count} avg={average:P0} hitFrames={shieldHits} absorbed={shieldAbsorbed:F0} collapses={shieldCollapses} hitsWhileSpectated={spectatedShieldHits}";
+    }
+
     IEnumerator Telemetry()
     {
         while (true)
         {
-            yield return new WaitForSeconds(30f);
+            yield return new WaitForSeconds(shieldTelemetryInterval);
+            report.AppendLine($"t={Elapsed:F0}s {ShieldStatus()}");
+            if (Elapsed % 30f > shieldTelemetryInterval) continue;
             report.AppendLine($"t={Elapsed:F0}s humans={Combatants(humans)} avanti={Combatants(avanti)} | {SquadronStatus(humans, "human")} | {SquadronStatus(avanti, "avanti")}");
         }
     }
@@ -319,13 +369,38 @@ public class BattleShowcase : MonoBehaviour
         return $"{label} squadrons={squadrons.Count} engaging={engaging} fighters={fighters} holding={holding}";
     }
 
+    private readonly HashSet<UnitHealthManager> visitedStructures = new HashSet<UnitHealthManager>();
+
+    private readonly Dictionary<UnitHealthManager, float> lastShieldHit = new Dictionary<UnitHealthManager, float>();
+
+    UnitHealthManager PickShieldTarget(List<UnitHealthManager> side, UnitHealthManager current)
+    {
+        return side.Where(u => IsAlive(u) && u != current && lastShieldHit.TryGetValue(u, out float at) && Time.time - at < 1.5f
+                && u.TryGetComponent(out ShieldGenerator shield) && shield.IsUp && shield.Fraction > 0.25f)
+            .OrderByDescending(u => u.GetComponent<ShieldGenerator>().Fraction)
+            .FirstOrDefault();
+    }
+
     UnitHealthManager PickShip(List<UnitHealthManager> side, UnitHealthManager current)
     {
-        List<HullDamage> ships = side.Where(u => IsAlive(u) && u != current && u.GetComponent<HullDamage>() != null).Select(u => u.GetComponent<HullDamage>()).ToList();
+        if (side == avanti && UnityEngine.Random.value < 0.85f)
+        {
+            UnitHealthManager shielded = PickShieldTarget(side, current);
+            if (shielded != null) return shielded;
+        }
+
+        List<HullDamage> ships = side.Where(u => IsAlive(u) && u != current && u.GetComponent<HullDamage>() != null && !visitedStructures.Contains(u)).Select(u => u.GetComponent<HullDamage>()).ToList();
+        HullDamage pick = PickFrom(ships);
+        if (pick != null && pick.GetComponent<UnityEngine.AI.NavMeshAgent>() == null) visitedStructures.Add(pick.GetComponent<UnitHealthManager>());
+        return pick != null ? pick.GetComponent<UnitHealthManager>() : null;
+    }
+
+    static HullDamage PickFrom(List<HullDamage> ships)
+    {
         if (ships.Count == 0) return null;
         List<HullDamage> wounded = ships.Where(s => s.HealthFraction < 0.5f).ToList();
         List<HullDamage> pool = wounded.Count > 0 && UnityEngine.Random.value < 0.6f ? wounded : ships;
-        return pool.OrderByDescending(s => s.Size * UnityEngine.Random.Range(0.6f, 1.4f)).First().GetComponent<UnitHealthManager>();
+        return pool.OrderByDescending(s => s.Size * UnityEngine.Random.Range(0.6f, 1.4f)).First();
     }
 
     UnitHealthManager PickSquadron(List<UnitHealthManager> side, UnitHealthManager current)
@@ -372,6 +447,10 @@ public class BattleShowcase : MonoBehaviour
         GameObject go = new GameObject("CaptureCamera");
         captureCamera = go.AddComponent<Camera>();
         captureCamera.CopyFrom(mainCamera);
+        UniversalAdditionalCameraData captureData = captureCamera.GetUniversalAdditionalCameraData();
+        captureData.renderPostProcessing = true;
+        captureData.antialiasing = AntialiasingMode.SubpixelMorphologicalAntiAliasing;
+        captureCamera.allowHDR = true;
         target = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32);
         target.antiAliasing = 4;
         captureCamera.targetTexture = target;
@@ -395,11 +474,25 @@ public class BattleShowcase : MonoBehaviour
             RenderTexture previous = RenderTexture.active;
             RenderTexture.active = target;
             readback.ReadPixels(new Rect(0, 0, width, height), 0, 0);
-            readback.Apply(false);
             RenderTexture.active = previous;
+            Letterbox();
+            readback.Apply(false);
             File.WriteAllBytes(Path.Combine(outputDir, $"f{frame:D5}.jpg"), readback.EncodeToJPG(92));
             frame++;
         }
+    }
+
+    void Letterbox()
+    {
+        if (cinematicCamera == null || cinematicCamera.LookWeight <= 0f) return;
+
+        float bar = Mathf.Max(0f, (1f - (float)width / height / cinematicCamera.letterboxAspect) * 0.5f) * cinematicCamera.LookWeight;
+        int rows = Mathf.RoundToInt(bar * height);
+        if (rows <= 0) return;
+
+        if (blackRow == null || blackRow.Length != width * rows) blackRow = new Color32[width * rows];
+        readback.SetPixels32(0, 0, width, rows, blackRow);
+        readback.SetPixels32(0, height - rows, width, rows, blackRow);
     }
 
     void OnEnable()

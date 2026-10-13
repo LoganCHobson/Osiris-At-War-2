@@ -67,10 +67,42 @@ public class Laser : MonoBehaviour
         }
     }
 
+    private static readonly RaycastHit[] hitBuffer = new RaycastHit[16];
+    private static readonly HitDistance hitOrder = new HitDistance();
+
+    private class HitDistance : System.Collections.Generic.IComparer<RaycastHit>
+    {
+        public int Compare(RaycastHit a, RaycastHit b) => a.distance.CompareTo(b.distance);
+    }
+
     bool CheckHit(Vector3 from, Vector3 to)
     {
-        if (!Physics.Linecast(from, to, out RaycastHit hit, layer | WreckChunk.BlockingMask)) return false;
+        Vector3 segment = to - from;
+        float length = segment.magnitude;
+        if (length <= 0f) return false;
 
+        int count = Physics.RaycastNonAlloc(from, segment / length, hitBuffer, length, layer | WreckChunk.BlockingMask | ShieldGenerator.Mask);
+        if (count == 0) return false;
+        System.Array.Sort(hitBuffer, 0, count, hitOrder);
+
+        for (int i = 0; i < count; i++)
+        {
+            RaycastHit candidate = hitBuffer[i];
+            if (candidate.collider.gameObject.layer != ShieldGenerator.Layer) return Impact(candidate);
+
+            ShieldGenerator shield = candidate.collider.GetComponentInParent<ShieldGenerator>();
+            if (shield == null || ((1 << shield.gameObject.layer) & layer) == 0) continue;
+            if (shield.Absorb(damage, candidate.point))
+            {
+                Recycle();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool Impact(RaycastHit hit)
+    {
         if (particle != null)
         {
             EffectPool.Play(effectKey, particle, hit.point, particle.transform.rotation, particleLifetime);

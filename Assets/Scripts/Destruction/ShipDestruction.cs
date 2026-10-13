@@ -203,6 +203,7 @@ public class ShipDestruction : MonoBehaviour
         }
 
         shudder = Mathf.Max(shudder, big ? 1f : 0.5f);
+        if (big) ImpactFlash.Pulse(point, 0.12f);
         CameraShake.Shake(point, profile.chainShake * (big ? 1.5f : 1f) * Mathf.Lerp(0.6f, 1.4f, hull.SizeT));
     }
 
@@ -257,6 +258,7 @@ public class ShipDestruction : MonoBehaviour
         DestructionFx.Flash(center, profile.flashColor, profile.flashIntensity * blastScale * Mathf.Lerp(0.6f, 1.5f, sizeT), hull.Size * profile.flashRange, profile.flashDuration * Mathf.Lerp(0.8f, 1.5f, sizeT));
         DestructionFx.Blast(profile.largeBlastClips, center, profile, Mathf.Lerp(1.1f, 0.7f, sizeT));
         CameraShake.Shake(center, profile.breakupShake * blastScale * Mathf.Lerp(0.4f, 1.2f, sizeT));
+        ImpactFlash.Pulse(center, Mathf.Lerp(0.35f, 0.9f, sizeT) * blastScale);
 
         for (int k = 0; k < pieceCount; k++)
         {

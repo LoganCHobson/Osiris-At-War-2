@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
 public class CinematicCamera : MonoBehaviour
 {
@@ -23,7 +25,13 @@ public class CinematicCamera : MonoBehaviour
     public float fovSharpness = 3f;
     public float deathLinger = 6f;
     public float orbitSpeed = 9f;
-    public float squadronFraming = 18f;
+    public float squadronFraming = 10f;
+
+    [Header("Look")]
+    public Volume cinematicVolume;
+    public float lookBlendSpeed = 2.5f;
+    [Range(1f, 3f)] public float letterboxAspect = 2.35f;
+    public float focusFalloff = 6f;
 
     private enum Shot { Chase, Broadside, LowBow, Orbit, Bridge, Flyby, Duel }
 
@@ -58,8 +66,11 @@ public class CinematicCamera : MonoBehaviour
     private Quaternion savedLocalRotation;
     private float savedFov;
     private float nextScanAt;
+    private float lookBlend;
+    private DepthOfField depthOfField;
 
     public UnitHealthManager Target => target;
+    public float LookWeight { get; private set; }
     public bool IsWatchingSquadron => targetSquadron != null;
 
     private bool TargetAlive => target != null && !target.IsDead;
@@ -89,15 +100,48 @@ public class CinematicCamera : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (!Active) return;
+        if (Active)
+        {
+            TrackTarget();
+            if (Active)
+            {
+                bool watchingDeath = lostAt >= 0f || (target != null && target.IsDead);
+                if (!watchingDeath && Time.unscaledTime >= shotEndsAt) NextShot();
+                Frame();
+            }
+        }
 
-        TrackTarget();
-        if (!Active) return;
+        UpdateLook();
+    }
 
-        bool watchingDeath = lostAt >= 0f || (target != null && target.IsDead);
-        if (!watchingDeath && Time.unscaledTime >= shotEndsAt) NextShot();
+    private void UpdateLook()
+    {
+        float goal = Active ? 1f : 0f;
+        if (lookBlend == goal && !Active) return;
 
-        Frame();
+        lookBlend = Mathf.MoveTowards(lookBlend, goal, lookBlendSpeed * Time.unscaledDeltaTime);
+        float eased = lookBlend * lookBlend * (3f - 2f * lookBlend);
+        LookWeight = eased;
+
+        if (cinematicVolume != null)
+        {
+            cinematicVolume.weight = eased;
+            if (depthOfField == null) cinematicVolume.profile.TryGet(out depthOfField);
+            if (depthOfField != null) depthOfField.active = targetSquadron == null;
+            if (depthOfField != null && camTransform != null && Active)
+            {
+                float focus = Vector3.Distance(camTransform.position, followCenter);
+                depthOfField.gaussianStart.value = focus + followSize * 1.5f;
+                depthOfField.gaussianEnd.value = focus + followSize * focusFalloff;
+            }
+        }
+
+        if (viewCamera != null)
+        {
+            float screenAspect = (float)Screen.width / Mathf.Max(1, Screen.height);
+            float bar = Mathf.Max(0f, (1f - screenAspect / letterboxAspect) * 0.5f) * eased;
+            viewCamera.rect = new Rect(0f, bar, 1f, 1f - bar * 2f);
+        }
     }
 
     public void Enter()
@@ -208,7 +252,7 @@ public class CinematicCamera : MonoBehaviour
 
     private void HideInterface()
     {
-        nextScanAt = Time.unscaledTime + 0.5f;
+        nextScanAt = Time.unscaledTime;
 
         foreach (Canvas canvas in FindObjectsByType<Canvas>(FindObjectsSortMode.None))
         {
@@ -320,7 +364,7 @@ public class CinematicCamera : MonoBehaviour
 
             followLead = lead != null ? lead.transform.position : followCenter;
             followYaw = lead != null ? lead.transform.eulerAngles.y : targetSquadron.transform.eulerAngles.y;
-            followSize = Mathf.Max(squadronFraming, spread * 1.6f);
+            followSize = Mathf.Max(squadronFraming, spread * 1.2f);
             return;
         }
 
@@ -518,6 +562,16 @@ public class CinematicCamera : MonoBehaviour
                 look = c;
                 fov = 45f;
                 break;
+        }
+
+        if (targetHull != null && shot != Shot.Bridge && shot != Shot.Chase)
+        {
+            Vector3 fromCenter = position - c;
+            float minimum = L * 0.9f;
+            if (fromCenter.sqrMagnitude < minimum * minimum)
+            {
+                position = c + (fromCenter.sqrMagnitude > 0.0001f ? fromCenter.normalized : Vector3.up) * minimum;
+            }
         }
 
         Vector3 direction = look - position;
