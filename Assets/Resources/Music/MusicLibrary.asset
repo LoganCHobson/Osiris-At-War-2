@@ -12,6 +12,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e1ea8ac06de949a7b532a6d1984059ae, type: 3}
   m_Name: MusicLibrary
   m_EditorClassIdentifier: 
-  menu: []
-  galacticMap: []
+  menu:
+  - clip: {fileID: 8300000, guid: 4d9387cb9f474a55885692e6e4ea368d, type: 3}
+    title: Eclipse Legion
+    artist: vitalezzz
+    license: CC0
+    source: https://opengameart.org/content/eclipse-legion
+    volume: 1
+  galacticMap:
+  - clip: {fileID: 8300000, guid: 4d9387cb9f474a55885692e6e4ea368d, type: 3}
+    title: Eclipse Legion
+    artist: vitalezzz
+    license: CC0
+    source: https://opengameart.org/content/eclipse-legion
+    volume: 1
   battle: []
