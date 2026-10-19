@@ -35,6 +35,15 @@ public class Fighter : MonoBehaviour
     public ParticleSystem deathEffect;
     public float deathEffectLifetime = 3f;
 
+    // Hits from a warship's guns or point defence it takes to destroy one.
+    public const int ShipHitsToKill = 2;
+
+    // A hit from a warship weapon: lethal in ShipHitsToKill hits regardless of the shot's damage.
+    public static void TakeShipHit(HardpointHealth health)
+    {
+        if (health != null && health.currentHealth > 0f) health.DealDamage(health.maxHealth / ShipHitsToKill + 0.01f);
+    }
+
     public bool Alive => gameObject.activeInHierarchy && health != null && health.currentHealth > 0f;
     public Vector3 Velocity => holding ? holdVelocity : transform.forward * currentSpeed;
     public bool IsHolding => holding;

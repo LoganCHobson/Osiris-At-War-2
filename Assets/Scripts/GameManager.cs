@@ -358,6 +358,16 @@ public class GameManager : MonoBehaviour
             squadron.SetAllegiance(1 << hostileLayer, projectile, playerSide);
         }
 
+        MissileLauncher.Fit(spawned, 1 << hostileLayer); // Destroyers and corvettes.
+
+        bool avantiTech = spawned.GetComponent<ShieldGenerator>() != null; // Human point defence is CIWS gatlings; Avanti use beams.
+        foreach (TurretController turret in spawned.GetComponentsInChildren<TurretController>(true))
+        {
+            if (turret.targetFilter != TurretController.TargetFilter.FightersOnly) continue;
+            if (avantiTech) turret.MakeBeam();
+            else turret.MakeGatling();
+        }
+
         if (faction != null && faction.shipMaterial != null)
         {
             Repaint(spawned, faction.shipMaterial);

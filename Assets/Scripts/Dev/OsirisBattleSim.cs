@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class OsirisBattleSim : MonoBehaviour
 {
-    const string OutPath = @"C:\Users\logan\AppData\Local\Temp\claude\C--Users-logan\0d82d420-765c-41d7-9f58-025e8984458e\scratchpad\battle_sim.txt";
+    const string OutPath = @"E:\Development\GameDevelopment\Unity\Osiris at war 2\Osiris-At-War-2\Logs\battle_sim.txt";
     public float timeScale = 6f;
     public float timeout = 240f;
 
@@ -39,11 +39,17 @@ public class OsirisBattleSim : MonoBehaviour
         Vector3 axis = (d - a).normalized;
         Vector3 across = Vector3.Cross(Vector3.up, axis);
 
-        foreach (string[] m in Matchups)
+        // -simOnly "a|b" runs just the matchups mentioning a or b; -simRepeat <n> runs each n times.
+        string[] only = Argument("-simOnly", "").Split('|').Where(s => s != "").ToArray();
+        int repeat = int.Parse(Argument("-simRepeat", "1"));
+        IEnumerable<string[]> runs = Matchups.Where(m => only.Length == 0 || only.Any(o => string.Join(" ", m).Contains(o))).SelectMany(m => Enumerable.Repeat(m, repeat));
+
+        foreach (string[] m in runs)
         {
             float gap = float.Parse(m[2]);
             List<UnitHealthManager> left = SpawnGroup(m[0], centre - axis * gap / 2f, across, Quaternion.LookRotation(axis), true);
             List<UnitHealthManager> right = SpawnGroup(m[1], centre + axis * gap / 2f, across, Quaternion.LookRotation(-axis), false);
+            Missile.Launched = Missile.Struck = Missile.ShotDown = Missile.ShotDownByCIWS = 0;
             float start = Time.time;
             yield return new WaitForSeconds(0.5f);
             float maxL = left.Sum(u => u.maxHealth), maxR = right.Sum(u => u.maxHealth);
@@ -54,6 +60,7 @@ public class OsirisBattleSim : MonoBehaviour
             float pr = right.Where(Alive).Sum(u => u.currentHealth) / Mathf.Max(1f, maxR);
             string winner = !left.Any(Alive) && right.Any(Alive) ? m[1] : !right.Any(Alive) && left.Any(Alive) ? m[0] : "draw";
             string line = $"SIM {Short(m[0]),-30} vs {Short(m[1]),-30} t={t,6:F1}s  left {pl * 100,4:F0}% ({left.Count(Alive)}/{left.Count} alive)  right {pr * 100,4:F0}% ({right.Count(Alive)}/{right.Count} alive)  winner={Short(winner)}";
+            if (Missile.Launched > 0) line += $"  missiles {Missile.Launched} fired, {Missile.Struck} hit, {Missile.ShotDown} shot down";
             Debug.Log(line);
             lines.Add(line);
             foreach (var u in left.Concat(right)) if (u != null) Destroy(u.gameObject);
@@ -65,6 +72,13 @@ public class OsirisBattleSim : MonoBehaviour
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.Exit(0);
 #endif
+    }
+
+    static string Argument(string name, string fallback)
+    {
+        string[] args = System.Environment.GetCommandLineArgs();
+        for (int i = 0; i < args.Length - 1; i++) if (args[i] == name) return args[i + 1];
+        return fallback;
     }
 
     static bool Alive(UnitHealthManager u) => u != null && !u.IsDead;

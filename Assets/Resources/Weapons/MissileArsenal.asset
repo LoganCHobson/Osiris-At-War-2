@@ -1,0 +1,59 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f3964cd231c2433886154bb275b1c525, type: 3}
+  m_Name: MissileArsenal
+  m_EditorClassIdentifier: 
+  conventional:
+    name: Missile
+    destroyerSalvo: 4
+    corvetteSalvo: 2
+    reload: 15
+    salvoSpacing: 0.15
+    speed: 42
+    turnRate: 120
+    damage: 9
+    passesThroughShields: 1
+    shieldMultiplier: 1
+    hullMultiplier: 1
+    interceptHealth: 2
+    hitRadius: 1
+    color: {r: 1, g: 0.6, b: 0.25, a: 1}
+    headSize: 1.6
+    trailWidth: 0.6
+    trailTime: 1.2
+    intensity: 4
+    pulse: 0
+    explosion: {fileID: 198656289721292014, guid: 64891a0eb28db934898420d80ca07cb3, type: 3}
+    explosionScale: 1
+  plasma:
+    name: Plasma Torpedo
+    destroyerSalvo: 3
+    corvetteSalvo: 2
+    reload: 15
+    salvoSpacing: 0.25
+    speed: 30
+    turnRate: 70
+    damage: 10
+    passesThroughShields: 0
+    shieldMultiplier: 1.75
+    hullMultiplier: 0.6
+    interceptHealth: 5
+    hitRadius: 1.6
+    color: {r: 0.45, g: 0.65, b: 1, a: 1}
+    headSize: 3
+    trailWidth: 1.4
+    trailTime: 0.5
+    intensity: 5
+    pulse: 0.35
+    explosion: {fileID: 198856239026640498, guid: 9bba9cf244c53c5439505dfc96fdd11c, type: 3}
+    explosionScale: 1.4
+  rangeMultiplier: 1.1

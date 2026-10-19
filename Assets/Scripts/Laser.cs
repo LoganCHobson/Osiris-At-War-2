@@ -10,6 +10,10 @@ public class Laser : MonoBehaviour
     public ParticleSystem particle;
     public float particleLifetime = 2f;
     public LayerMask layer;
+    [System.NonSerialized] public Missile intercept; // Point defence: the missile this shot was aimed at.
+    [System.NonSerialized] public bool fromWarship; // Light warship guns kill fighters in Fighter.ShipHitsToKill hits.
+
+    private const float CraftHitEffectScale = 0.3f;
 
     private Vector3 lastPos;
     private Vector3 velocity;
@@ -29,6 +33,8 @@ public class Laser : MonoBehaviour
         velocity = transform.forward * speed;
         lifeTimer = 0f;
         spent = false;
+        intercept = null;
+        fromWarship = false;
     }
 
     public void SetSourcePool(ObjectPool pool)
@@ -57,6 +63,7 @@ public class Laser : MonoBehaviour
 
         transform.position += velocity * Time.fixedDeltaTime;
 
+        if (CheckIntercept(lastPos, transform.position)) return;
         if (CheckHit(lastPos, transform.position)) return;
         lastPos = transform.position;
 
@@ -101,14 +108,41 @@ public class Laser : MonoBehaviour
         return false;
     }
 
-    bool Impact(RaycastHit hit)
+    // Point-defence shots can knock down the missile they were fired at.
+    bool CheckIntercept(Vector3 from, Vector3 to)
     {
-        if (particle != null)
+        if (intercept == null) return false;
+        if (!intercept.InFlight)
         {
-            EffectPool.Play(effectKey, particle, hit.point, particle.transform.rotation, particleLifetime);
+            intercept = null;
+            return false;
         }
 
+        Vector3 missile = intercept.transform.position;
+        Vector3 segment = to - from;
+        float along = segment.sqrMagnitude > 0f ? Mathf.Clamp01(Vector3.Dot(missile - from, segment) / segment.sqrMagnitude) : 0f;
+        Vector3 closest = from + segment * along;
+        if ((missile - closest).sqrMagnitude > intercept.HitRadius * intercept.HitRadius) return false;
+
+        if (particle != null)
+        {
+            EffectPool.Play(effectKey + "_small", particle, closest, particle.transform.rotation, particleLifetime, particle.transform.localScale * CraftHitEffectScale);
+        }
+        intercept.TakeHit(damage, false);
+        Recycle();
+        return true;
+    }
+
+    bool Impact(RaycastHit hit)
+    {
         Collider hitCollider = hit.collider;
+        Fighter craft = hitCollider.GetComponentInParent<Fighter>();
+
+        if (particle != null)
+        {
+            if (craft != null) EffectPool.Play(effectKey + "_small", particle, hit.point, particle.transform.rotation, particleLifetime, particle.transform.localScale * CraftHitEffectScale);
+            else EffectPool.Play(effectKey, particle, hit.point, particle.transform.rotation, particleLifetime);
+        }
         int hitLayer = hitCollider.gameObject.layer;
         if (hitLayer == WreckChunk.WreckLayer || hitLayer == BattleTerrain.AsteroidLayer) // Wrecks and rocks soak the shot.
         {
@@ -120,7 +154,8 @@ public class Laser : MonoBehaviour
             || (hp = hitCollider.GetComponentInChildren<HardpointHealth>()) != null
             || (hp = hitCollider.GetComponentInParent<HardpointHealth>()) != null)
         {
-            hp.DealDamage(damage);
+            if (craft != null && fromWarship) Fighter.TakeShipHit(hp);
+            else hp.DealDamage(damage);
         }
         else
         {
