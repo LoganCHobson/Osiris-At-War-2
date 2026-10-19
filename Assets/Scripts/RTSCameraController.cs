@@ -38,6 +38,14 @@ public class RTSCameraController : MonoBehaviour
 
     CursorArrow currentCursor = CursorArrow.DEFAULT;
 
+    [Header("Bounds")]
+    [Tooltip("Keep the camera over the map: the planets on the galactic map, the battlefield in battle.")]
+    [SerializeField] bool clampToMap = true;
+    [Tooltip("How far past the outermost planets the galactic map camera may go.")]
+    [SerializeField] float mapMargin = 40f;
+    bool hasBounds;
+    Rect bounds;
+
     [Header("Zoom")]
     [SerializeField] float zoomSpeed = 4f;
     [SerializeField] float minZoom = 10f;
@@ -65,6 +73,55 @@ public class RTSCameraController : MonoBehaviour
         movementSpeed = normalSpeed;
 
         targetZoom = cameraTransform.localPosition.y;
+        FindBounds();
+    }
+
+    // Galactic map: the planets' spread plus a margin. Battle: the battlefield plane.
+    private void FindBounds()
+    {
+        hasBounds = false;
+        if (!clampToMap) return;
+
+        if (Planet.All.Count > 0)
+        {
+            Vector3 first = Planet.All[0].transform.position;
+            float minX = first.x, maxX = first.x, minZ = first.z, maxZ = first.z;
+            foreach (Planet planet in Planet.All)
+            {
+                Vector3 position = planet.transform.position;
+                minX = Mathf.Min(minX, position.x);
+                maxX = Mathf.Max(maxX, position.x);
+                minZ = Mathf.Min(minZ, position.z);
+                maxZ = Mathf.Max(maxZ, position.z);
+            }
+            bounds = Rect.MinMaxRect(minX - mapMargin, minZ - mapMargin, maxX + mapMargin, maxZ + mapMargin);
+            hasBounds = true;
+            return;
+        }
+
+        if (BattleTerrain.Instance != null)
+        {
+            bounds = BattleTerrain.Instance.Map;
+            hasBounds = true;
+            return;
+        }
+
+        int groundLayer = LayerMask.NameToLayer("Ground");
+        foreach (Renderer ground in FindObjectsByType<Renderer>(FindObjectsSortMode.None))
+        {
+            if (ground.gameObject.layer != groundLayer) continue;
+            bounds = new Rect(ground.bounds.min.x, ground.bounds.min.z, ground.bounds.size.x, ground.bounds.size.z);
+            hasBounds = true;
+            return;
+        }
+    }
+
+    private Vector3 Clamp(Vector3 position)
+    {
+        if (!hasBounds) return position;
+        position.x = Mathf.Clamp(position.x, bounds.xMin, bounds.xMax);
+        position.z = Mathf.Clamp(position.z, bounds.yMin, bounds.yMax);
+        return position;
     }
 
     private void Update()
@@ -72,7 +129,7 @@ public class RTSCameraController : MonoBehaviour
         //Allow Camera to follow Target
         if (followTransform != null)
         {
-            transform.position = followTransform.position;
+            transform.position = Clamp(followTransform.position);
         }
         //Let us control Camera
         else
@@ -98,13 +155,13 @@ public class RTSCameraController : MonoBehaviour
         //Keyboard Control
         if (moveWithKeyboad)
         {
-            if (Input.GetKey(KeyCode.LeftCommand))
+            if (Input.GetKey(KeyCode.LeftCommand) || Input.GetKey(KeyCode.LeftShift))
             {
-                movementSpeed = fastSpeed;
+                movementSpeed = fastSpeed * GameSettings.CameraSpeed;
             }
             else
             {
-                movementSpeed = normalSpeed;
+                movementSpeed = normalSpeed * GameSettings.CameraSpeed;
             }
 
             if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow))
@@ -125,8 +182,11 @@ public class RTSCameraController : MonoBehaviour
             }
         }
 
-        // Edge Scrolling
-        if (moveWithEdgeScrolling)
+        // Edge Scrolling - only while the game has focus and the mouse is really in the window, so an
+        // AFK cursor parked on the edge (or on another monitor) doesn't drift the camera forever.
+        Vector3 mouse = Input.mousePosition;
+        bool mouseInWindow = Application.isFocused && mouse.x >= 0f && mouse.y >= 0f && mouse.x <= Screen.width && mouse.y <= Screen.height;
+        if (moveWithEdgeScrolling && GameSettings.EdgeScrolling && mouseInWindow && !GameSpeed.MenuPaused)
         {
 
             // Move Right
@@ -170,9 +230,17 @@ public class RTSCameraController : MonoBehaviour
             }
         }
 
+        else if (isCursorSet)
+        {
+            ChangeCursor(CursorArrow.DEFAULT);
+            isCursorSet = false;
+        }
+
+        newPosition = Clamp(newPosition);
         transform.position = Vector3.Lerp(transform.position, newPosition, Time.unscaledDeltaTime * movementSensitivity);
 
-        Cursor.lockState = CursorLockMode.Confined; //If we have an extra monitor we don't want to exit screen bounds
+        // Keep the cursor in the window for edge scrolling on multi-monitor setups (optional in settings).
+        Cursor.lockState = GameSettings.ConfineCursor && Application.isFocused ? CursorLockMode.Confined : CursorLockMode.None;
     }
 
     private void ChangeCursor(CursorArrow newCursor)
