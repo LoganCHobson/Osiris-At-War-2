@@ -25,7 +25,6 @@ public class EngineHardpoint : MonoBehaviour
     public bool IsDestroyed { get; private set; }
 
     private NavMeshAgent agent;
-    private float baseSpeed;
     private float baseAcceleration;
     private float baseAngularSpeed;
 
@@ -34,7 +33,7 @@ public class EngineHardpoint : MonoBehaviour
         agent = GetComponentInParent<NavMeshAgent>();
         if (agent != null)
         {
-            baseSpeed = agent.speed;
+            ShipSpeed.For(agent); // Records the undamaged speed.
             baseAcceleration = agent.acceleration;
             baseAngularSpeed = agent.angularSpeed;
         }
@@ -105,7 +104,7 @@ public class EngineHardpoint : MonoBehaviour
         }
 
         float lost = engines.Length > 0 ? destroyed / (float)engines.Length : 0f;
-        agent.speed = baseSpeed * Mathf.Lerp(1f, destroyedSpeedMultiplier, lost);
+        ShipSpeed.For(agent).SetEngineFactor(Mathf.Lerp(1f, destroyedSpeedMultiplier, lost));
         agent.acceleration = baseAcceleration * Mathf.Lerp(1f, destroyedAccelerationMultiplier, lost);
         agent.angularSpeed = baseAngularSpeed * Mathf.Lerp(1f, destroyedTurnMultiplier, lost);
     }

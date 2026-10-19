@@ -326,6 +326,12 @@ public class PlayerSpaceManager : MonoBehaviour
     {
         PruneSelection();
         List<SpaceUnit> movers = selectedUnits.FindAll(unit => unit.IsMobile);
+
+        // Only fighters can be ordered into a dense asteroid cluster; for anything else the order does nothing.
+        if (BattleTerrain.Instance != null && BattleTerrain.Instance.InDense(hit.point))
+        {
+            movers = movers.FindAll(unit => unit.GetComponent<Squadron>() != null);
+        }
         if (movers.Count == 0) return;
 
         bool queue = Input.GetKey(KeyCode.LeftShift);

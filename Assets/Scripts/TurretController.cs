@@ -301,7 +301,7 @@ public class TurretController : MonoBehaviour
         }
 
         Vector3 direction = (aimPoint - firingPoint.position).normalized;
-        float accuracyMultiplier = GetAccuracyMultiplier(target);
+        float accuracyMultiplier = GetAccuracyMultiplier(target) * BattleTerrain.AccuracyMultiplier(firingPoint.position); // Asteroids spoil aim.
         Vector3 inaccuracyOffset = Random.insideUnitSphere * accuracyMultiplier;
         Vector3 finalDirection = (direction + inaccuracyOffset).normalized;
 

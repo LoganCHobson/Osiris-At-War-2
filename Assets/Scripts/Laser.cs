@@ -81,7 +81,7 @@ public class Laser : MonoBehaviour
         float length = segment.magnitude;
         if (length <= 0f) return false;
 
-        int count = Physics.RaycastNonAlloc(from, segment / length, hitBuffer, length, layer | WreckChunk.BlockingMask | ShieldGenerator.Mask);
+        int count = Physics.RaycastNonAlloc(from, segment / length, hitBuffer, length, layer | WreckChunk.BlockingMask | BattleTerrain.BlockingMask | ShieldGenerator.Mask);
         if (count == 0) return false;
         System.Array.Sort(hitBuffer, 0, count, hitOrder);
 
@@ -109,7 +109,8 @@ public class Laser : MonoBehaviour
         }
 
         Collider hitCollider = hit.collider;
-        if (hitCollider.gameObject.layer == WreckChunk.WreckLayer)
+        int hitLayer = hitCollider.gameObject.layer;
+        if (hitLayer == WreckChunk.WreckLayer || hitLayer == BattleTerrain.AsteroidLayer) // Wrecks and rocks soak the shot.
         {
             Recycle();
             return true;

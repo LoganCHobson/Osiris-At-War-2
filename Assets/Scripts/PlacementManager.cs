@@ -88,9 +88,10 @@ public class PlacementManager : MonoBehaviour
         if (ship == null || ship.prefab == null) return false;
         if (!CanDeploy(ship)) return false;
         if (!TryGetPlacementPoint(screenPosition, out Vector3 point)) return false;
+        if (!CanDropAt(point)) return false; // Asteroids or an enemy shipyard/station in the way.
 
         GameObject spawned = Instantiate(ship.prefab, point, Quaternion.identity);
-        GameManager.TagShip(spawned, ship, GameManager.Instance == null || GameManager.Instance.PlayerIsAttacker);
+        GameManager.TagShip(spawned, ship, PlayerSide);
         FTLJump.Arrive(spawned);
 
         Destroy(sourceIcon);
@@ -107,6 +108,7 @@ public class PlacementManager : MonoBehaviour
         hologramRenderers = cached.renderers;
         shownValidity = -1;
         previewShip = ship;
+        DropZoneOverlay.Show(PlayerSide);
     }
 
     public void UpdatePreview(Vector2 screenPosition)
@@ -122,7 +124,7 @@ public class PlacementManager : MonoBehaviour
 
         hologram.transform.SetPositionAndRotation(point, Quaternion.identity);
 
-        int validity = CanDeploy(previewShip) ? 1 : 0;
+        int validity = CanDeploy(previewShip) && CanDropAt(point) ? 1 : 0;
         if (validity != shownValidity)
         {
             shownValidity = validity;
@@ -136,9 +138,17 @@ public class PlacementManager : MonoBehaviour
         {
             hologram.SetActive(false); // Kept for the next drag.
         }
+        DropZoneOverlay.Hide();
 
         hologram = null;
         hologramRenderers = null;
+    }
+
+    private static bool PlayerSide => GameManager.Instance == null || GameManager.Instance.PlayerIsAttacker;
+
+    private static bool CanDropAt(Vector3 point)
+    {
+        return BattleTerrain.Instance == null || BattleTerrain.Instance.CanDrop(point, PlayerSide);
     }
 
     private static bool CanDeploy(Ship ship)

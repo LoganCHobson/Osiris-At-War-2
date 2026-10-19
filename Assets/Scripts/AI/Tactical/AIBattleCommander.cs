@@ -368,7 +368,7 @@ public class AIBattleCommander : MonoBehaviour
 
         for (int i = 0; i < deploying.Count; i++)
         {
-            Spawn(deploying[i], drop + lateral * SlotOffset(i) * spacing, facing, true);
+            Spawn(deploying[i], DropPoint(drop + lateral * SlotOffset(i) * spacing), facing, true);
         }
 
         reinforceReadyAt = Time.time + personality.reinforcementDelay;
@@ -401,6 +401,7 @@ public class AIBattleCommander : MonoBehaviour
         foreach (Vector3 candidate in candidates)
         {
             if (NearestEnemyDistance(candidate) < safeDistance) continue;
+            if (BattleTerrain.Instance != null && !BattleTerrain.Instance.CanDrop(candidate, IsAttackerSide)) continue;
 
             float score = CurrentStance switch
             {
@@ -584,10 +585,32 @@ public class AIBattleCommander : MonoBehaviour
         }
     }
 
+    // Reinforcements can't drop inside asteroids or near an enemy shipyard/station - slide to the nearest clear spot.
+    private Vector3 DropPoint(Vector3 point)
+    {
+        return BattleTerrain.Instance != null ? BattleTerrain.Instance.NearestDropPoint(point, IsAttackerSide) : point;
+    }
+
+    // Through an asteroid field: a priority move keeps full speed but scrapes the hull. Worth it when
+    // retreating, for small hulls that barely notice, or for healthy ships pressing an attack.
+    private bool WantsPriority(Unit unit, Vector3 destination)
+    {
+        BattleTerrain terrain = BattleTerrain.Instance;
+        if (terrain == null || unit.spaceUnit == null) return false;
+
+        Vector3 from = unit.spaceUnit.transform.position;
+        if (!terrain.InField(from) && !terrain.CrossesField(from, destination)) return false;
+        if (Retreating) return true;
+        if (BattleTerrain.SizeFactor(unit.spaceUnit.shipType) <= 0.55f) return true;
+        return CurrentStance == Stance.Press && HealthFraction(unit.health) > 0.6f && personality.aggression >= 1f;
+    }
+
     private void MoveTo(Unit unit, Vector3 destination)
     {
         SpaceUnit spaceUnit = unit.spaceUnit;
         if (spaceUnit == null) return;
+
+        BattleTerrain.SetAIPriority(spaceUnit, WantsPriority(unit, destination));
 
         if (spaceUnit.moveState == null || spaceUnit.stateMachine == null)
         {

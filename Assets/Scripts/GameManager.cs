@@ -55,6 +55,7 @@ public class GameManager : MonoBehaviour
         }
 
         SkyPlanet.Create(); // The planet being fought over, below the fleets.
+        CreateTerrain();
 
         bool hasBattleContext = BattleContext.Instance != null && BattleContext.Instance.hasPendingBattle;
 
@@ -124,6 +125,17 @@ public class GameManager : MonoBehaviour
             }
         }
         return count;
+    }
+
+    // Asteroids for this battle. The same planet always gets the same layout.
+    private void CreateTerrain()
+    {
+        Vector3 attackerStart = attackerShipSpawnPoint != null ? attackerShipSpawnPoint.position : Vector3.zero;
+        Vector3 defenderStart = defenderShipSpawnPoint != null ? defenderShipSpawnPoint.position : Vector3.zero;
+
+        string planet = BattleContext.Instance != null ? BattleContext.Instance.destinationPlanetName : null;
+        int seed = string.IsNullOrEmpty(planet) ? Random.Range(1, int.MaxValue) : PlanetArchetypes.StableHash(planet) + 17;
+        BattleTerrain.Create(attackerStart, defenderStart, seed);
     }
 
     public Transform StartPointFor(bool attackerSide)
@@ -317,6 +329,7 @@ public class GameManager : MonoBehaviour
         health?.ConfigureSpecial(isShipyardBonus, isBattleStation);
 
         ApplyAllegiance(spawned, false);
+        BattleTerrain.Instance?.AddDefenseZone(health, false); // Attackers can't drop reinforcements near it.
     }
 
     public void ApplyAllegiance(GameObject spawned, bool attackerSide)
@@ -454,5 +467,7 @@ public class GameManager : MonoBehaviour
         {
             Instance.ApplyAllegiance(spawned, isAttackerSide);
         }
+
+        BattleTerrain.Instance?.RestrictShip(spawned);
     }
 }
