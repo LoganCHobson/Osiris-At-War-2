@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -14,7 +14,8 @@ public class MainMenuController : MonoBehaviour
     [Header("Media")]
     public VideoClip backdrop;
     public AudioClip music;
-    [Range(0f, 1f)] public float musicVolume = 0.7f;
+    [Tooltip("Trim for this track on top of the player's Music volume.")]
+    [Range(0f, 1f)] public float musicVolume = 1f;
 
     [Header("Look")]
     public string title = "OSIRIS AT WAR";
@@ -29,6 +30,7 @@ public class MainMenuController : MonoBehaviour
     public float exitFadeTime = 1.2f;
     public string campaignScene = "GalacticMap";
 
+    private Canvas menuCanvas;
     private VideoPlayer player;
     private RenderTexture videoTexture;
     private AudioSource musicSource;
@@ -53,6 +55,7 @@ public class MainMenuController : MonoBehaviour
     private void BuildInterface()
     {
         Canvas canvas = new GameObject("MenuCanvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster)).GetComponent<Canvas>();
+        menuCanvas = canvas;
         canvas.transform.SetParent(transform, false);
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         CanvasScaler scaler = canvas.GetComponent<CanvasScaler>();
@@ -91,7 +94,7 @@ public class MainMenuController : MonoBehaviour
         float y = -470f;
         AddButton(menu.transform, "NEW CAMPAIGN", ref y, true, StartCampaign);
         AddButton(menu.transform, "CONTINUE", ref y, false, null);
-        AddButton(menu.transform, "OPTIONS", ref y, false, null);
+        AddButton(menu.transform, "OPTIONS", ref y, true, OpenOptions);
         AddButton(menu.transform, "CREDITS", ref y, false, null);
         y -= 24f;
         AddButton(menu.transform, "QUIT", ref y, true, Quit);
@@ -181,6 +184,7 @@ public class MainMenuController : MonoBehaviour
         musicSource.clip = music;
         musicSource.loop = true;
         musicSource.volume = 0f;
+        musicSource.ignoreListenerVolume = true; // Follows the Music slider, not the Effects one.
         musicSource.playOnAwake = false;
         musicSource.Play();
     }
@@ -192,15 +196,15 @@ public class MainMenuController : MonoBehaviour
         screenFade = Mathf.MoveTowards(screenFade, target, Time.unscaledDeltaTime * speed);
         if (fade != null) fade.color = new Color(0f, 0f, 0f, screenFade);
 
-        if (menuGroup != null && !leaving)
+        if (menuGroup != null && !leaving && !SettingsPanel.IsOpen)
         {
             menuGroup.alpha = Mathf.MoveTowards(menuGroup.alpha, 1f, Time.unscaledDeltaTime / fadeInTime);
         }
 
         if (musicSource != null)
         {
-            float volume = leaving ? 0f : musicVolume;
-            musicSource.volume = Mathf.MoveTowards(musicSource.volume, volume, Time.unscaledDeltaTime * musicVolume / (leaving ? exitFadeTime : 2.5f));
+            float volume = leaving ? 0f : musicVolume * GameSettings.MusicOutput;
+            musicSource.volume = Mathf.MoveTowards(musicSource.volume, volume, Time.unscaledDeltaTime / (leaving ? exitFadeTime : 2.5f));
         }
     }
 
@@ -216,6 +220,17 @@ public class MainMenuController : MonoBehaviour
     }
 
     // ---------------- Actions ----------------
+
+    private void OpenOptions()
+    {
+        if (leaving || SettingsPanel.IsOpen) return;
+        menuGroup.alpha = 0f;
+        menuGroup.interactable = false;
+        SettingsPanel.Open(menuCanvas.transform, () =>
+        {
+            menuGroup.interactable = true;
+        });
+    }
 
     private void StartCampaign()
     {

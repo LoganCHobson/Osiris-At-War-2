@@ -126,6 +126,8 @@ public class RTSCameraController : MonoBehaviour
 
     private void Update()
     {
+        if (GameSpeed.MenuPaused) return; // Pause menu is open.
+
         //Allow Camera to follow Target
         if (followTransform != null)
         {
