@@ -183,6 +183,7 @@ public class AIBattleCommander : MonoBehaviour
     {
         RetreatManager retreat = RetreatManager.Instance;
         if (retreat == null || !personality.canRetreat) return;
+        if (Faction != null && Faction.isNeutral) return; // Neutrals defend their home to the death.
 
         float ours = 0f;
         foreach (Unit unit in units)

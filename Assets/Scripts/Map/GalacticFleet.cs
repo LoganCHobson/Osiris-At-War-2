@@ -448,12 +448,15 @@ public class GalacticFleet : MonoBehaviour
         holdTimer = postBattleHoldDuration;
     }
 
+    // Neutral defenders hold their home to the death - they never fall back.
+    public bool CanRetreat => faction == null || !faction.isNeutral;
+
     public Planet RetreatFrom(Planet from)
     {
         if (from == null) from = currentPlanet;
 
-        List<Planet> path = GalacticPathfinder.FindNearest(from, planet => planet.owner == faction);
-        if (path.Count < 2)
+        List<Planet> path = CanRetreat ? GalacticPathfinder.FindNearest(from, planet => planet.owner == faction) : new List<Planet>();
+        if (path.Count < 2 && CanRetreat)
         {
             path = GalacticPathfinder.FindNearest(from, planet => planet.owner == null || planet.owner.isNeutral);
         }

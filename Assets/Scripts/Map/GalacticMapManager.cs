@@ -121,14 +121,16 @@ public class GalacticMapManager : MonoBehaviour
 
         List<GalacticFleet> losingFleets = attackerWon ? defenderFleets : attackerFleets;
         Planet retreatedTo = null;
+        bool anyRetreated = false;
         foreach (GalacticFleet fleet in losingFleets)
         {
+            anyRetreated |= fleet.CanRetreat; // Neutral losers are wiped out instead.
             Planet haven = fleet.RetreatFrom(destinationPlanet);
             if (retreatedTo == null) retreatedTo = haven;
         }
 
         BattleResult result = BuildBattleResult(context, destinationPlanet, attackerWon, ownerBefore);
-        if (result != null && losingFleets.Count > 0)
+        if (result != null && anyRetreated)
         {
             bool playerLost = Strength.IsPlayer(attackerWon ? context.defenderFaction : context.attackerFaction);
             result.playerRetreated = playerLost;
