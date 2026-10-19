@@ -10,6 +10,10 @@ public class ShipSpeed : MonoBehaviour
     private float baseSpeed;
     private float engineFactor = 1f;
     private float terrainFactor = 1f;
+    private float groupCap = float.PositiveInfinity;
+
+    // Full speed with current engine damage, ignoring asteroids and group caps.
+    public float CruiseSpeed => baseSpeed * engineFactor;
 
     public static ShipSpeed For(NavMeshAgent agent)
     {
@@ -38,8 +42,22 @@ public class ShipSpeed : MonoBehaviour
         Apply();
     }
 
+    // Ships moving as a group hold to the slowest member's pace so fighters don't race ahead of battleships.
+    public void SetGroupCap(float cap)
+    {
+        groupCap = cap > 0f ? cap : float.PositiveInfinity;
+        Apply();
+    }
+
+    public void ClearGroupCap()
+    {
+        if (float.IsPositiveInfinity(groupCap)) return;
+        groupCap = float.PositiveInfinity;
+        Apply();
+    }
+
     private void Apply()
     {
-        if (agent != null) agent.speed = baseSpeed * engineFactor * terrainFactor;
+        if (agent != null) agent.speed = Mathf.Min(baseSpeed * engineFactor * terrainFactor, groupCap);
     }
 }

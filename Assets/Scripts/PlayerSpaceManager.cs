@@ -322,6 +322,21 @@ public class PlayerSpaceManager : MonoBehaviour
         }
     }
 
+    // A group order moves at the pace of its slowest ship; a single ship flies at its own speed.
+    private static float SlowestCruiseSpeed(List<SpaceUnit> movers)
+    {
+        if (movers.Count < 2) return float.PositiveInfinity;
+
+        float slowest = float.PositiveInfinity;
+        foreach (SpaceUnit unit in movers)
+        {
+            UnityEngine.AI.NavMeshAgent agent = unit.agent != null ? unit.agent : unit.GetComponent<UnityEngine.AI.NavMeshAgent>();
+            ShipSpeed speed = ShipSpeed.For(agent);
+            if (speed != null) slowest = Mathf.Min(slowest, speed.CruiseSpeed);
+        }
+        return slowest;
+    }
+
     private void PlayerLocation(RaycastHit hit, bool priority = false)
     {
         PruneSelection();
@@ -344,6 +359,7 @@ public class PlayerSpaceManager : MonoBehaviour
 
         FleetFormation.Slot[] slots = FleetFormation.Move(movers, origins, hit.point);
         int group = SolarStudios.PlayerUnitMoveState.NextOrderGroup();
+        float groupPace = SlowestCruiseSpeed(movers);
         for (int i = 0; i < movers.Count; i++)
         {
             SpaceUnit unit = movers[i];
@@ -358,6 +374,7 @@ public class PlayerSpaceManager : MonoBehaviour
             unit.moveState.SetPriority(priority);
             unit.moveState.SetOrderGroup(group);
             BeginMoving(unit);
+            ShipSpeed.For(unit.agent != null ? unit.agent : unit.GetComponent<UnityEngine.AI.NavMeshAgent>())?.SetGroupCap(groupPace);
         }
 
         selectionAnim.gameObject.transform.localPosition = hit.point;

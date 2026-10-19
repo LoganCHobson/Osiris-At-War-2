@@ -139,6 +139,7 @@ namespace SolarStudios
         public void Exit() // Runs when we exit the state
         {
             hasActiveDestination = false;
+            if (ownAgent != null && ownAgent.TryGetComponent(out ShipSpeed speed)) speed.ClearGroupCap(); // Order's done - back to own pace.
         }
 
         private void FollowDestinations()
