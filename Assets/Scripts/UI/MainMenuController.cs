@@ -98,7 +98,7 @@ public class MainMenuController : MonoBehaviour
         AddButton(menu.transform, "CONTINUE", ref y, latest != null, () => ContinueFrom(latest));
         AddButton(menu.transform, "LOAD GAME", ref y, SaveSystem.List().Count > 0, OpenLoad);
         AddButton(menu.transform, "OPTIONS", ref y, true, OpenOptions);
-        AddButton(menu.transform, "CREDITS", ref y, false, null);
+        AddButton(menu.transform, "CREDITS", ref y, true, OpenCredits);
         y -= 24f;
         AddButton(menu.transform, "QUIT", ref y, true, Quit);
 
@@ -186,7 +186,7 @@ public class MainMenuController : MonoBehaviour
         screenFade = Mathf.MoveTowards(screenFade, target, Time.unscaledDeltaTime * speed);
         if (fade != null) fade.color = new Color(0f, 0f, 0f, screenFade);
 
-        if (menuGroup != null && !leaving && !SettingsPanel.IsOpen && !SaveLoadPanel.IsOpen && picker == null)
+        if (menuGroup != null && !leaving && !SettingsPanel.IsOpen && !SaveLoadPanel.IsOpen && !CreditsPanel.IsOpen && picker == null)
         {
             menuGroup.alpha = Mathf.MoveTowards(menuGroup.alpha, 1f, Time.unscaledDeltaTime / fadeInTime);
         }
@@ -225,6 +225,17 @@ public class MainMenuController : MonoBehaviour
         menuGroup.alpha = 0f;
         menuGroup.interactable = false;
         SaveLoadPanel.Open(menuCanvas.transform, SaveLoadPanel.Mode.Load, false, () =>
+        {
+            menuGroup.interactable = true;
+        });
+    }
+
+    private void OpenCredits()
+    {
+        if (leaving || CreditsPanel.IsOpen) return;
+        menuGroup.alpha = 0f;
+        menuGroup.interactable = false;
+        CreditsPanel.Open(menuCanvas.transform, () =>
         {
             menuGroup.interactable = true;
         });

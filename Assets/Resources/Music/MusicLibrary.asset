@@ -26,10 +26,46 @@ MonoBehaviour:
     license: CC0
     source: https://opengameart.org/content/eclipse-legion
     volume: 1
+  - clip: {fileID: 8300000, guid: 555fe04bd2b9499db7a2489a55f240c3, type: 3}
+    title: Jupiter, the Bringer of Jollity (The Planets)
+    artist: Gustav Holst - performed by the US Air Force Heritage of America Band
+    license: Public domain
+    source: https://opengameart.org/content/holst-the-planets-suite
+    volume: 1
+  - clip: {fileID: 8300000, guid: f89c9f91cb7847669f6348387b15b89e, type: 3}
+    title: Starfire
+    artist: Scott Buckley
+    license: CC BY 4.0
+    source: https://www.scottbuckley.com.au
+    volume: 1
+  - clip: {fileID: 8300000, guid: e6f3dffbf77f4fdc8b8ae7d3dba14c3e, type: 3}
+    title: Aphelion
+    artist: Scott Buckley
+    license: CC BY 4.0
+    source: https://www.scottbuckley.com.au
+    volume: 1
   battle:
   - clip: {fileID: 8300000, guid: 4d9387cb9f474a55885692e6e4ea368d, type: 3}
     title: Eclipse Legion
     artist: vitalezzz
     license: CC0
     source: https://opengameart.org/content/eclipse-legion
+    volume: 1
+  - clip: {fileID: 8300000, guid: f13f82c6d11249b19ba6c41efa57d420, type: 3}
+    title: Mars, the Bringer of War (The Planets)
+    artist: Gustav Holst - performed by the US Air Force Heritage of America Band
+    license: Public domain
+    source: https://opengameart.org/content/holst-the-planets-suite
+    volume: 1
+  - clip: {fileID: 8300000, guid: 1870a777c6c04b45b940a2b7b4bdbea4, type: 3}
+    title: Space Race
+    artist: Shane Ivers
+    license: CC BY 4.0
+    source: https://www.silvermansound.com
+    volume: 1
+  - clip: {fileID: 8300000, guid: 848ba3c893174ef9b2ab0367051af27b, type: 3}
+    title: Proxima Centauri
+    artist: Shane Ivers
+    license: CC BY 4.0
+    source: https://www.silvermansound.com
     volume: 1
