@@ -23,6 +23,16 @@ public class AIBattleCommander : MonoBehaviour
     public Stance CurrentStance { get; private set; } = Stance.Engage;
     public float ForceRatio { get; private set; } = 1f;
     public int ReserveCount => reserve.Count;
+
+    public float ReservePower
+    {
+        get
+        {
+            float power = 0f;
+            foreach (Ship ship in reserve) power += ship != null ? ship.combatPower : 0f;
+            return power;
+        }
+    }
     public bool Patient { get; private set; }
     public int FieldCount => units.Count;
 
