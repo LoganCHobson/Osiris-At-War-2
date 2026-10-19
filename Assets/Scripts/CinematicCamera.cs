@@ -574,6 +574,8 @@ public class CinematicCamera : MonoBehaviour
             }
         }
 
+        position = AvoidRocks(position);
+
         Vector3 direction = look - position;
         Quaternion rotation = direction.sqrMagnitude > 0.0001f ? Quaternion.LookRotation(direction, Vector3.up) : camTransform.rotation;
 
@@ -590,6 +592,30 @@ public class CinematicCamera : MonoBehaviour
         camTransform.position = Vector3.SmoothDamp(camTransform.position, position, ref moveVelocity, smoothing, Mathf.Infinity, dt);
         camTransform.rotation = Quaternion.Slerp(camTransform.rotation, rotation, 1f - Mathf.Exp(-rotationSharpness * dt));
         viewCamera.fieldOfView = Mathf.Lerp(viewCamera.fieldOfView, fov, 1f - Mathf.Exp(-fovSharpness * dt));
+    }
+
+    private static readonly Collider[] rockHits = new Collider[16];
+
+    // Never park the camera inside an asteroid - push it out past the rock's visible size.
+    private static Vector3 AvoidRocks(Vector3 position)
+    {
+        int mask = BattleTerrain.BlockingMask;
+        if (mask == 0) return position;
+
+        int count = Physics.OverlapSphereNonAlloc(position, 30f, rockHits, mask, QueryTriggerInteraction.Ignore);
+        for (int i = 0; i < count; i++)
+        {
+            if (!(rockHits[i] is SphereCollider rock)) continue;
+
+            Vector3 centre = rock.transform.TransformPoint(rock.center);
+            float scale = Mathf.Max(rock.transform.lossyScale.x, rock.transform.lossyScale.y, rock.transform.lossyScale.z);
+            float clearance = rock.radius * scale * 1.6f + 4f; // Rocks look bigger than their colliders.
+            Vector3 away = position - centre;
+            if (away.sqrMagnitude >= clearance * clearance) continue;
+
+            position = centre + (away.sqrMagnitude > 0.0001f ? away.normalized : Vector3.up) * clearance;
+        }
+        return position;
     }
 
     private void OnDisable()
