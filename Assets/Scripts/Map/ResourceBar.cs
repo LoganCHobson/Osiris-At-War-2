@@ -6,10 +6,11 @@ using UnityEngine.UI;
 // Built at runtime, so the scene needs no setup - GalacticMapManager creates one if none exists.
 public class ResourceBar : MonoBehaviour
 {
-    public Vector2 screenOffset = new Vector2(-16f, -16f);
+    [Tooltip("Sits just under the speed controls (top-right, 68px tall at 20px from the corner).")]
+    public Vector2 screenOffset = new Vector2(-20f, -96f);
     public float fontSize = 26f;
     public float refreshInterval = 0.25f;
-    public Color backgroundColor = new Color(0.04f, 0.06f, 0.1f, 0.8f);
+    public Color backgroundColor = new Color(0.05f, 0.07f, 0.1f, 0.88f); // Matches the speed controls panel.
 
     private TMP_Text label;
     private Faction player;
