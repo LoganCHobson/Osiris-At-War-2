@@ -105,7 +105,7 @@ public class MusicManager : MonoBehaviour
 
         // Start the next track a little before this one ends so they overlap.
         AudioSource current = sources[active];
-        if (current == null) return;
+        if (current == null || current.loop) return;
         if (HasTracks(playlist) && playing[active] != null && current.clip != null
             && (!current.isPlaying || current.clip.length - current.time <= crossfadeTime))
         {
@@ -123,6 +123,7 @@ public class MusicManager : MonoBehaviour
         if (source == null) return;
         source.Stop();
         source.clip = track.clip;
+        source.loop = DistinctTracks(playlist) == 1; // A lone track just loops seamlessly.
         source.time = 0f;
         source.volume = 0f;
         fades[active] = 0f;
@@ -155,6 +156,19 @@ public class MusicManager : MonoBehaviour
             }
         }
         return options.Count > 0 ? options[Random.Range(0, options.Count)] : null;
+    }
+
+    private static int DistinctTracks(List<MusicLibrary.Track> list)
+    {
+        HashSet<AudioClip> clips = new HashSet<AudioClip>();
+        if (list != null)
+        {
+            foreach (MusicLibrary.Track track in list)
+            {
+                if (track != null && track.clip != null) clips.Add(track.clip);
+            }
+        }
+        return clips.Count;
     }
 
     private static bool HasTracks(List<MusicLibrary.Track> list)

@@ -42,6 +42,15 @@ public class CursorManager : MonoBehaviour
 
     void Update()
     {
+        // Menus and UI get the normal mouse pointer - never the 3D battle marker hiding behind them.
+        bool overInterface = UnityEngine.EventSystems.EventSystem.current != null && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject();
+        if (GameSpeed.MenuPaused || SettingsPanel.IsOpen || overInterface)
+        {
+            if (markerInstance != null) markerInstance.SetActive(false);
+            Cursor.visible = true;
+            return;
+        }
+
         // Check if the marker should be active
         if (isMarkerActive)
         {

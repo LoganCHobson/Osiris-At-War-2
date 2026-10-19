@@ -11,6 +11,8 @@ public class CinematicCamera : MonoBehaviour
     [Header("Input")]
     public KeyCode toggleKey = KeyCode.C;
     public KeyCode exitKey = KeyCode.Escape;
+    [Tooltip("Wide overhead view of the whole battle (press again for the normal shots).")]
+    public KeyCode overviewKey = KeyCode.V;
 
     [Header("References")]
     public Camera viewCamera;
@@ -33,9 +35,10 @@ public class CinematicCamera : MonoBehaviour
     [Range(1f, 3f)] public float letterboxAspect = 2.35f;
     public float focusFalloff = 6f;
 
-    private enum Shot { Chase, Broadside, LowBow, Orbit, Bridge, Flyby, Duel }
+    private enum Shot { Chase, Broadside, LowBow, Orbit, Bridge, Flyby, Duel, Overview }
 
-    private static readonly Shot[] Rotation = { Shot.Chase, Shot.Broadside, Shot.LowBow, Shot.Orbit, Shot.Bridge, Shot.Flyby, Shot.Duel };
+    private static readonly Shot[] Rotation = { Shot.Chase, Shot.Broadside, Shot.LowBow, Shot.Orbit, Shot.Bridge, Shot.Flyby, Shot.Duel, Shot.Overview };
+    private bool overviewLocked;
 
     private readonly List<Canvas> hiddenCanvases = new List<Canvas>();
     private readonly List<Renderer> hiddenLines = new List<Renderer>();
@@ -77,6 +80,26 @@ public class CinematicCamera : MonoBehaviour
 
     private void Update()
     {
+        if (Input.GetKeyDown(overviewKey))
+        {
+            if (!Active)
+            {
+                Enter();
+                overviewLocked = Active;
+            }
+            else
+            {
+                overviewLocked = !overviewLocked;
+            }
+
+            if (Active)
+            {
+                if (overviewLocked) BeginShot(Shot.Overview);
+                else NextShot();
+            }
+            return;
+        }
+
         if (Input.GetKeyDown(toggleKey))
         {
             if (Active) Exit();
@@ -196,6 +219,7 @@ public class CinematicCamera : MonoBehaviour
     {
         if (!Active) return;
         Active = false;
+        overviewLocked = false;
 
         if (camTransform != null)
         {
@@ -451,6 +475,12 @@ public class CinematicCamera : MonoBehaviour
 
     private void NextShot()
     {
+        if (overviewLocked)
+        {
+            BeginShot(Shot.Overview);
+            return;
+        }
+
         Shot next = shot;
         for (int attempt = 0; attempt < 8 && (next == shot || (next == Shot.Duel && Opponent() == null)); attempt++)
         {
@@ -464,6 +494,7 @@ public class CinematicCamera : MonoBehaviour
         shot = next;
         shotStartedAt = Time.unscaledTime;
         shotEndsAt = Time.unscaledTime + Random.Range(shotDuration.x, shotDuration.y);
+        if (shot == Shot.Overview && overviewLocked) shotEndsAt = float.PositiveInfinity; // Hold until V again.
         side = Random.value < 0.5f ? -1f : 1f;
         orbitAngle = followYaw + Random.Range(0f, 360f);
         snap = true;
@@ -554,6 +585,15 @@ public class CinematicCamera : MonoBehaviour
                 look = Vector3.Lerp(c, enemy.Value, 0.35f);
                 fov = 50f;
                 break;
+            case Shot.Overview:
+                BattleSpread(out Vector3 battleCentre, out float battleRadius);
+                orbitAngle += orbitSpeed * 0.35f * dt;
+                float overviewDistance = Mathf.Max(battleRadius * 1.6f, 220f);
+                Quaternion high = Quaternion.Euler(52f, orbitAngle, 0f);
+                position = battleCentre - high * Vector3.forward * overviewDistance;
+                look = battleCentre;
+                fov = 50f;
+                break;
             default:
                 bool death = lostAt >= 0f || (target != null && target.IsDead);
                 orbitAngle += orbitSpeed * (death ? 0.6f : 1f) * dt;
@@ -592,6 +632,35 @@ public class CinematicCamera : MonoBehaviour
         camTransform.position = Vector3.SmoothDamp(camTransform.position, position, ref moveVelocity, smoothing, Mathf.Infinity, dt);
         camTransform.rotation = Quaternion.Slerp(camTransform.rotation, rotation, 1f - Mathf.Exp(-rotationSharpness * dt));
         viewCamera.fieldOfView = Mathf.Lerp(viewCamera.fieldOfView, fov, 1f - Mathf.Exp(-fovSharpness * dt));
+    }
+
+    // Middle of everything still fighting, and how far the fighting spreads from it.
+    private void BattleSpread(out Vector3 centre, out float radius)
+    {
+        centre = Vector3.zero;
+        int count = 0;
+        foreach (UnitHealthManager unit in UnitHealthManager.Active)
+        {
+            if (unit == null || unit.IsDead) continue;
+            centre += unit.transform.position;
+            count++;
+        }
+
+        if (count == 0)
+        {
+            centre = followCenter;
+            radius = followSize;
+            return;
+        }
+
+        centre /= count;
+        radius = 0f;
+        foreach (UnitHealthManager unit in UnitHealthManager.Active)
+        {
+            if (unit == null || unit.IsDead) continue;
+            radius = Mathf.Max(radius, Vector3.Distance(unit.transform.position, centre));
+        }
+        radius = Mathf.Min(radius, 900f);
     }
 
     private static readonly Collider[] rockHits = new Collider[16];

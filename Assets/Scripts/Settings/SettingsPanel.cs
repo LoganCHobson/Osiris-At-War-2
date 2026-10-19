@@ -196,7 +196,7 @@ public class SettingsPanel : MonoBehaviour
         TMP_Text text = UIKit.Text(keys, "<b>HOTKEYS</b>\n" +
             "Space  pause / play      1 / 2 / 3  game speed      Esc  menu\n" +
             "WASD / arrows  pan (Shift = faster)      Middle mouse  drag camera\n" +
-            "F  priority move      G  guard      C  cinematic camera", 22f, UIKit.MutedColor, TextAlignmentOptions.TopLeft);
+            "F  priority move      G  guard      C  cinematic camera      V  overhead battle view", 22f, UIKit.MutedColor, TextAlignmentOptions.TopLeft);
         text.textWrappingMode = TextWrappingModes.Normal;
         text.lineSpacing = 18f;
         text.rectTransform.offsetMin = new Vector2(24f, 0f);
