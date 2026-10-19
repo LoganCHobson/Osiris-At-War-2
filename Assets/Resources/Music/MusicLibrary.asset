@@ -26,4 +26,10 @@ MonoBehaviour:
     license: CC0
     source: https://opengameart.org/content/eclipse-legion
     volume: 1
-  battle: []
+  battle:
+  - clip: {fileID: 8300000, guid: 4d9387cb9f474a55885692e6e4ea368d, type: 3}
+    title: Eclipse Legion
+    artist: vitalezzz
+    license: CC0
+    source: https://opengameart.org/content/eclipse-legion
+    volume: 1

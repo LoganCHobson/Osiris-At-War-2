@@ -16,7 +16,8 @@ public class MainMenuController : MonoBehaviour
 
     [Header("Look")]
     public string title = "OSIRIS AT WAR";
-    public string subtitle = "II";
+    [Tooltip("Optional line under the title (leave empty for none).")]
+    public string subtitle = "";
     public Color accent = new Color(1f, 0.74f, 0.32f);
     public Color textColor = new Color(0.86f, 0.9f, 0.96f);
     public Color disabledColor = new Color(0.86f, 0.9f, 0.96f, 0.3f);
@@ -78,15 +79,20 @@ public class MainMenuController : MonoBehaviour
         TMP_Text titleText = Label(menu.transform, "Title", title, 112f, textColor, new Vector2(140f, -170f));
         titleText.fontStyle = FontStyles.Bold;
         titleText.characterSpacing = 18f;
-        TMP_Text subtitleText = Label(menu.transform, "Subtitle", subtitle, 64f, accent, new Vector2(146f, -300f));
-        subtitleText.characterSpacing = 30f;
+        bool hasSubtitle = !string.IsNullOrEmpty(subtitle);
+        float shift = hasSubtitle ? 0f : 90f; // Close the gap when there's no subtitle.
+        if (hasSubtitle)
+        {
+            TMP_Text subtitleText = Label(menu.transform, "Subtitle", subtitle, 64f, accent, new Vector2(146f, -300f));
+            subtitleText.characterSpacing = 30f;
+        }
 
         RectTransform rule = new GameObject("Rule", typeof(Image)).GetComponent<RectTransform>();
         rule.SetParent(menu.transform, false);
-        Anchor(rule, new Vector2(150f, -390f), new Vector2(420f, 2f));
+        Anchor(rule, new Vector2(150f, -390f + shift), new Vector2(420f, 2f));
         rule.GetComponent<Image>().color = new Color(accent.r, accent.g, accent.b, 0.6f);
 
-        float y = -470f;
+        float y = -470f + shift;
         AddButton(menu.transform, "NEW CAMPAIGN", ref y, true, ChooseDifficulty);
         AddButton(menu.transform, "CONTINUE", ref y, false, null);
         AddButton(menu.transform, "OPTIONS", ref y, true, OpenOptions);
