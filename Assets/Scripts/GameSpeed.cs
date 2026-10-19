@@ -6,6 +6,8 @@ public static class GameSpeed
 
     public static float Speed { get; private set; } = 1f;
     public static bool Suspended { get; private set; }
+    // The pause menu is open - freezes the game without touching the chosen speed.
+    public static bool MenuPaused { get; private set; }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void Initialize()
@@ -13,6 +15,7 @@ public static class GameSpeed
         baseFixedDeltaTime = Time.fixedDeltaTime;
         Speed = 1f;
         Suspended = false;
+        MenuPaused = false;
     }
 
     public static void SetSpeed(float speed)
@@ -27,10 +30,17 @@ public static class GameSpeed
         Apply();
     }
 
+    public static void SetMenuPaused(bool paused)
+    {
+        MenuPaused = paused;
+        Apply();
+    }
+
     public static void Reset()
     {
         Speed = 1f;
         Suspended = false;
+        MenuPaused = false;
         Apply();
     }
 
@@ -41,7 +51,7 @@ public static class GameSpeed
             baseFixedDeltaTime = Time.fixedDeltaTime;
         }
 
-        float scale = Suspended ? 0f : Speed;
+        float scale = Suspended || MenuPaused ? 0f : Speed;
         Time.timeScale = scale;
         Time.fixedDeltaTime = baseFixedDeltaTime * Mathf.Max(1f, scale);
     }
