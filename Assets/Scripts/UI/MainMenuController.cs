@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -6,16 +6,13 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using UnityEngine.Video;
 
-// The main menu: a looping battle clip behind the title and buttons, with the menu theme playing.
-// The whole menu is built at runtime - drop the clip and music into the slots below (or into
-// Resources/Menu as MenuBackdrop / MenuMusic) and it picks them up.
+// The main menu: a looping battle clip behind the title and buttons. The whole menu is built at
+// runtime - drop the clip into the slot below (or Resources/Menu/MenuBackdrop). Music comes from
+// MusicManager's menu playlist.
 public class MainMenuController : MonoBehaviour
 {
     [Header("Media")]
     public VideoClip backdrop;
-    public AudioClip music;
-    [Tooltip("Trim for this track on top of the player's Music volume.")]
-    [Range(0f, 1f)] public float musicVolume = 1f;
 
     [Header("Look")]
     public string title = "OSIRIS AT WAR";
@@ -33,7 +30,6 @@ public class MainMenuController : MonoBehaviour
     private Canvas menuCanvas;
     private VideoPlayer player;
     private RenderTexture videoTexture;
-    private AudioSource musicSource;
     private Image fade;
     private CanvasGroup menuGroup;
     private bool leaving;
@@ -42,12 +38,10 @@ public class MainMenuController : MonoBehaviour
     private void Start()
     {
         if (backdrop == null) backdrop = Resources.Load<VideoClip>("Menu/MenuBackdrop");
-        if (music == null) music = Resources.Load<AudioClip>("Menu/MenuMusic");
 
         EnsureEventSystem();
         BuildInterface();
         StartVideo();
-        StartMusic();
     }
 
     // ---------------- Interface ----------------
@@ -176,19 +170,6 @@ public class MainMenuController : MonoBehaviour
         player.Prepare();
     }
 
-    private void StartMusic()
-    {
-        if (music == null) return;
-
-        musicSource = gameObject.AddComponent<AudioSource>();
-        musicSource.clip = music;
-        musicSource.loop = true;
-        musicSource.volume = 0f;
-        musicSource.ignoreListenerVolume = true; // Follows the Music slider, not the Effects one.
-        musicSource.playOnAwake = false;
-        musicSource.Play();
-    }
-
     private void Update()
     {
         float target = leaving ? 1f : LoopFade();
@@ -201,11 +182,6 @@ public class MainMenuController : MonoBehaviour
             menuGroup.alpha = Mathf.MoveTowards(menuGroup.alpha, 1f, Time.unscaledDeltaTime / fadeInTime);
         }
 
-        if (musicSource != null)
-        {
-            float volume = leaving ? 0f : musicVolume * GameSettings.MusicOutput;
-            musicSource.volume = Mathf.MoveTowards(musicSource.volume, volume, Time.unscaledDeltaTime / (leaving ? exitFadeTime : 2.5f));
-        }
     }
 
     // Dips to black for a moment around the clip's loop point so the restart isn't a hard cut.
