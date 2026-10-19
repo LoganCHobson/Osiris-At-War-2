@@ -90,7 +90,7 @@ public class MusicManager : MonoBehaviour
         for (int i = 0; i < sources.Length; i++)
         {
             AudioSource source = sources[i];
-            if (!source.isPlaying) continue;
+            if (source == null || !source.isPlaying) continue; // No audio device (e.g. headless runs).
 
             float target = i == active && playing[i] != null ? 1f : 0f;
             fades[i] = Mathf.MoveTowards(fades[i], target, step);
@@ -105,6 +105,7 @@ public class MusicManager : MonoBehaviour
 
         // Start the next track a little before this one ends so they overlap.
         AudioSource current = sources[active];
+        if (current == null) return;
         if (HasTracks(playlist) && playing[active] != null && current.clip != null
             && (!current.isPlaying || current.clip.length - current.time <= crossfadeTime))
         {
@@ -119,6 +120,7 @@ public class MusicManager : MonoBehaviour
 
         active = 1 - active;
         AudioSource source = sources[active];
+        if (source == null) return;
         source.Stop();
         source.clip = track.clip;
         source.time = 0f;
