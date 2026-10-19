@@ -90,7 +90,17 @@ public class MusicManager : MonoBehaviour
         for (int i = 0; i < sources.Length; i++)
         {
             AudioSource source = sources[i];
-            if (source == null || !source.isPlaying) continue; // No audio device (e.g. headless runs).
+            if (source == null || source.clip == null) continue; // No audio device (e.g. headless runs).
+
+            // Music turned all the way down: pause rather than play silently, so it picks up where it was.
+            bool muted = GameSettings.MusicOutput <= 0.001f;
+            if (muted)
+            {
+                if (source.isPlaying) source.Pause();
+                continue;
+            }
+            if (!source.isPlaying && playing[i] != null && source.time > 0f) source.UnPause();
+            if (!source.isPlaying) continue;
 
             float target = i == active && playing[i] != null ? 1f : 0f;
             fades[i] = Mathf.MoveTowards(fades[i], target, step);
@@ -105,7 +115,7 @@ public class MusicManager : MonoBehaviour
 
         // Start the next track a little before this one ends so they overlap.
         AudioSource current = sources[active];
-        if (current == null || current.loop) return;
+        if (current == null || current.loop || GameSettings.MusicOutput <= 0.001f) return; // Paused tracks aren't finished.
         if (HasTracks(playlist) && playing[active] != null && current.clip != null
             && (!current.isPlaying || current.clip.length - current.time <= crossfadeTime))
         {
