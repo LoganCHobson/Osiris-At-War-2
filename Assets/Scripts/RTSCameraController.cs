@@ -42,7 +42,7 @@ public class RTSCameraController : MonoBehaviour
     [Tooltip("Keep the camera over the map: the planets on the galactic map, the battlefield in battle.")]
     [SerializeField] bool clampToMap = true;
     [Tooltip("How far past the outermost planets the galactic map camera may go.")]
-    [SerializeField] float mapMargin = 40f;
+    [SerializeField] float mapMargin = 80f;
     bool hasBounds;
     Rect bounds;
 
@@ -116,12 +116,32 @@ public class RTSCameraController : MonoBehaviour
         }
     }
 
+    // Clamps what you're looking at, not the rig: the camera sits back from the rig and looks ahead at an
+    // angle, so the point under the middle of the screen is what has to stay over the map.
     private Vector3 Clamp(Vector3 position)
     {
         if (!hasBounds) return position;
-        position.x = Mathf.Clamp(position.x, bounds.xMin, bounds.xMax);
-        position.z = Mathf.Clamp(position.z, bounds.yMin, bounds.yMax);
-        return position;
+
+        Vector3 lookOffset = LookOffset();
+        Vector3 focus = position + lookOffset;
+        focus.x = Mathf.Clamp(focus.x, bounds.xMin, bounds.xMax);
+        focus.z = Mathf.Clamp(focus.z, bounds.yMin, bounds.yMax);
+        return focus - lookOffset;
+    }
+
+    // Flat offset from the rig to the map point under the centre of the screen.
+    private Vector3 LookOffset()
+    {
+        Transform view = cam != null ? cam.transform : cameraTransform;
+        if (view == null) return Vector3.zero;
+
+        Plane map = new Plane(Vector3.up, Vector3.zero);
+        Ray ray = new Ray(view.position, view.forward);
+        if (!map.Raycast(ray, out float distance)) return Vector3.zero;
+
+        Vector3 offset = ray.GetPoint(distance) - transform.position;
+        offset.y = 0f;
+        return offset;
     }
 
     private void Update()
