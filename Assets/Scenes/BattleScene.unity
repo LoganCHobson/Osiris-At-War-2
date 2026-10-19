@@ -2197,6 +2197,7 @@ MonoBehaviour:
   validColor: {r: 0.3, g: 0.85, b: 1, a: 0.35}
   invalidColor: {r: 1, g: 0.3, b: 0.3, a: 0.35}
   emissionStrength: 1.5
+  prewarmDelay: 1
 --- !u!1001 &7700000000000000002
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4922,6 +4923,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   openingCooldown: 10
   retreatDuration: 10
+  spoolLead: 2.5
+  jumpOutWindow: 1.2
+  holdAfterJump: 1
   attackerRetreatBlocked: 0
   defenderRetreatBlocked: 0
 --- !u!1660057539 &9223372036854775807

@@ -89,6 +89,22 @@ public class BattleTerrain : MonoBehaviour
         if (Instance == this) Instance = null;
     }
 
+    // Throws away the current asteroids and rolls a new layout (used by the showcase recorder).
+    public void Regenerate(Vector3 attackerStart, Vector3 defenderStart, int seed, bool allowClearMap)
+    {
+        foreach (AsteroidField field in fields)
+        {
+            if (field != null) Destroy(field.gameObject);
+        }
+        fields.Clear();
+        restrictedAgents.Clear();
+
+        float clearChance = layout.clearMapChance;
+        if (!allowClearMap) layout.clearMapChance = 0f;
+        Generate(attackerStart, defenderStart, seed);
+        layout.clearMapChance = clearChance;
+    }
+
     private void Generate(Vector3 attackerStart, Vector3 defenderStart, int seed)
     {
         Map = FindMapBounds();

@@ -60,12 +60,18 @@ public class BattleShowcase : MonoBehaviour
     private int humanWaves;
     private int avantiWaves;
 
+    private bool letterbox = true;
+
     private float Elapsed => Time.time - startedAt;
 
     IEnumerator Start()
     {
         outputDir = Argument("-captureDir", Path.Combine(Application.temporaryCachePath, "BattleShowcase"));
         if (float.TryParse(Argument("-duration", ""), NumberStyles.Float, CultureInfo.InvariantCulture, out float requested)) duration = requested;
+        if (int.TryParse(Argument("-width", ""), out int requestedWidth)) width = requestedWidth;
+        if (int.TryParse(Argument("-height", ""), out int requestedHeight)) height = requestedHeight;
+        if (int.TryParse(Argument("-fps", ""), out int requestedFps)) frameRate = requestedFps;
+        letterbox = !HasFlag("-noLetterbox");
         Directory.CreateDirectory(outputDir);
         foreach (string old in Directory.GetFiles(outputDir, "*.jpg")) File.Delete(old);
 
@@ -74,9 +80,21 @@ public class BattleShowcase : MonoBehaviour
 
         Vector3 a = GameManager.Instance.attackerShipSpawnPoint.position;
         Vector3 d = GameManager.Instance.defenderShipSpawnPoint.position;
-        centre = (a + d) / 2f;
         axis = (d - a).normalized;
         across = Vector3.Cross(Vector3.up, axis);
+
+        // Optional: a chosen world below and a chosen asteroid layout (for recording the menu backdrop).
+        if (System.Enum.TryParse(Argument("-planet", ""), out PlanetArchetype archetype))
+        {
+            int.TryParse(Argument("-planetSeed", "1"), out int planetSeed);
+            yield return null; // SkyPlanet builds its material in Start.
+            FindFirstObjectByType<SkyPlanet>()?.Show(PlanetArchetypes.Create(archetype, planetSeed));
+        }
+        if (int.TryParse(Argument("-terrainSeed", ""), out int terrainSeed) && BattleTerrain.Instance != null)
+        {
+            BattleTerrain.Instance.Regenerate(a, d, terrainSeed, false);
+        }
+        centre = ClearBattleCentre(a, d);
 
         Deploy(HumanFleet, centre - axis * 150f, axis, true, humans);
         Deploy(AvantiFleet, centre + axis * 150f, -axis, false, avanti);
@@ -148,6 +166,35 @@ public class BattleShowcase : MonoBehaviour
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.Exit(0);
 #endif
+    }
+
+    // The stretch between the fleets with the least asteroid in it, so nobody spawns inside rock.
+    static Vector3 ClearBattleCentre(Vector3 a, Vector3 d)
+    {
+        BattleTerrain terrain = BattleTerrain.Instance;
+        if (terrain == null || terrain.Fields.Count == 0) return (a + d) / 2f;
+
+        Vector3 best = (a + d) / 2f;
+        int fewest = int.MaxValue;
+        for (float t = 0.3f; t <= 0.7f; t += 0.05f)
+        {
+            Vector3 candidate = Vector3.Lerp(a, d, t);
+            int blocked = 0;
+            for (int ring = 1; ring <= 3; ring++)
+            for (int i = 0; i < 12; i++)
+            {
+                float angle = i * Mathf.PI / 6f;
+                Vector3 probe = candidate + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * ring * 90f;
+                if (terrain.InAsteroids(probe)) blocked++;
+            }
+            if (terrain.InAsteroids(candidate)) blocked += 10;
+            if (blocked < fewest)
+            {
+                fewest = blocked;
+                best = candidate;
+            }
+        }
+        return best;
     }
 
     void Deploy((string key, int count)[] fleet, Vector3 front, Vector3 facing, bool attacker, List<UnitHealthManager> roster)
@@ -484,7 +531,7 @@ public class BattleShowcase : MonoBehaviour
 
     void Letterbox()
     {
-        if (cinematicCamera == null || cinematicCamera.LookWeight <= 0f) return;
+        if (!letterbox || cinematicCamera == null || cinematicCamera.LookWeight <= 0f) return;
 
         float bar = Mathf.Max(0f, (1f - (float)width / height / cinematicCamera.letterboxAspect) * 0.5f) * cinematicCamera.LookWeight;
         int rows = Mathf.RoundToInt(bar * height);
@@ -511,6 +558,8 @@ public class BattleShowcase : MonoBehaviour
             report.AppendLine($"missing prefab {key}");
             return null;
         }
+        if (BattleTerrain.Instance != null) pos = BattleTerrain.Instance.NearestDropPoint(pos, attacker); // Never inside rock.
+
         Ship ship = prefab.GetComponent<Ship>();
         if (ship != null) return GameManager.Instance.SpawnShip(ship, pos, rot, attacker, false);
         GameObject go = Instantiate(prefab, pos, rot);
@@ -518,6 +567,8 @@ public class BattleShowcase : MonoBehaviour
         GameManager.Instance.ApplyAllegiance(go, attacker);
         return go;
     }
+
+    static bool HasFlag(string name) => Array.IndexOf(Environment.GetCommandLineArgs(), name) >= 0;
 
     static string Argument(string name, string fallback)
     {
