@@ -16,6 +16,12 @@ public class GalacticMapManager : MonoBehaviour
     public Color invalidOrderColor = Color.red;
     public float routeLineHeight = 0.1f;
 
+    [Header("Fleet drag and drop")]
+    [Tooltip("How close (in map units) the cursor must be to a parking spot to drop a fleet onto it.")]
+    public float slotSnapRadius = 1.4f;
+    public Color mergeOrderColor = new Color(1f, 0.78f, 0.25f);
+    public float slotMarkerRadius = 0.7f;
+
     [Header("Hyperspace lanes")]
     public Color laneColor = Color.cyan;
     public float laneWidth = 0.15f;
@@ -33,7 +39,21 @@ public class GalacticMapManager : MonoBehaviour
     private bool previewValid;
     private string previewInfo;
 
+    private enum DropKind { None, Route, Merge, Park }
+    private DropKind dropKind;
+    private GalacticFleet dropFleet;
+    private Planet dropPlanet;
+    private int dropSlot = -1;
+    private LineRenderer slotMarker;
+
     public bool IsDraggingFleet => isDragging;
+    public GalacticFleet DropTargetFleet => isDragging && dropKind == DropKind.Merge ? dropFleet : null;
+    public Planet DragHoverPlanet => isDragging ? dropPlanet : null;
+
+    public bool IsSelected(GalacticFleet fleet)
+    {
+        return fleet != null && selectedFleets.Contains(fleet);
+    }
 
     private void Awake()
     {
@@ -47,6 +67,7 @@ public class GalacticMapManager : MonoBehaviour
         GameSpeed.Reset();
 
         DrawHyperspaceLanes();
+        CreateSlotMarker();
 
         if (orderLinePreview != null)
         {
@@ -56,6 +77,11 @@ public class GalacticMapManager : MonoBehaviour
         if (AIDirector.Instance == null)
         {
             new GameObject("AIDirector").AddComponent<AIDirector>();
+        }
+
+        if (FindFirstObjectByType<ResourceBar>() == null)
+        {
+            new GameObject("ResourceBar").AddComponent<ResourceBar>();
         }
 
         GalacticState.Instance?.ApplyToScene();
@@ -282,6 +308,7 @@ public class GalacticMapManager : MonoBehaviour
             dragFleet = fleet;
             previewPlanet = null;
             previewRoute.Clear();
+            ResetDropTarget();
             FleetPanel.Instance?.Hide();
             PlanetBuildPanel.Instance?.Hide();
             return;
@@ -307,31 +334,37 @@ public class GalacticMapManager : MonoBehaviour
         if (orderLinePreview == null) return;
 
         Ray ray = cam.ScreenPointToRay(Input.mousePosition);
-        Vector3 dragPoint;
-        Planet hoveredPlanet = null;
+        Plane mapPlane = new Plane(Vector3.up, dragOrigin);
+        Vector3 dragPoint = mapPlane.Raycast(ray, out float enter) ? ray.GetPoint(enter) : dragOrigin;
 
-        if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, planetLayer))
-        {
-            hoveredPlanet = hit.collider.GetComponentInParent<Planet>();
-            dragPoint = hit.collider.transform.position;
-        }
-        else
-        {
-            Plane mapPlane = new Plane(Vector3.up, dragOrigin);
-            dragPoint = mapPlane.Raycast(ray, out float enter) ? ray.GetPoint(enter) : dragOrigin;
-        }
+        DropKind previousKind = dropKind;
+        GalacticFleet previousFleet = dropFleet;
+        Planet previousPlanet = dropPlanet;
+        int previousSlot = dropSlot;
 
-        if (hoveredPlanet != previewPlanet)
+        ResolveDropTarget(ray, dragPoint);
+
+        bool targetChanged = dropKind != previousKind || dropFleet != previousFleet || dropPlanet != previousPlanet || dropSlot != previousSlot;
+        if (targetChanged)
         {
-            previewPlanet = hoveredPlanet;
+            previewPlanet = dropKind == DropKind.Route ? dropPlanet : null;
             RebuildRoutePreview();
         }
 
         Vector3 lift = Vector3.up * routeLineHeight;
-        if (previewRoute.Count >= 2 && dragFleet != null)
+        Vector3 from = dragFleet != null ? dragFleet.transform.position : dragOrigin;
+
+        if (dropKind == DropKind.Merge || dropKind == DropKind.Park)
+        {
+            Vector3 to = dropKind == DropKind.Merge ? dropFleet.transform.position : dropPlanet.GetSlotPosition(dropSlot);
+            orderLinePreview.positionCount = 2;
+            orderLinePreview.SetPosition(0, from + lift);
+            orderLinePreview.SetPosition(1, to + lift);
+        }
+        else if (previewRoute.Count >= 2 && dragFleet != null)
         {
             orderLinePreview.positionCount = previewRoute.Count;
-            orderLinePreview.SetPosition(0, dragFleet.transform.position + lift);
+            orderLinePreview.SetPosition(0, from + lift);
             for (int i = 1; i < previewRoute.Count; i++)
             {
                 orderLinePreview.SetPosition(i, previewRoute[i].transform.position + lift);
@@ -339,16 +372,106 @@ public class GalacticMapManager : MonoBehaviour
         }
         else
         {
+            Vector3 to = dropPlanet != null ? dropPlanet.transform.position : dragPoint;
             orderLinePreview.positionCount = 2;
             orderLinePreview.SetPosition(0, dragOrigin + lift);
-            orderLinePreview.SetPosition(1, dragPoint + lift);
+            orderLinePreview.SetPosition(1, to + lift);
         }
 
-        Color lineColor = previewValid ? validOrderColor : invalidOrderColor;
+        Color lineColor = !previewValid ? invalidOrderColor : dropKind == DropKind.Merge ? mergeOrderColor : validOrderColor;
         orderLinePreview.startColor = lineColor;
         orderLinePreview.endColor = lineColor;
 
+        UpdateSlotMarker(lineColor);
         PlanetTooltip.Instance?.SetRouteInfo(previewInfo);
+    }
+
+    // Works out what releasing the mouse right now would do: merge into a friendly fleet, park in an
+    // empty spot around the current planet, or travel to another planet (optionally into a chosen spot).
+    private void ResolveDropTarget(Ray ray, Vector3 dragPoint)
+    {
+        ResetDropTarget();
+
+        GalacticFleet hoveredFleet = FindHoveredFleet(ray);
+        if (hoveredFleet != null)
+        {
+            SetFleetTarget(hoveredFleet);
+            return;
+        }
+
+        if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, planetLayer))
+        {
+            Planet planet = hit.collider.GetComponentInParent<Planet>();
+            if (planet != null)
+            {
+                dropKind = DropKind.Route;
+                dropPlanet = planet;
+                return;
+            }
+        }
+
+        Planet slotPlanet = Planet.FindNearestSlot(dragPoint, slotSnapRadius, out int slot);
+        if (slotPlanet == null) return;
+
+        GalacticFleet occupant = slotPlanet.GetFleetInSlot(slot);
+        if (occupant != null)
+        {
+            if (selectedFleets.Contains(occupant)) return; // Dropped back on itself - nothing to do.
+            if (occupant.IsRevealed)
+            {
+                SetFleetTarget(occupant);
+                return;
+            }
+        }
+
+        dropPlanet = slotPlanet;
+        dropSlot = slot;
+        bool parkingHere = dragFleet != null && dragFleet.currentPlanet == slotPlanet && !dragFleet.IsTraveling;
+        dropKind = parkingHere && occupant == null ? DropKind.Park : DropKind.Route;
+    }
+
+    private void SetFleetTarget(GalacticFleet target)
+    {
+        dropPlanet = target.currentPlanet;
+        dropFleet = target;
+
+        foreach (GalacticFleet fleet in selectedFleets)
+        {
+            if (fleet != null && fleet.CanReorganizeWith(target))
+            {
+                dropKind = DropKind.Merge;
+                return;
+            }
+        }
+
+        // Can't merge right now (other planet, enemy, or busy) - treat it as an order to fly to its planet.
+        dropFleet = null;
+        dropKind = target.currentPlanet != null && !target.IsTraveling ? DropKind.Route : DropKind.None;
+        if (dropKind == DropKind.None) dropPlanet = null;
+    }
+
+    private GalacticFleet FindHoveredFleet(Ray ray)
+    {
+        RaycastHit[] hits = Physics.RaycastAll(ray, Mathf.Infinity, fleetLayer);
+        System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+
+        foreach (RaycastHit hit in hits)
+        {
+            GalacticFleet fleet = hit.collider.GetComponentInParent<GalacticFleet>();
+            if (fleet != null && fleet.IsRevealed && !selectedFleets.Contains(fleet))
+            {
+                return fleet;
+            }
+        }
+        return null;
+    }
+
+    private void ResetDropTarget()
+    {
+        dropKind = DropKind.None;
+        dropFleet = null;
+        dropPlanet = null;
+        dropSlot = -1;
     }
 
     private void RebuildRoutePreview()
@@ -356,6 +479,19 @@ public class GalacticMapManager : MonoBehaviour
         previewRoute.Clear();
         previewValid = false;
         previewInfo = null;
+
+        if (dropKind == DropKind.Merge)
+        {
+            BuildMergePreview();
+            return;
+        }
+
+        if (dropKind == DropKind.Park)
+        {
+            previewValid = true;
+            previewInfo = "<b>Park</b>  Move to this spot";
+            return;
+        }
 
         if (previewPlanet == null) return;
 
@@ -439,6 +575,34 @@ public class GalacticMapManager : MonoBehaviour
         previewInfo = string.Join("\n", lines);
     }
 
+    private void BuildMergePreview()
+    {
+        int merging = 0;
+        int ships = dropFleet.roster.Count;
+        float power = Strength.Of(dropFleet);
+
+        foreach (GalacticFleet fleet in selectedFleets)
+        {
+            if (fleet == null || !fleet.CanReorganizeWith(dropFleet)) continue;
+            merging++;
+            ships += fleet.roster.Count;
+            power += Strength.Of(fleet);
+        }
+
+        previewValid = merging > 0;
+
+        List<string> lines = new List<string>
+        {
+            $"<b>Merge</b>  {MapText.Plural(merging, "fleet")} into this one",
+            MapText.Tint($"Result: {MapText.Plural(ships, "ship")}, power {power:0}", MapText.Good)
+        };
+
+        int left = selectedFleets.Count - merging;
+        if (left > 0) lines.Add(MapText.Tint($"{MapText.Plural(left, "fleet")} not here and won't merge", MapText.Muted));
+
+        previewInfo = string.Join("\n", lines);
+    }
+
     private void ClearRoutePreview()
     {
         previewPlanet = null;
@@ -451,28 +615,100 @@ public class GalacticMapManager : MonoBehaviour
             orderLinePreview.positionCount = 0;
         }
 
+        if (slotMarker != null)
+        {
+            slotMarker.enabled = false;
+        }
+
         PlanetTooltip.Instance?.SetRouteInfo(null);
     }
 
     private void HandleRelease()
     {
+        Ray ray = cam.ScreenPointToRay(Input.mousePosition);
+        Plane mapPlane = new Plane(Vector3.up, dragOrigin);
+        Vector3 dropPoint = mapPlane.Raycast(ray, out float enter) ? ray.GetPoint(enter) : dragOrigin;
+        ResolveDropTarget(ray, dropPoint);
+
+        DropKind kind = dropKind;
+        GalacticFleet targetFleet = dropFleet;
+        Planet targetPlanet = dropPlanet;
+        int targetSlot = dropSlot;
+
         isDragging = false;
         ClearRoutePreview();
+        ResetDropTarget();
 
-        Ray ray = cam.ScreenPointToRay(Input.mousePosition);
-
-        if (!Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, planetLayer))
+        switch (kind)
         {
-            return;
+            case DropKind.Merge:
+                MergeSelectedInto(targetFleet);
+                break;
+
+            case DropKind.Park:
+                dragFleet?.MoveToSlot(targetSlot);
+                break;
+
+            case DropKind.Route:
+                foreach (GalacticFleet fleet in selectedFleets)
+                {
+                    if (fleet == null) continue;
+                    fleet.TrySetDestination(targetPlanet, fleet == dragFleet ? targetSlot : -1);
+                }
+                break;
+        }
+    }
+
+    private void MergeSelectedInto(GalacticFleet target)
+    {
+        if (target == null) return;
+
+        foreach (GalacticFleet fleet in new List<GalacticFleet>(selectedFleets))
+        {
+            if (fleet != null && fleet.MergeInto(target))
+            {
+                selectedFleets.Remove(fleet);
+            }
         }
 
-        Planet targetPlanet = hit.collider.GetComponentInParent<Planet>();
-        if (targetPlanet == null) return;
-
-        foreach (GalacticFleet fleet in selectedFleets)
+        if (!selectedFleets.Contains(target))
         {
-            fleet.TrySetDestination(targetPlanet);
+            selectedFleets.Add(target);
         }
+        dragFleet = target;
+    }
+
+    private void CreateSlotMarker()
+    {
+        GameObject markerObj = new GameObject("SlotDropMarker");
+        markerObj.transform.SetParent(transform);
+
+        slotMarker = markerObj.AddComponent<LineRenderer>();
+        slotMarker.loop = true;
+        slotMarker.useWorldSpace = true;
+        slotMarker.positionCount = 32;
+        slotMarker.startWidth = 0.08f;
+        slotMarker.endWidth = 0.08f;
+        slotMarker.material = new Material(Shader.Find("Sprites/Default"));
+        slotMarker.enabled = false;
+    }
+
+    private void UpdateSlotMarker(Color color)
+    {
+        if (slotMarker == null) return;
+
+        bool show = dropPlanet != null && dropSlot >= 0 && (dropKind == DropKind.Park || dropKind == DropKind.Route);
+        slotMarker.enabled = show;
+        if (!show) return;
+
+        Vector3 centre = dropPlanet.GetSlotPosition(dropSlot) + Vector3.up * routeLineHeight;
+        for (int i = 0; i < slotMarker.positionCount; i++)
+        {
+            float angle = i * Mathf.PI * 2f / slotMarker.positionCount;
+            slotMarker.SetPosition(i, centre + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * slotMarkerRadius);
+        }
+        slotMarker.startColor = color;
+        slotMarker.endColor = color;
     }
 
     private void DeselectAll()

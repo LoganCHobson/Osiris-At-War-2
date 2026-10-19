@@ -17,6 +17,9 @@ public class Ship : MonoBehaviour
     [Min(0)] public int populationCost = 2;
     public FleetRole fleetRole = FleetRole.Line;
 
+    // Only capital ships can lead a fleet - the lead is the ship that opens an attack on its own.
+    public bool CanLead => fleetRole == FleetRole.Line || fleetRole == FleetRole.Screen || fleetRole == FleetRole.Carrier;
+
     private Sprite cachedIconSprite;
 
     public Sprite IconSprite

@@ -120,11 +120,17 @@ public class Planet : MonoBehaviour
         return transform.position + offset;
     }
 
-    public int ClaimSlot(GalacticFleet fleet)
+    public int ClaimSlot(GalacticFleet fleet, int preferredSlot = -1)
     {
         for (int i = 0; i < fleetSlots.Length; i++)
         {
             if (fleetSlots[i] == fleet) return i;
+        }
+
+        if (preferredSlot >= 0 && preferredSlot < fleetSlots.Length && fleetSlots[preferredSlot] == null)
+        {
+            fleetSlots[preferredSlot] = fleet;
+            return preferredSlot;
         }
 
         for (int i = 0; i < fleetSlots.Length; i++)
@@ -162,6 +168,50 @@ public class Planet : MonoBehaviour
             if (fleetSlots[i] == null) return i;
         }
         return -1;
+    }
+
+    public int SlotOf(GalacticFleet fleet)
+    {
+        for (int i = 0; i < fleetSlots.Length; i++)
+        {
+            if (fleetSlots[i] == fleet) return i;
+        }
+        return -1;
+    }
+
+    public bool MoveFleetToSlot(GalacticFleet fleet, int slot)
+    {
+        if (slot < 0 || slot >= fleetSlots.Length) return false;
+        if (fleetSlots[slot] != null && fleetSlots[slot] != fleet) return false;
+
+        ReleaseSlot(fleet);
+        fleetSlots[slot] = fleet;
+        return true;
+    }
+
+    public static Planet FindNearestSlot(Vector3 point, float maxDistance, out int slot)
+    {
+        Planet nearest = null;
+        slot = -1;
+        float best = maxDistance * maxDistance;
+
+        foreach (Planet planet in All)
+        {
+            for (int i = 0; i < FleetSlotCount; i++)
+            {
+                Vector3 offset = planet.GetSlotPosition(i) - point;
+                offset.y = 0f;
+                float distance = offset.sqrMagnitude;
+                if (distance < best)
+                {
+                    best = distance;
+                    nearest = planet;
+                    slot = i;
+                }
+            }
+        }
+
+        return nearest;
     }
 
     public void ForceClaimSlot(GalacticFleet fleet, int slot)

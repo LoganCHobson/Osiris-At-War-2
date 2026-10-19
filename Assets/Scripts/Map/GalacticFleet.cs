@@ -47,6 +47,14 @@ public class GalacticFleet : MonoBehaviour
     private static readonly int ColorID = Shader.PropertyToID("_Color");
     private MaterialPropertyBlock factionProperties;
 
+    private FleetMapIcon mapIcon;
+
+    private void Awake()
+    {
+        mapIcon = GetComponent<FleetMapIcon>();
+        if (mapIcon == null) mapIcon = gameObject.AddComponent<FleetMapIcon>();
+    }
+
     private void OnEnable()
     {
         All.Add(this);
@@ -129,7 +137,7 @@ public class GalacticFleet : MonoBehaviour
         }
     }
 
-    public bool TrySetDestination(Planet planet)
+    public bool TrySetDestination(Planet planet, int preferredSlot = -1)
     {
         if (IsTraveling || IsHolding || currentPlanet == null || planet == null)
         {
@@ -140,7 +148,7 @@ public class GalacticFleet : MonoBehaviour
         {
             // Re-parking at the same planet - just claim a fresh slot, no travel needed.
             currentPlanet.ReleaseSlot(this);
-            int slot = currentPlanet.ClaimSlot(this);
+            int slot = currentPlanet.ClaimSlot(this, preferredSlot);
             transform.position = slot >= 0 ? currentPlanet.GetSlotPosition(slot) : currentPlanet.transform.position;
             return true;
         }
@@ -154,8 +162,36 @@ public class GalacticFleet : MonoBehaviour
         currentPlanet.ReleaseSlot(this);
         route = path;
         routeIndex = 1; // route[0] is the planet we're departing from.
-        finalSlot = planet.ClaimSlot(this);
+        finalSlot = planet.ClaimSlot(this, preferredSlot);
         IsTraveling = true;
+        return true;
+    }
+
+    public bool CanReorganizeWith(GalacticFleet other)
+    {
+        if (other == null || other == this || other.faction != faction) return false;
+        if (currentPlanet == null || other.currentPlanet != currentPlanet) return false;
+        return !IsTraveling && !other.IsTraveling && !AwaitingBattle && !other.AwaitingBattle;
+    }
+
+    public bool MergeInto(GalacticFleet target)
+    {
+        if (!CanReorganizeWith(target)) return false;
+
+        target.roster.AddRange(roster); // The target keeps its lead ship.
+        target.EnsureValidLead();
+        roster.Clear();
+        currentPlanet.ReleaseSlot(this);
+        Destroy(gameObject);
+        return true;
+    }
+
+    public bool MoveToSlot(int slot)
+    {
+        if (IsTraveling || AwaitingBattle || currentPlanet == null) return false;
+        if (!currentPlanet.MoveFleetToSlot(this, slot)) return false;
+
+        transform.position = currentPlanet.GetSlotPosition(slot);
         return true;
     }
 
@@ -192,22 +228,75 @@ public class GalacticFleet : MonoBehaviour
         return distance / travelSpeed + stopoversLeft * stopoverDuration + (isStoppedOver ? stopoverTimer : 0f);
     }
 
-    public bool TransferShipTo(Ship ship, GalacticFleet destination)
+    // Roster position 0 is the lead ship - the one that deploys first when this fleet attacks.
+    public Ship LeadShip => roster.Count > 0 ? roster[0] : null;
+
+    public bool TransferShipTo(Ship ship, GalacticFleet destination, int index = -1)
     {
-        if (destination == this || IsTraveling || destination.IsTraveling) return false;
+        int from = roster.IndexOf(ship);
+        return from >= 0 && destination != this && MoveShips(new List<int> { from }, destination, index);
+    }
+
+    // Moves the ships at the given roster positions into destination (which may be this fleet) so they
+    // start at roster position index (-1 = the end). Index 0 makes the first moved ship the lead.
+    public bool MoveShips(List<int> fromIndices, GalacticFleet destination, int index = -1)
+    {
+        if (destination == null || fromIndices == null || fromIndices.Count == 0) return false;
+        if (IsTraveling || destination.IsTraveling) return false;
         if (destination.faction != faction) return false; // Can't reorganize ships across factions.
         if (currentPlanet == null || currentPlanet != destination.currentPlanet) return false;
-        if (!roster.Remove(ship)) return false;
 
-        destination.roster.Add(ship);
+        List<int> sorted = new List<int>(fromIndices);
+        sorted.Sort();
+        if (sorted[0] < 0 || sorted[sorted.Count - 1] >= roster.Count) return false;
+
+        List<Ship> moving = sorted.ConvertAll(i => roster[i]);
+        bool sameFleet = destination == this;
+        int othersInDestination = sameFleet ? roster.Count - moving.Count : destination.roster.Count;
+        if (index == 0 && othersInDestination > 0 && !moving[0].CanLead) return false; // Squadrons can't lead.
+
+        if (sameFleet && index >= 0)
+        {
+            if (sorted.Count == 1 && sorted[0] == index) return false; // Dropped back where it was.
+            index -= sorted.FindAll(i => i < index).Count; // Account for the ships lifted out ahead of the target.
+        }
+
+        for (int i = sorted.Count - 1; i >= 0; i--)
+        {
+            roster.RemoveAt(sorted[i]);
+        }
+
+        List<Ship> target = destination.roster;
+        if (index < 0 || index > target.Count) index = target.Count;
+        target.InsertRange(index, moving);
+        destination.EnsureValidLead();
+
+        if (sameFleet) return true;
 
         if (roster.Count == 0)
         {
             currentPlanet.ReleaseSlot(this);
             Destroy(gameObject);
         }
+        else
+        {
+            EnsureValidLead();
+        }
 
         return true;
+    }
+
+    // Keeps a squadron from ending up in the lead spot (e.g. after the old lead was moved away).
+    public void EnsureValidLead()
+    {
+        if (roster.Count < 2 || roster[0] == null || roster[0].CanLead) return;
+
+        int capital = roster.FindIndex(ship => ship != null && ship.CanLead);
+        if (capital <= 0) return;
+
+        Ship lead = roster[capital];
+        roster.RemoveAt(capital);
+        roster.Insert(0, lead);
     }
 
     public void RemoveShip(Ship ship)
@@ -427,6 +516,8 @@ public class GalacticFleet : MonoBehaviour
 
         foreach (MeshRenderer meshRenderer in GetComponentsInChildren<MeshRenderer>())
         {
+            if (mapIcon != null && mapIcon.IsIconPart(meshRenderer.transform)) continue; // The map icon tints itself.
+
             meshRenderer.GetPropertyBlock(factionProperties);
             factionProperties.SetColor(BaseColorID, tint);
             factionProperties.SetColor(ColorID, tint);

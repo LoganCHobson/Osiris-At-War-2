@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Rendering;
@@ -129,10 +130,7 @@ public class PlacementManager : MonoBehaviour
             if (canvas != null) DestroyImmediate(canvas.gameObject);
         }
 
-        foreach (MonoBehaviour behaviour in model.GetComponentsInChildren<MonoBehaviour>(true))
-        {
-            if (behaviour != null) DestroyImmediate(behaviour);
-        }
+        StripBehaviours(model);
 
         StripAll<NavMeshAgent>(model);
         StripAll<NavMeshObstacle>(model);
@@ -168,6 +166,53 @@ public class PlacementManager : MonoBehaviour
         }
 
         return root;
+    }
+
+    // Removes every script, dependents first - Unity refuses to remove a component another one
+    // [RequireComponent]s (e.g. ShipDestruction -> HullDamage -> UnitHealthManager), which would leave
+    // live gameplay scripts running on the hologram.
+    private static void StripBehaviours(GameObject model)
+    {
+        List<MonoBehaviour> remaining = new List<MonoBehaviour>(model.GetComponentsInChildren<MonoBehaviour>(true));
+        bool progress = true;
+
+        while (remaining.Count > 0 && progress)
+        {
+            progress = false;
+            for (int i = remaining.Count - 1; i >= 0; i--)
+            {
+                MonoBehaviour behaviour = remaining[i];
+                if (behaviour != null && IsRequiredByAnother(behaviour, remaining)) continue;
+
+                if (behaviour != null) DestroyImmediate(behaviour);
+                remaining.RemoveAt(i);
+                progress = true;
+            }
+        }
+    }
+
+    private static bool IsRequiredByAnother(MonoBehaviour target, List<MonoBehaviour> remaining)
+    {
+        System.Type targetType = target.GetType();
+
+        foreach (MonoBehaviour other in remaining)
+        {
+            if (other == null || other == target || other.gameObject != target.gameObject) continue;
+
+            foreach (RequireComponent requirement in other.GetType().GetCustomAttributes(typeof(RequireComponent), true))
+            {
+                if (Requires(requirement.m_Type0, targetType) || Requires(requirement.m_Type1, targetType) || Requires(requirement.m_Type2, targetType))
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static bool Requires(System.Type required, System.Type candidate)
+    {
+        return required != null && required.IsAssignableFrom(candidate);
     }
 
     private static void StripAll<T>(GameObject model) where T : Component

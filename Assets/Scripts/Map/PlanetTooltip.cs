@@ -110,6 +110,12 @@ public class PlanetTooltip : MonoBehaviour
             if (fleet != null) return true;
         }
 
+        if (map.IsDraggingFleet && map.DragHoverPlanet != null)
+        {
+            planet = map.DragHoverPlanet; // Dropping onto a fleet or parking spot - describe the planet it belongs to.
+            return true;
+        }
+
         if (Physics.Raycast(ray, out RaycastHit planetHit, Mathf.Infinity, map.planetLayer))
         {
             planet = planetHit.collider.GetComponentInParent<Planet>();
