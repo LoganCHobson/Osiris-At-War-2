@@ -54,6 +54,8 @@ public class GameManager : MonoBehaviour
             return;
         }
 
+        SkyPlanet.Create(); // The planet being fought over, below the fleets.
+
         bool hasBattleContext = BattleContext.Instance != null && BattleContext.Instance.hasPendingBattle;
 
         if (!hasBattleContext)

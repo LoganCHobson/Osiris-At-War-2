@@ -60,6 +60,9 @@ public class GalacticMapGeneratorWindow : EditorWindow
     private int shipyardSiteCount = 6;
     private bool shipyardSitePerFaction = true;
 
+    private float nameHintChance = 0.6f;
+    private bool varyPlanetSize = true;
+
     [MenuItem("Osiris/Galactic Map Generator")]
     public static void Open()
     {
@@ -145,6 +148,27 @@ public class GalacticMapGeneratorWindow : EditorWindow
         shipyardSitePerFaction = EditorGUILayout.Toggle("Guarantee One Per Faction", shipyardSitePerFaction);
 
         EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Planet Appearance", EditorStyles.boldLabel);
+        EditorGUILayout.HelpBox("Every planet gets a world type (temperate, ocean, desert, tundra, gas giant, ecumenopolis...) with its own palette, continents, clouds, cities and atmosphere. Famous names follow their EAW world (Hoth = tundra, Mustafar = volcanic); \"Hoth Minor\" style offshoots follow it by the chance below.", MessageType.Info);
+        nameHintChance = EditorGUILayout.Slider("Name Hint Chance", nameHintChance, 0f, 1f);
+        varyPlanetSize = EditorGUILayout.Toggle("Vary Planet Size", varyPlanetSize);
+
+        EditorGUILayout.BeginHorizontal();
+        if (GUILayout.Button("Reroll All Planet Looks"))
+        {
+            RerollAppearances(Object.FindObjectsByType<Planet>(FindObjectsSortMode.None));
+        }
+
+        using (new EditorGUI.DisabledScope(SelectedPlanets().Length == 0))
+        {
+            if (GUILayout.Button("Reroll Selected"))
+            {
+                RerollAppearances(SelectedPlanets());
+            }
+        }
+        EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.Space();
         EditorGUILayout.LabelField("Core Marker", EditorStyles.boldLabel);
         spawnCoreMarker = EditorGUILayout.Toggle("Spawn Black Hole Marker", spawnCoreMarker);
         if (spawnCoreMarker)
@@ -216,6 +240,7 @@ public class GalacticMapGeneratorWindow : EditorWindow
 
         ConnectPlanets(planets);
         AssignFactionTerritories(planets);
+        AssignAppearances(planets, new System.Random(seed != 0 ? seed * 7919 : System.Environment.TickCount));
 
         if (shipyardSiteCount > 0)
         {
@@ -510,6 +535,48 @@ public class GalacticMapGeneratorWindow : EditorWindow
         }
 
         return names;
+    }
+
+    private static Planet[] SelectedPlanets()
+    {
+        return Selection.gameObjects
+            .Select(go => go.GetComponent<Planet>())
+            .Where(planet => planet != null)
+            .ToArray();
+    }
+
+    // Gives existing planets fresh looks without touching anything else about the map.
+    private void RerollAppearances(Planet[] planets)
+    {
+        if (planets.Length == 0) return;
+
+        Undo.SetCurrentGroupName("Reroll Planet Looks");
+        int undoGroup = Undo.GetCurrentGroup();
+
+        AssignAppearances(planets, new System.Random(System.Environment.TickCount));
+
+        Undo.CollapseUndoOperations(undoGroup);
+        EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+    }
+
+    private void AssignAppearances(Planet[] planets, System.Random random)
+    {
+        foreach (Planet planet in planets)
+        {
+            Undo.RecordObject(planet, "Assign Planet Look");
+            Undo.RecordObject(planet.transform, "Assign Planet Look");
+
+            PlanetArchetype archetype = PlanetArchetypes.Choose(planet.planetName, random, nameHintChance);
+            planet.appearance = PlanetArchetypes.Create(archetype, random.Next());
+            if (!varyPlanetSize) planet.appearance.size = 1f;
+            planet.transform.localScale = Vector3.one * planet.appearance.size;
+
+            PlanetVisual visual = planet.GetComponent<PlanetVisual>();
+            if (visual == null) visual = Undo.AddComponent<PlanetVisual>(planet.gameObject);
+            visual.Refresh();
+
+            EditorUtility.SetDirty(planet);
+        }
     }
 
     private Planet CreatePlanet(Vector3 position, string name, Transform parent)

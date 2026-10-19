@@ -162,6 +162,7 @@ public class PlanetTooltip : MonoBehaviour
 
         builder.Clear();
         builder.Append("Owner: ").Append(MapText.Colored(planet.owner)).Append('\n');
+        builder.Append("World: ").Append(planet.Appearance.DisplayName).Append('\n');
 
         if (planet.owner != null && inVision)
         {

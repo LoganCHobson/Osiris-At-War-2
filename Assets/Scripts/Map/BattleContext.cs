@@ -28,6 +28,7 @@ public class BattleContext : MonoBehaviour
     public List<Ship> defenderRoster = new List<Ship>();
 
     public string destinationPlanetName;
+    public PlanetAppearance destinationAppearance;
 
     public bool defenderHasShipyard;
     public bool defenderShipyardSurvived = true;
@@ -89,6 +90,7 @@ public class BattleContext : MonoBehaviour
         defenderRoster = RosterOf(defenderTokens);
 
         destinationPlanetName = planet != null ? planet.planetName : null;
+        destinationAppearance = planet != null ? planet.Appearance.Clone() : null; // Painted into the battle sky.
 
         defenderHasShipyard = planet != null && planet.hasCapitalShipyard;
         defenderHasBattleStation = planet != null && planet.hasBattleStation;
@@ -210,6 +212,7 @@ public class BattleContext : MonoBehaviour
         defenderTokens.Clear();
         defenderRoster.Clear();
         destinationPlanetName = null;
+        destinationAppearance = null;
         defenderHasShipyard = false;
         defenderShipyardSurvived = true;
         defenderHasBattleStation = false;

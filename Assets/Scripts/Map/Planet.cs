@@ -35,12 +35,40 @@ public class Planet : MonoBehaviour
     public MeshRenderer ownershipRing;
     public Color unclaimedColor = new Color(0.5f, 0.5f, 0.5f, 0.6f);
 
+    [Header("Appearance")]
+    [Tooltip("Set by the Galactic Map Generator. Planets that were never generated get a look derived from their name.")]
+    public PlanetAppearance appearance = new PlanetAppearance();
+
     private static readonly int ColorID = Shader.PropertyToID("_Color");
     private MaterialPropertyBlock ringProperties;
+    private PlanetAppearance nameDerivedAppearance;
+    private string nameDerivedFor;
+
+    public PlanetAppearance Appearance
+    {
+        get
+        {
+            // A look saved under a world type that no longer exists (e.g. Ecumenopolis) falls back to a fresh one.
+            bool valid = appearance != null && appearance.generated && System.Enum.IsDefined(typeof(PlanetArchetype), appearance.archetype);
+            if (valid) return appearance;
+
+            if (nameDerivedAppearance == null || nameDerivedFor != planetName)
+            {
+                nameDerivedAppearance = PlanetArchetypes.ForName(planetName);
+                nameDerivedFor = planetName;
+            }
+            return nameDerivedAppearance;
+        }
+    }
 
     private void OnEnable()
     {
         All.Add(this);
+
+        if (GetComponent<PlanetVisual>() == null)
+        {
+            gameObject.AddComponent<PlanetVisual>();
+        }
     }
 
     private void OnDisable()
