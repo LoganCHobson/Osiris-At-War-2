@@ -79,6 +79,20 @@ public class AIDirector : MonoBehaviour
         }
     }
 
+    // Loading a save: put the galactic clock back where it was.
+    public void RestoreClock(float galacticTime)
+    {
+        GalacticTime = galacticTime;
+        nextDiscoveryAt = galacticTime;
+    }
+
+    // Loading a save: the brain for this faction, created now if it doesn't exist yet.
+    public FactionBrain EnsureBrain(Faction faction)
+    {
+        TryAddBrain(faction);
+        return BrainFor(faction);
+    }
+
     public FactionBrain BrainFor(Faction faction)
     {
         foreach (FactionBrain brain in brains)

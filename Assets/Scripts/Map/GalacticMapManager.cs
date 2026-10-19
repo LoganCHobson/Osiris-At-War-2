@@ -84,8 +84,10 @@ public class GalacticMapManager : MonoBehaviour
             new GameObject("ResourceBar").AddComponent<ResourceBar>();
         }
 
+        SaveSystem.PrepareLoad(GalacticState.Instance); // Loading a save: hand over the saved galaxy first.
         GalacticState.Instance?.ApplyToScene();
         ApplyPendingBattleResult();
+        SaveSystem.FinishLoad(); // ...then the AI empires, clock and economy.
     }
 
     private void ApplyPendingBattleResult()
@@ -138,6 +140,7 @@ public class GalacticMapManager : MonoBehaviour
             result.retreatedTo = retreatedTo != null ? retreatedTo.planetName : null;
         }
         BattleReportPanel.Show(result);
+        SaveHotkeys.RequestAutosave(); // Results are in - a good moment for an autosave.
 
         if (destinationPlanet != null)
         {
@@ -226,7 +229,7 @@ public class GalacticMapManager : MonoBehaviour
 
         if (moveToPlanet != null)
         {
-            fleet.PlaceAt(moveToPlanet);
+            fleet.HaltAt(moveToPlanet); // The battle was the end of its trip - don't resume the old route.
         }
 
         return fleet;

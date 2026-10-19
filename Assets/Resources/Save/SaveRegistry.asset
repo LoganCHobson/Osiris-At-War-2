@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5967ccf583c4fcb93451b5bed7f505f, type: 3}
+  m_Name: SaveRegistry
+  m_EditorClassIdentifier: 
+  factions:
+  - {fileID: 11400000, guid: c604a5a639a54f4b992a31a977a1e46a, type: 2}
+  - {fileID: 11400000, guid: 5e19f2026b1f44468191065423398376, type: 2}
+  - {fileID: 11400000, guid: 3abca19e0bae48d79acbf4ffba0e65b9, type: 2}
+  - {fileID: 11400000, guid: 9ecdb8c4b9f74dda9ed09b73f4fb6baa, type: 2}
+  - {fileID: 11400000, guid: 8862c06a9ce5483ba31c7f842dc4e6b2, type: 2}
+  - {fileID: 11400000, guid: 43531cf843ea4ab890a68d2911dad4d2, type: 2}
+  - {fileID: 11400000, guid: 6cc92e8569804452886ab521e84bb8a2, type: 2}
+  - {fileID: 11400000, guid: 45041b6e255f47c9908ae8c413fb8d76, type: 2}

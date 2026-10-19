@@ -9,8 +9,6 @@ using UnityEngine.UI;
 [DefaultExecutionOrder(-1000)]
 public class PauseMenu : MonoBehaviour
 {
-    private const string MainMenuScene = "MainMenu";
-
     private Canvas canvas;
     private RectTransform main;
     private RectTransform confirm;
@@ -47,7 +45,7 @@ public class PauseMenu : MonoBehaviour
 
     private void Update()
     {
-        if (!Input.GetKeyDown(KeyCode.Escape) || SettingsPanel.IsOpen) return;
+        if (!Input.GetKeyDown(KeyCode.Escape) || SettingsPanel.IsOpen || SaveLoadPanel.IsOpen) return;
 
         if (open)
         {
@@ -94,7 +92,8 @@ public class PauseMenu : MonoBehaviour
         RectTransform root = UIKit.Fill("Pause", canvas.transform);
         UIKit.Image(root, UIKit.Dim, true);
 
-        main = UIKit.Rect("Window", root, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(520f, 520f));
+        bool onGalacticMap = SceneManager.GetActiveScene().name == "GalacticMap";
+        main = UIKit.Rect("Window", root, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(520f, onGalacticMap ? 660f : 590f));
         UIKit.Image(main, UIKit.PanelColor, true);
 
         RectTransform header = UIKit.Rect("Header", main, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0f, 100f));
@@ -111,9 +110,20 @@ public class PauseMenu : MonoBehaviour
         UIKit.List(list, 8f);
 
         UIKit.MenuButton(list, "RESUME", 34f, new Vector2(380f, 62f), Close);
+        if (onGalacticMap) UIKit.MenuButton(list, "SAVE GAME", 34f, new Vector2(380f, 62f), () => OpenSaves(SaveLoadPanel.Mode.Save));
+        UIKit.MenuButton(list, "LOAD GAME", 34f, new Vector2(380f, 62f), () => OpenSaves(SaveLoadPanel.Mode.Load));
         UIKit.MenuButton(list, "SETTINGS", 34f, new Vector2(380f, 62f), OpenSettings);
         UIKit.MenuButton(list, "MAIN MENU", 34f, new Vector2(380f, 62f), () => Confirm("Leave to the main menu?\nUnsaved progress will be lost.", ToMainMenu));
         UIKit.MenuButton(list, "QUIT GAME", 34f, new Vector2(380f, 62f), () => Confirm("Quit to desktop?\nUnsaved progress will be lost.", QuitGame));
+    }
+
+    private void OpenSaves(SaveLoadPanel.Mode mode)
+    {
+        main.gameObject.SetActive(false);
+        SaveLoadPanel.Open(canvas.transform, mode, true, () =>
+        {
+            if (main != null && open) main.gameObject.SetActive(true);
+        });
     }
 
     private void OpenSettings()
@@ -157,11 +167,7 @@ public class PauseMenu : MonoBehaviour
     private void ToMainMenu()
     {
         Close();
-        GameSpeed.Reset();
-        if (GalacticState.Instance != null) Destroy(GalacticState.Instance.gameObject);
-        if (BattleContext.Instance != null) Destroy(BattleContext.Instance.gameObject);
-        if (AIDirector.Instance != null) Destroy(AIDirector.Instance.gameObject);
-        SceneManager.LoadScene(MainMenuScene);
+        SaveSystem.ReturnToMainMenu();
     }
 
     private static void QuitGame()

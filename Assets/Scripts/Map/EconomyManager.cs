@@ -7,6 +7,13 @@ public class EconomyManager : MonoBehaviour
     public float taxTickInterval = 20f;
     private float taxTickTimer;
 
+    // Time since the last tax payout (saved so a loaded game pays out on schedule).
+    public float TaxTimer
+    {
+        get => taxTickTimer;
+        set => taxTickTimer = Mathf.Max(0f, value);
+    }
+
     private void Awake()
     {
         Instance = this;

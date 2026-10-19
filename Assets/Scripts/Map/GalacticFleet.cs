@@ -30,6 +30,80 @@ public class GalacticFleet : MonoBehaviour
     private Collider[] revealColliders;
     private Canvas[] revealCanvases;
 
+    // Everything about a fleet's movement that isn't obvious from its planet - so a save, or a trip into
+    // battle and back, leaves fleets exactly where they were: mid-jump, stopped over, or holding.
+    [System.Serializable]
+    public class TravelState
+    {
+        public bool traveling;
+        public List<string> route = new List<string>();
+        public int routeIndex;
+        public int finalSlot = -1;
+        public bool stoppedOver;
+        public float stopoverTimer;
+        public float holdTimer;
+        public Vector3 position;
+        public int parkedSlot = -1;
+    }
+
+    public TravelState CaptureTravel()
+    {
+        TravelState state = new TravelState
+        {
+            traveling = IsTraveling,
+            routeIndex = routeIndex,
+            finalSlot = finalSlot,
+            stoppedOver = isStoppedOver,
+            stopoverTimer = stopoverTimer,
+            holdTimer = holdTimer,
+            position = transform.position,
+            parkedSlot = currentPlanet != null ? currentPlanet.SlotOf(this) : -1
+        };
+        foreach (Planet stop in route)
+        {
+            state.route.Add(stop != null ? stop.planetName : "");
+        }
+        return state;
+    }
+
+    // Puts the fleet back as captured. Call after it has been placed at its current planet.
+    public void RestoreTravel(TravelState state, System.Func<string, Planet> findPlanet)
+    {
+        if (state == null) return;
+
+        holdTimer = state.holdTimer;
+
+        if (!state.traveling)
+        {
+            if (currentPlanet != null && state.parkedSlot >= 0 && currentPlanet.SlotOf(this) != state.parkedSlot)
+            {
+                MoveToSlot(state.parkedSlot);
+            }
+            return;
+        }
+
+        List<Planet> restored = new List<Planet>();
+        foreach (string stop in state.route)
+        {
+            Planet planet = findPlanet(stop);
+            if (planet == null) return; // Map changed under the save - leave the fleet parked.
+            restored.Add(planet);
+        }
+        if (restored.Count < 2) return;
+
+        currentPlanet?.ReleaseSlot(this);
+        route = restored;
+        routeIndex = Mathf.Clamp(state.routeIndex, 1, route.Count - 1);
+        isStoppedOver = state.stoppedOver;
+        stopoverTimer = state.stopoverTimer;
+        transform.position = state.position;
+
+        Planet destination = route[route.Count - 1];
+        finalSlot = destination.ClaimSlot(this, state.finalSlot);
+        if (isStoppedOver && currentPlanet != null) currentPlanet.ClaimSlot(this);
+        IsTraveling = true;
+    }
+
     public bool IsPresentAt(Planet planet)
     {
         return planet != null && currentPlanet == planet && (!IsTraveling || isStoppedOver);
@@ -480,7 +554,8 @@ public class GalacticFleet : MonoBehaviour
         return haven;
     }
 
-    private void HaltAt(Planet planet)
+    // Ends any journey and parks the fleet at this planet (used after a battle it fought in).
+    public void HaltAt(Planet planet)
     {
         Planet destination = Destination;
         if (destination != null && destination != planet)

@@ -94,7 +94,9 @@ public class MainMenuController : MonoBehaviour
 
         float y = -470f + shift;
         AddButton(menu.transform, "NEW CAMPAIGN", ref y, true, ChooseDifficulty);
-        AddButton(menu.transform, "CONTINUE", ref y, false, null);
+        SaveSummary latest = SaveSystem.Latest();
+        AddButton(menu.transform, "CONTINUE", ref y, latest != null, () => ContinueFrom(latest));
+        AddButton(menu.transform, "LOAD GAME", ref y, SaveSystem.List().Count > 0, OpenLoad);
         AddButton(menu.transform, "OPTIONS", ref y, true, OpenOptions);
         AddButton(menu.transform, "CREDITS", ref y, false, null);
         y -= 24f;
@@ -184,7 +186,7 @@ public class MainMenuController : MonoBehaviour
         screenFade = Mathf.MoveTowards(screenFade, target, Time.unscaledDeltaTime * speed);
         if (fade != null) fade.color = new Color(0f, 0f, 0f, screenFade);
 
-        if (menuGroup != null && !leaving && !SettingsPanel.IsOpen && picker == null)
+        if (menuGroup != null && !leaving && !SettingsPanel.IsOpen && !SaveLoadPanel.IsOpen && picker == null)
         {
             menuGroup.alpha = Mathf.MoveTowards(menuGroup.alpha, 1f, Time.unscaledDeltaTime / fadeInTime);
         }
@@ -203,6 +205,30 @@ public class MainMenuController : MonoBehaviour
     }
 
     // ---------------- Actions ----------------
+
+    private void ContinueFrom(SaveSummary save)
+    {
+        if (leaving || save == null) return;
+        leaving = true;
+        menuGroup.interactable = false;
+        if (!SaveSystem.Load(save.slot, out string error))
+        {
+            leaving = false;
+            menuGroup.interactable = true;
+            Toast.Show(error);
+        }
+    }
+
+    private void OpenLoad()
+    {
+        if (leaving || SaveLoadPanel.IsOpen) return;
+        menuGroup.alpha = 0f;
+        menuGroup.interactable = false;
+        SaveLoadPanel.Open(menuCanvas.transform, SaveLoadPanel.Mode.Load, false, () =>
+        {
+            menuGroup.interactable = true;
+        });
+    }
 
     private void OpenOptions()
     {
@@ -268,6 +294,7 @@ public class MainMenuController : MonoBehaviour
 
     private void StartCampaign()
     {
+        SaveSystem.ClearCampaign(); // A new campaign never inherits anything from a previous one.
         if (picker != null) picker.gameObject.SetActive(false);
         if (leaving) return;
         StartCoroutine(LeaveTo(campaignScene));

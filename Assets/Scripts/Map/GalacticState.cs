@@ -23,6 +23,7 @@ public class GalacticState : MonoBehaviour
         public Faction faction;
         public string planetName;
         public List<Ship> roster = new List<Ship>();
+        public GalacticFleet.TravelState travel;
     }
 
     [System.Serializable]
@@ -83,7 +84,8 @@ public class GalacticState : MonoBehaviour
                 fleetName = fleet.gameObject.name,
                 faction = fleet.faction,
                 planetName = fleet.currentPlanet.planetName,
-                roster = new List<Ship>(fleet.roster)
+                roster = new List<Ship>(fleet.roster),
+                travel = fleet.CaptureTravel()
             });
         }
 
@@ -119,6 +121,7 @@ public class GalacticState : MonoBehaviour
         }
 
         HashSet<string> keptFleets = new HashSet<string>();
+        List<(GalacticFleet fleet, GalacticFleet.TravelState travel)> moving = new List<(GalacticFleet, GalacticFleet.TravelState)>();
 
         foreach (FleetSnapshot snapshot in fleetSnapshots)
         {
@@ -136,6 +139,13 @@ public class GalacticState : MonoBehaviour
             fleet.roster = new List<Ship>(snapshot.roster);
             fleet.faction = snapshot.faction;
             fleet.PlaceAt(planet);
+            moving.Add((fleet, snapshot.travel));
+        }
+
+        // Once every fleet is parked, put the travellers back on their routes (and parked ones in their spots).
+        foreach ((GalacticFleet fleet, GalacticFleet.TravelState travel) in moving)
+        {
+            fleet.RestoreTravel(travel, name => planetsByName.TryGetValue(name, out Planet found) ? found : null);
         }
 
         foreach (KeyValuePair<string, GalacticFleet> entry in fleetsByName)
