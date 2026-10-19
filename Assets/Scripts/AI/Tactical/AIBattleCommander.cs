@@ -13,6 +13,11 @@ public class AIBattleCommander : MonoBehaviour
     public float focusFireWindow = 10f;
     public float defaultRange = 50f;
 
+    [Tooltip("Off = use the campaign's difficulty. The difficulty simulator turns this on to pit levels against each other.")]
+    public bool useDifficultyOverride;
+    public DifficultyProfile difficultyOverride;
+    public DifficultyProfile Difficulty { get; private set; }
+
     public Faction Faction { get; private set; }
     public bool IsAttackerSide { get; private set; }
     public Stance CurrentStance { get; private set; } = Stance.Engage;
@@ -69,7 +74,9 @@ public class AIBattleCommander : MonoBehaviour
         IsAttackerSide = attackerSide;
         spawnPoint = spawn;
         populationCap = population;
-        personality = ResolvePersonality(faction);
+        Difficulty = useDifficultyOverride && difficultyOverride != null ? difficultyOverride : global::Difficulty.Profile;
+        personality = Difficulty.Apply(ResolvePersonality(faction));
+        decisionInterval = Difficulty.decisionInterval;
         Patient = Random.value < personality.patience;
 
         reserve.AddRange(roster);
@@ -451,6 +458,7 @@ public class AIBattleCommander : MonoBehaviour
             if (unit.hardpoints == null) continue;
 
             Contact chosen = personality.canFocusFire ? PickFocusTarget() : NearestContact(unit.health.transform.position);
+            if (Random.value < Difficulty.targetMistakeChance) chosen = NearestContact(unit.health.transform.position); // Tunnel vision.
             if (chosen == null) continue;
 
             chosen.incomingDps += unit.dps;
@@ -598,9 +606,12 @@ public class AIBattleCommander : MonoBehaviour
         BattleTerrain terrain = BattleTerrain.Instance;
         if (terrain == null || unit.spaceUnit == null) return false;
 
+        if (Difficulty.priorityMoveSkill <= 0) return false;
+
         Vector3 from = unit.spaceUnit.transform.position;
         if (!terrain.InField(from) && !terrain.CrossesField(from, destination)) return false;
         if (Retreating) return true;
+        if (Difficulty.priorityMoveSkill < 2) return false; // Only knows to rush out when escaping.
         if (BattleTerrain.SizeFactor(unit.spaceUnit.shipType) <= 0.55f) return true;
         return CurrentStance == Stance.Press && HealthFraction(unit.health) > 0.6f && personality.aggression >= 1f;
     }

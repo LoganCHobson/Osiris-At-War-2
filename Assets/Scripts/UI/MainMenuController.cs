@@ -28,6 +28,7 @@ public class MainMenuController : MonoBehaviour
     public string campaignScene = "GalacticMap";
 
     private Canvas menuCanvas;
+    private RectTransform picker;
     private VideoPlayer player;
     private RenderTexture videoTexture;
     private Image fade;
@@ -86,7 +87,7 @@ public class MainMenuController : MonoBehaviour
         rule.GetComponent<Image>().color = new Color(accent.r, accent.g, accent.b, 0.6f);
 
         float y = -470f;
-        AddButton(menu.transform, "NEW CAMPAIGN", ref y, true, StartCampaign);
+        AddButton(menu.transform, "NEW CAMPAIGN", ref y, true, ChooseDifficulty);
         AddButton(menu.transform, "CONTINUE", ref y, false, null);
         AddButton(menu.transform, "OPTIONS", ref y, true, OpenOptions);
         AddButton(menu.transform, "CREDITS", ref y, false, null);
@@ -177,7 +178,7 @@ public class MainMenuController : MonoBehaviour
         screenFade = Mathf.MoveTowards(screenFade, target, Time.unscaledDeltaTime * speed);
         if (fade != null) fade.color = new Color(0f, 0f, 0f, screenFade);
 
-        if (menuGroup != null && !leaving && !SettingsPanel.IsOpen)
+        if (menuGroup != null && !leaving && !SettingsPanel.IsOpen && picker == null)
         {
             menuGroup.alpha = Mathf.MoveTowards(menuGroup.alpha, 1f, Time.unscaledDeltaTime / fadeInTime);
         }
@@ -208,8 +209,60 @@ public class MainMenuController : MonoBehaviour
         });
     }
 
+    // New Campaign asks how sharp the enemy should be first.
+    private void ChooseDifficulty()
+    {
+        if (leaving || picker != null) return;
+        menuGroup.alpha = 0f;
+        menuGroup.interactable = false;
+
+        picker = UIKit.Fill("Difficulty", menuCanvas.transform);
+        UIKit.Image(picker, UIKit.Dim, true);
+
+        RectTransform window = UIKit.Rect("Window", picker, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(900f, 640f));
+        UIKit.Image(window, UIKit.PanelColor, true);
+
+        RectTransform header = UIKit.Rect("Header", window, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0f, 100f));
+        TMP_Text heading = UIKit.Text(header, "CHOOSE DIFFICULTY", 42f, UIKit.TextColor, TextAlignmentOptions.Center);
+        heading.characterSpacing = 12f;
+        heading.fontStyle = FontStyles.Bold;
+
+        RectTransform list = UIKit.Rect("Levels", window, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+        list.offsetMin = new Vector2(60f, 110f);
+        list.offsetMax = new Vector2(-60f, -120f);
+        UIKit.List(list, 18f);
+
+        foreach (DifficultyLevel level in new[] { DifficultyLevel.Cadet, DifficultyLevel.Captain, DifficultyLevel.Admiral })
+        {
+            DifficultyLevel chosen = level;
+            UIKit.MenuButton(list, level.ToString().ToUpperInvariant() + (level == Difficulty.Current ? "   <size=60%><color=#FFBC52>LAST USED</color></size>" : ""), 38f, new Vector2(780f, 58f), () =>
+            {
+                Difficulty.Current = chosen;
+                StartCampaign();
+            });
+
+            RectTransform note = UIKit.Rect("Note", list, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(780f, 30f));
+            note.gameObject.AddComponent<LayoutElement>().preferredHeight = 30f;
+            TMP_Text description = UIKit.Text(note, Difficulty.Describe(level), 22f, UIKit.MutedColor);
+            description.rectTransform.offsetMin = new Vector2(24f, 0f);
+        }
+
+        RectTransform footer = UIKit.Rect("Footer", window, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(30f, 24f), new Vector2(240f, 60f));
+        Button back = UIKit.MenuButton(footer, "BACK", 32f, new Vector2(240f, 60f), CloseDifficulty);
+        RectTransform backRect = (RectTransform)back.transform;
+        backRect.anchorMin = backRect.anchorMax = backRect.pivot = Vector2.zero;
+    }
+
+    private void CloseDifficulty()
+    {
+        if (picker != null) Destroy(picker.gameObject);
+        picker = null;
+        menuGroup.interactable = true;
+    }
+
     private void StartCampaign()
     {
+        if (picker != null) picker.gameObject.SetActive(false);
         if (leaving) return;
         StartCoroutine(LeaveTo(campaignScene));
     }
