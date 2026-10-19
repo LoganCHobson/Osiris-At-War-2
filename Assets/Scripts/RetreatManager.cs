@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -7,17 +8,26 @@ public class RetreatManager : MonoBehaviour
 
     public float openingCooldown = 10f;
     public float retreatDuration = 10f;
+    [Tooltip("Seconds before the jump that retreating ships start gathering FTL energy.")]
+    public float spoolLead = 2.5f;
+    [Tooltip("Retreating ships jump out one after another across this many seconds.")]
+    public float jumpOutWindow = 1.2f;
+    [Tooltip("Pause after the last ship jumps before the battle ends.")]
+    public float holdAfterJump = 1f;
 
     public bool attackerRetreatBlocked;
     public bool defenderRetreatBlocked;
 
     public float BattleTime { get; private set; }
+    public bool JumpingOut { get; private set; }
     public float CooldownRemaining => Mathf.Max(0f, openingCooldown - BattleTime);
 
     private bool attackerRetreating;
     private bool defenderRetreating;
     private float attackerRemaining;
     private float defenderRemaining;
+    private bool attackerSpooled;
+    private bool defenderSpooled;
     private bool finished;
 
     private static bool BattleActive => BattleContext.Instance != null && BattleContext.Instance.hasPendingBattle;
@@ -67,7 +77,7 @@ public class RetreatManager : MonoBehaviour
         if (unit == null) return;
 
         ShipDeparted?.Invoke(unit);
-        unit.gameObject.SetActive(false);
+        FTLJump.Depart(unit.gameObject); // Jumps out, then deactivates the ship.
     }
 
     public bool BeginRetreat(bool attackerSide)
@@ -103,6 +113,11 @@ public class RetreatManager : MonoBehaviour
         if (attackerRetreating)
         {
             attackerRemaining -= Time.deltaTime;
+            if (!attackerSpooled && attackerRemaining <= spoolLead)
+            {
+                attackerSpooled = true;
+                SpoolSide(true, attackerRemaining);
+            }
             if (attackerRemaining <= 0f)
             {
                 Complete(true);
@@ -113,6 +128,11 @@ public class RetreatManager : MonoBehaviour
         if (defenderRetreating)
         {
             defenderRemaining -= Time.deltaTime;
+            if (!defenderSpooled && defenderRemaining <= spoolLead)
+            {
+                defenderSpooled = true;
+                SpoolSide(false, defenderRemaining);
+            }
             if (defenderRemaining <= 0f)
             {
                 Complete(false);
@@ -123,7 +143,56 @@ public class RetreatManager : MonoBehaviour
     private void Complete(bool attackerSide)
     {
         finished = true;
+        StartCoroutine(JumpOut(attackerSide));
+    }
+
+    // The retreating fleet jumps out one ship after another, and only once they're all gone does the
+    // battle end - so the jumps play out on screen before the victory/defeat banner.
+    private IEnumerator JumpOut(bool attackerSide)
+    {
+        JumpingOut = true;
+
+        List<UnitHealthManager> leaving = new List<UnitHealthManager>();
+        foreach (UnitHealthManager unit in UnitHealthManager.Active)
+        {
+            if (unit != null && unit.isAttackerSide == attackerSide && ShipCanRetreat(unit))
+            {
+                leaving.Add(unit);
+            }
+        }
+
+        // Random order, spread across the window so it reads as a ripple.
+        for (int i = leaving.Count - 1; i > 0; i--)
+        {
+            int j = Random.Range(0, i + 1);
+            (leaving[i], leaving[j]) = (leaving[j], leaving[i]);
+        }
+
+        float window = Mathf.Min(jumpOutWindow, 0.2f * leaving.Count);
+        for (int i = 0; i < leaving.Count; i++)
+        {
+            float delay = leaving.Count > 1 ? window * i / (leaving.Count - 1) : 0f;
+            ShipDeparted?.Invoke(leaving[i]);
+            FTLJump.Depart(leaving[i].gameObject, delay);
+        }
+
+        float wait = window + FTLJump.JumpOutDuration + holdAfterJump;
+        for (float t = 0f; t < wait; t += Time.unscaledDeltaTime) yield return null;
+
+        JumpingOut = false;
         GameManager.Instance?.ConcludeBattle(attackerSide, true);
+    }
+
+    // Ships that can still jump start gathering energy for the departure.
+    private static void SpoolSide(bool attackerSide, float duration)
+    {
+        foreach (UnitHealthManager unit in UnitHealthManager.Active)
+        {
+            if (unit != null && unit.isAttackerSide == attackerSide && ShipCanRetreat(unit))
+            {
+                FTLJump.BeginSpool(unit.gameObject, duration);
+            }
+        }
     }
 
     private void FaceStartPoint(bool attackerSide)

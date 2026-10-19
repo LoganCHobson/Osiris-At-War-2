@@ -102,6 +102,7 @@ public class GameManager : MonoBehaviour
     {
         if (battleEnded) return;
         if (BattleContext.Instance == null || !BattleContext.Instance.hasPendingBattle) return;
+        if (RetreatManager.Instance != null && RetreatManager.Instance.JumpingOut) return; // The retreat ends the battle itself.
 
         bool attackerInPlay = CountInPlay(true) > 0;
         bool defenderInPlay = CountInPlay(false) > 0;

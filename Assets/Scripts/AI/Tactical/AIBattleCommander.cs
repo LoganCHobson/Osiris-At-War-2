@@ -368,7 +368,7 @@ public class AIBattleCommander : MonoBehaviour
 
         for (int i = 0; i < deploying.Count; i++)
         {
-            Spawn(deploying[i], drop + lateral * SlotOffset(i) * spacing, facing);
+            Spawn(deploying[i], drop + lateral * SlotOffset(i) * spacing, facing, true);
         }
 
         reinforceReadyAt = Time.time + personality.reinforcementDelay;
@@ -627,13 +627,15 @@ public class AIBattleCommander : MonoBehaviour
         agent.SetDestination(destination);
     }
 
-    private void Spawn(Ship ship, Vector3 position, Quaternion rotation)
+    // Ships present when the battle starts are simply there; only reinforcements jump in from FTL.
+    private void Spawn(Ship ship, Vector3 position, Quaternion rotation, bool jumpIn = false)
     {
         reserve.Remove(ship);
         if (GameManager.Instance == null) return;
 
         GameObject spawned = GameManager.Instance.SpawnShip(ship, SnapToNavMesh(position), rotation, IsAttackerSide);
         if (spawned == null) return;
+        if (jumpIn) FTLJump.Arrive(spawned);
 
         units.Add(new Unit
         {

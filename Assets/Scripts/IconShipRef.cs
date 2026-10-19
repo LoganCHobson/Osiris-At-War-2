@@ -19,6 +19,11 @@ public class IconShipRef : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndD
         iconImage = GetComponentInChildren<Image>();
     }
 
+    private void Start()
+    {
+        PlacementManager.Instance?.Prewarm(ship); // Build its placement hologram before the first drag.
+    }
+
     public void OnBeginDrag(PointerEventData eventData)
     {
         originalParent = rect.parent;

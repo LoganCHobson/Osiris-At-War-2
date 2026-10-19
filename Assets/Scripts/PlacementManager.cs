@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.AI;
 using UnityEngine.Rendering;
 
 public class PlacementManager : MonoBehaviour
@@ -12,12 +11,25 @@ public class PlacementManager : MonoBehaviour
     public Color validColor = new Color(0.3f, 0.85f, 1f, 0.35f);
     public Color invalidColor = new Color(1f, 0.3f, 0.3f, 0.35f);
     public float emissionStrength = 1.5f;
+    [Tooltip("Seconds into the battle before holograms for the reinforcement list start being pre-built.")]
+    public float prewarmDelay = 1f;
 
     private static readonly int BaseColorID = Shader.PropertyToID("_BaseColor");
     private static readonly int EmissionColorID = Shader.PropertyToID("_EmissionColor");
 
     private GameObject hologram;
     private Renderer[] hologramRenderers;
+
+    // Building a hologram instantiates the whole ship prefab, which hitches - so each ship type's hologram is
+    // built once (ahead of time where possible) and reused for every drag.
+    private class CachedHologram
+    {
+        public GameObject root;
+        public Renderer[] renderers;
+    }
+
+    private readonly Dictionary<GameObject, CachedHologram> holograms = new Dictionary<GameObject, CachedHologram>();
+    private readonly Queue<GameObject> prewarmQueue = new Queue<GameObject>();
     private MaterialPropertyBlock hologramProperties;
     private int shownValidity = -1;
     private Ship previewShip;
@@ -37,6 +49,36 @@ public class PlacementManager : MonoBehaviour
     private void OnDestroy()
     {
         EndPreview();
+        foreach (CachedHologram cached in holograms.Values)
+        {
+            if (cached.root != null) Destroy(cached.root);
+        }
+        holograms.Clear();
+    }
+
+    // Queue a ship type's hologram to be built in the background so its first drag is smooth.
+    public void Prewarm(Ship ship)
+    {
+        if (ship == null || ship.prefab == null || hologramMaterial == null) return;
+        if (holograms.ContainsKey(ship.prefab) || prewarmQueue.Contains(ship.prefab)) return;
+        prewarmQueue.Enqueue(ship.prefab);
+    }
+
+    private void Update()
+    {
+        // One per few frames, never mid-drag, so the cost is spread out where nobody notices.
+        if (prewarmQueue.Count == 0 || hologram != null || Time.timeSinceLevelLoad < prewarmDelay || Time.frameCount % 4 != 0) return;
+        GetHologram(prewarmQueue.Dequeue());
+    }
+
+    private CachedHologram GetHologram(GameObject prefab)
+    {
+        if (holograms.TryGetValue(prefab, out CachedHologram cached) && cached.root != null) return cached;
+
+        GameObject root = BuildHologram(prefab);
+        cached = new CachedHologram { root = root, renderers = root.GetComponentsInChildren<Renderer>(true) };
+        holograms[prefab] = cached;
+        return cached;
     }
 
     public bool TryPlace(Ship ship, Vector2 screenPosition, GameObject sourceIcon)
@@ -49,6 +91,7 @@ public class PlacementManager : MonoBehaviour
 
         GameObject spawned = Instantiate(ship.prefab, point, Quaternion.identity);
         GameManager.TagShip(spawned, ship, GameManager.Instance == null || GameManager.Instance.PlayerIsAttacker);
+        FTLJump.Arrive(spawned);
 
         Destroy(sourceIcon);
         return true;
@@ -59,8 +102,9 @@ public class PlacementManager : MonoBehaviour
         EndPreview();
         if (ship == null || ship.prefab == null || hologramMaterial == null) return;
 
-        hologram = BuildHologram(ship.prefab);
-        hologramRenderers = hologram.GetComponentsInChildren<Renderer>(true);
+        CachedHologram cached = GetHologram(ship.prefab);
+        hologram = cached.root;
+        hologramRenderers = cached.renderers;
         shownValidity = -1;
         previewShip = ship;
     }
@@ -90,7 +134,7 @@ public class PlacementManager : MonoBehaviour
     {
         if (hologram != null)
         {
-            Destroy(hologram);
+            hologram.SetActive(false); // Kept for the next drag.
         }
 
         hologram = null;
@@ -125,25 +169,7 @@ public class PlacementManager : MonoBehaviour
         model.transform.localPosition = Vector3.zero;
         model.transform.localRotation = Quaternion.identity;
 
-        foreach (Canvas canvas in model.GetComponentsInChildren<Canvas>(true))
-        {
-            if (canvas != null) DestroyImmediate(canvas.gameObject);
-        }
-
-        StripBehaviours(model);
-
-        StripAll<NavMeshAgent>(model);
-        StripAll<NavMeshObstacle>(model);
-        StripAll<Rigidbody>(model);
-        StripAll<Collider>(model);
-        StripAll<AudioSource>(model);
-        StripAll<Light>(model);
-
-        foreach (ParticleSystem particles in model.GetComponentsInChildren<ParticleSystem>(true))
-        {
-            ParticleSystem.MainModule main = particles.main;
-            main.playOnAwake = false;
-        }
+        ShipVisualProxy.Strip(model);
 
         foreach (Renderer renderer in model.GetComponentsInChildren<Renderer>(true))
         {
@@ -166,61 +192,6 @@ public class PlacementManager : MonoBehaviour
         }
 
         return root;
-    }
-
-    // Removes every script, dependents first - Unity refuses to remove a component another one
-    // [RequireComponent]s (e.g. ShipDestruction -> HullDamage -> UnitHealthManager), which would leave
-    // live gameplay scripts running on the hologram.
-    private static void StripBehaviours(GameObject model)
-    {
-        List<MonoBehaviour> remaining = new List<MonoBehaviour>(model.GetComponentsInChildren<MonoBehaviour>(true));
-        bool progress = true;
-
-        while (remaining.Count > 0 && progress)
-        {
-            progress = false;
-            for (int i = remaining.Count - 1; i >= 0; i--)
-            {
-                MonoBehaviour behaviour = remaining[i];
-                if (behaviour != null && IsRequiredByAnother(behaviour, remaining)) continue;
-
-                if (behaviour != null) DestroyImmediate(behaviour);
-                remaining.RemoveAt(i);
-                progress = true;
-            }
-        }
-    }
-
-    private static bool IsRequiredByAnother(MonoBehaviour target, List<MonoBehaviour> remaining)
-    {
-        System.Type targetType = target.GetType();
-
-        foreach (MonoBehaviour other in remaining)
-        {
-            if (other == null || other == target || other.gameObject != target.gameObject) continue;
-
-            foreach (RequireComponent requirement in other.GetType().GetCustomAttributes(typeof(RequireComponent), true))
-            {
-                if (Requires(requirement.m_Type0, targetType) || Requires(requirement.m_Type1, targetType) || Requires(requirement.m_Type2, targetType))
-                {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    private static bool Requires(System.Type required, System.Type candidate)
-    {
-        return required != null && required.IsAssignableFrom(candidate);
-    }
-
-    private static void StripAll<T>(GameObject model) where T : Component
-    {
-        foreach (T component in model.GetComponentsInChildren<T>(true))
-        {
-            if (component != null) DestroyImmediate(component);
-        }
     }
 
     private void ApplyHologramColor(Color color)
