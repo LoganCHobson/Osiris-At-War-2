@@ -297,7 +297,7 @@ public class RTSCameraController : MonoBehaviour
 
     private void HandleMouseDragInput()
     {
-        if (Input.GetMouseButtonDown(2) && EventSystem.current.IsPointerOverGameObject() == false)
+        if (Input.GetMouseButtonDown(2) && !UIKit.PointerOverScreenUI())
         {
             Plane plane = new Plane(Vector3.up, Vector3.zero);
             Ray ray = cam.ScreenPointToRay(Input.mousePosition);
@@ -309,7 +309,7 @@ public class RTSCameraController : MonoBehaviour
                 dragStartPosition = ray.GetPoint(entry);
             }
         }
-        if (Input.GetMouseButton(2) && EventSystem.current.IsPointerOverGameObject() == false)
+        if (Input.GetMouseButton(2) && !UIKit.PointerOverScreenUI())
         {
             Plane plane = new Plane(Vector3.up, Vector3.zero);
             Ray ray = cam.ScreenPointToRay(Input.mousePosition);

@@ -31,6 +31,26 @@ public static class UIKit
         return canvas;
     }
 
+    private static readonly List<RaycastResult> pointerHits = new List<RaycastResult>();
+
+    // True when the mouse is over on-screen UI (menus, panels, HUD). Unlike
+    // EventSystem.IsPointerOverGameObject, world-space canvases floating in the scene (hardpoint target
+    // icons, health bars) don't count, so clicks on them still reach the game.
+    public static bool PointerOverScreenUI()
+    {
+        EventSystem events = EventSystem.current;
+        if (events == null) return false;
+
+        pointerHits.Clear();
+        events.RaycastAll(new PointerEventData(events) { position = Input.mousePosition }, pointerHits);
+        foreach (RaycastResult hit in pointerHits)
+        {
+            Canvas canvas = hit.gameObject != null ? hit.gameObject.GetComponentInParent<Canvas>() : null;
+            if (canvas == null || canvas.rootCanvas.renderMode != RenderMode.WorldSpace) return true;
+        }
+        return false;
+    }
+
     public static void EnsureEventSystem()
     {
         if (EventSystem.current != null || Object.FindFirstObjectByType<EventSystem>() != null) return;

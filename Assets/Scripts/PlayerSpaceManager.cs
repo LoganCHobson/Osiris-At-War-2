@@ -70,7 +70,7 @@ public class PlayerSpaceManager : MonoBehaviour
             SetMode(CommandMode.None);
         }
 
-        bool pointerOverUI = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+        bool pointerOverUI = UIKit.PointerOverScreenUI(); // Target icons and health bars on the ships don't block clicks.
 
         if (Input.GetMouseButtonDown(0) && !pointerOverUI && Mode != CommandMode.None)
         {
