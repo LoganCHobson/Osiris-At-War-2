@@ -145,6 +145,7 @@ public class FTLJump : MonoBehaviour
 
         Measure(ship, out Vector3 localCentre, out float length);
         SetHidden(ship, true);
+        Sfx.Play(Sfx.Cue.FtlArrive, ship.transform.TransformPoint(localCentre)); // Its boom lands on the implosion.
 
         float distance = length * jumpDistanceInLengths;
         Vector3 Centre() => ship.transform.TransformPoint(localCentre);
@@ -340,6 +341,7 @@ public class FTLJump : MonoBehaviour
 
         ship.SetActive(false);
         CameraShake.Shake(bow, departureShake);
+        Sfx.Play(Sfx.Cue.FtlDepart, bow);
 
         MeshRenderer flash = CreateSprite("FTLFlash", coreColor);
         LineRenderer streak = CreateLine("FTLStreak", energyColor);

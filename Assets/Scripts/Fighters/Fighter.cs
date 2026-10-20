@@ -304,6 +304,7 @@ public class Fighter : MonoBehaviour
         {
             EffectPool.Play("FighterDeath", deathEffect, transform.position, Quaternion.identity, deathEffectLifetime);
         }
+        Sfx.Play(Sfx.Cue.ExplosionSmall, transform.position, 0.5f, 1.4f);
         gameObject.SetActive(false);
     }
 

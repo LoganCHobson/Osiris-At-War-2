@@ -10,7 +10,8 @@ using UnityEngine.Rendering.Universal;
 // Dev recording: a full Human vs Avanti fleet battle filmed by a scripted camera director, for a trailer cut
 // to music. Each ship holds its own lane so nothing collides; destroyed ships are replaced by FTL
 // reinforcements; one carrier per side sits at the back and its squadrons are sent at the enemy line.
-// Frames go to Logs/BattleCinematic for ffmpeg. Run with -executeMethod ShowcaseRunner.RunBattle.
+// Frames go to Logs/BattleCinematic for ffmpeg (and audio.wav with -captureAudio). Run with
+// -executeMethod ShowcaseRunner.RunBattle.
 [DefaultExecutionOrder(200)]
 public class BattleCinematic : MonoBehaviour
 {
@@ -46,6 +47,7 @@ public class BattleCinematic : MonoBehaviour
     private Texture2D readback;
     private int frame;
     private bool capturing;
+    private AudioCapture audioCapture;
     private Vector3 centre, axis, across;
 
     private Vector3 camPosition, camLook, wantPosition, wantLook;
@@ -91,6 +93,13 @@ public class BattleCinematic : MonoBehaviour
         SetupCapture();
         StartCoroutine(Upkeep());
 
+        // -captureAudio records the battle's sound too (music muted, so the effects can be heard).
+        if (System.Array.IndexOf(args, "-captureAudio") >= 0)
+        {
+            foreach (AudioSource music in FindObjectsByType<AudioSource>(FindObjectsSortMode.None)) if (music.ignoreListenerVolume) music.mute = true;
+            audioCapture = new AudioCapture();
+        }
+
         capturing = true;
         int totalFrames = Mathf.CeilToInt(duration * frameRate); // Counted in frames: slow-motion shots stretch game time.
         yield return Establishing(7f);
@@ -118,6 +127,7 @@ public class BattleCinematic : MonoBehaviour
         }
 
         capturing = false;
+        audioCapture?.End(Path.Combine(outputDir, "audio.wav"));
         report.Insert(0, $"BATTLE CINEMATIC: {frame} frames, {kills} ships destroyed, {reinforcements} reinforcements, {missileShots} missile shots, {fighterShots} fighter shots\n");
         File.WriteAllText(Path.Combine(outputDir, "report.txt"), report.ToString());
         Debug.Log(report.ToString());
@@ -499,6 +509,7 @@ public class BattleCinematic : MonoBehaviour
             readback.Apply(false);
             RenderTexture.active = previous;
             File.WriteAllBytes(Path.Combine(outputDir, $"f{frame:D5}.jpg"), readback.EncodeToJPG(90));
+            audioCapture?.CaptureFrame();
             frame++;
         }
     }

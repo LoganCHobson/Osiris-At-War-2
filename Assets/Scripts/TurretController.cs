@@ -86,6 +86,7 @@ public class TurretController : MonoBehaviour
     private float gatlingOwed;
     private float gatlingNextFlashAt;
     private int gatlingBarrel;
+    private bool? avantiGuns;
     private LineRenderer beamLine;
     private Vector3 beamDirection;
     private float beamOwed;
@@ -98,6 +99,16 @@ public class TurretController : MonoBehaviour
     void Awake()
     {
         AlignMuzzleFlashes();
+        MuteBuiltInShotSound();
+    }
+
+    // The turret prefab plays its shot through its own AudioSource; Sfx plays it in 3D instead (see Shoot).
+    void MuteBuiltInShotSound()
+    {
+        for (int i = 0; i < onFire.GetPersistentEventCount(); i++)
+        {
+            if (onFire.GetPersistentTarget(i) is AudioSource) onFire.SetPersistentListenerState(i, UnityEventCallState.Off);
+        }
     }
 
     void AlignMuzzleFlashes()
@@ -320,6 +331,8 @@ public class TurretController : MonoBehaviour
         {
             onFire.Invoke();
             lastFiredTime = Time.time;
+            avantiGuns ??= GetComponentInParent<ShieldGenerator>() != null;
+            Sfx.Play(avantiGuns.Value ? Sfx.Cue.LaserAvanti : Sfx.Cue.LaserHeavy, firingPoints[0].position);
 
             foreach (Transform firingPoint in firingPoints)
             {
@@ -448,6 +461,7 @@ public class TurretController : MonoBehaviour
             beamOwed = 0f;
         }
 
+        if (firing && beamPower <= 0f) Sfx.Play(Sfx.Cue.Beam, muzzle.position);
         beamPower = Mathf.MoveTowards(beamPower, firing ? 1f : 0f, Time.deltaTime * 4f);
         if (beamPower <= 0f)
         {
@@ -516,6 +530,7 @@ public class TurretController : MonoBehaviour
         {
             gatlingBurstEndsAt = now + gatlingBurst;
             gatlingOwed = 0f;
+            Sfx.Play(Sfx.Cue.Ciws, firingPoints[0].position);
         }
         gatlingLastAt = now;
 

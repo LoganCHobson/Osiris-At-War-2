@@ -101,6 +101,7 @@ public class Laser : MonoBehaviour
             if (shield == null || ((1 << shield.gameObject.layer) & layer) == 0) continue;
             if (shield.Absorb(damage, candidate.point))
             {
+                Sfx.Play(Sfx.Cue.HitShield, candidate.point);
                 Recycle();
                 return true;
             }
@@ -156,6 +157,7 @@ public class Laser : MonoBehaviour
         {
             if (craft != null && fromWarship) Fighter.TakeShipHit(hp);
             else hp.DealDamage(damage);
+            if (craft == null) Sfx.Play(Sfx.Cue.HitHull, hit.point);
         }
         else
         {

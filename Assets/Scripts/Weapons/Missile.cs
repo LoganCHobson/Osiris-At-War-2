@@ -157,6 +157,7 @@ public class Missile : MonoBehaviour
         ShotDown++;
         if (ciws) ShotDownByCIWS++;
         Explode(transform.position, 0.22f);
+        Sfx.Play(Sfx.Cue.ExplosionSmall, transform.position, 0.45f, 1.35f);
         Recycle();
         return true;
     }
@@ -193,6 +194,7 @@ public class Missile : MonoBehaviour
         InFlight = true;
         Active.Add(this);
         Launched++;
+        Sfx.Play(warhead.passesThroughShields ? Sfx.Cue.MissileLaunch : Sfx.Cue.TorpedoLaunch, position);
     }
 
     private void SetTarget(Transform aim)
@@ -299,6 +301,7 @@ public class Missile : MonoBehaviour
 
                 Splashed++;
                 Explode(hit.point, 1f);
+                Sfx.Play(Sfx.Cue.HitShield, hit.point, 1f, 0.7f);
                 Recycle();
                 return true;
             }
@@ -337,6 +340,7 @@ public class Missile : MonoBehaviour
         else if (ship != null && !ship.IsDead) ship.DealRandomDamage(damage);
 
         Explode(point, 1f);
+        Sfx.Play(Sfx.Cue.ExplosionSmall, point, warhead.passesThroughShields ? 0.8f : 1f, warhead.passesThroughShields ? 1.1f : 0.85f);
         Recycle();
     }
 

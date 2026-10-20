@@ -106,6 +106,14 @@ public class CreditsPanel : MonoBehaviour
             }
         }
 
+        text.AppendLine($"<color={accent}><b>SOUND EFFECTS</b></color>");
+        text.AppendLine("Kenney  ·  Sci-Fi Sounds and Impact Sounds");
+        text.AppendLine($"<color={muted}>CC0  ·  kenney.nl</color>");
+        text.AppendLine();
+        text.AppendLine("dimapain  ·  Avanti laser cannon");
+        text.AppendLine($"<color={muted}>CC0  ·  freesound.org</color>");
+        text.AppendLine();
+
         text.AppendLine($"<color={accent}><b>BUILT WITH</b></color>");
         text.AppendLine("Unity");
         return text.ToString();
