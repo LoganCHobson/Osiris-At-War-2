@@ -247,7 +247,8 @@ public class PlayerSpaceManager : MonoBehaviour
             if (aimPoint == null) continue;
 
             ShipGuard.Cancel(unit);
-            unit.GetComponent<HardpointManager>().AssignTarget(aimPoint);
+            bool wholeShip = !hit.transform.gameObject.CompareTag("TargetUI") && !hit.collider.gameObject.CompareTag("Hardpoint"); // Clicked the hull, not a hardpoint.
+            unit.GetComponent<HardpointManager>().AssignTarget(aimPoint, wholeShip);
             if (unit.IsMobile) attackers.Add(unit);
         }
 

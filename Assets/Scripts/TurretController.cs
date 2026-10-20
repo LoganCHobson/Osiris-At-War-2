@@ -44,6 +44,14 @@ public class TurretController : MonoBehaviour
     public bool leadFighters;
     public float shotLifetimeRangeMultiplier = 1.5f;
 
+    public enum Arc { All, Forward }
+
+    [Header("Firing arc")]
+    [Tooltip("All: fires anywhere. Forward: only into a cone ahead of the ship (Avanti - point at the target).")]
+    public Arc arc = Arc.All;
+    [Tooltip("Forward: half-width of the cone ahead of the bow.")]
+    public float arcAngle = 40f;
+
     [Header("CIWS")]
     [Tooltip("Rapid-fire gatling point defence: sprays tracer bursts instead of single bolts.")]
     public bool gatling;
@@ -80,6 +88,9 @@ public class TurretController : MonoBehaviour
     private Transform lineOfSightTarget;
     private Transform typedTarget;
     private ShipType targetType;
+    private float typedRangeFalloff;
+    private bool ordered;          // Ordered by the player or AI: stick to it until it's destroyed.
+    private bool orderedWholeShip; // Ordered onto a ship (not one hardpoint): work through its hardpoints.
     private float gatlingBurstEndsAt;
     private float gatlingRestUntil;
     private float gatlingLastAt = float.NegativeInfinity;
@@ -137,7 +148,7 @@ public class TurretController : MonoBehaviour
     {
         ValidateTarget();
 
-        if (targetFilter == TargetFilter.FightersOnly && (target == null || targetMissile == null) && Time.time >= nextMissileScanAt)
+        if (targetFilter == TargetFilter.FightersOnly && !ordered && (target == null || targetMissile == null) && Time.time >= nextMissileScanAt)
         {
             nextMissileScanAt = Time.time + targetSearchInterval * Random.Range(0.8f, 1.2f);
             Missile incoming = Missile.NearestHostile(transform.position, range * Missile.InterceptRangeFraction, targetLayer, this); // Missiles before fighters.
@@ -161,7 +172,7 @@ public class TurretController : MonoBehaviour
             {
                 lineOfSightTarget = target;
                 nextLineOfSightAt = Time.time + lineOfSightInterval * Random.Range(0.8f, 1.2f);
-                hasLineOfSight = targetMissile != null ? HasClearShot(firingPoints[0]) : HasLineOfSight(firingPoints[0]);  //I would use one of the middle guns but I don't want to adjust this for single use guns. Wont matter much anyway.
+                hasLineOfSight = InArc(target.position) && (targetMissile != null ? HasClearShot(firingPoints[0]) : HasLineOfSight(firingPoints[0]));  //I would use one of the middle guns but I don't want to adjust this for single use guns. Wont matter much anyway.
             }
 
             if (hasLineOfSight)
@@ -174,7 +185,7 @@ public class TurretController : MonoBehaviour
             {
                 timeOutOfLOS += Time.deltaTime;
 
-                if (timeOutOfLOS >= maxTimeWithoutLOS)
+                if (!ordered && timeOutOfLOS >= maxTimeWithoutLOS) // Ordered targets wait for a clear shot.
                 {
                     target = null;
                     timeOutOfLOS = 0f;
@@ -236,12 +247,19 @@ public class TurretController : MonoBehaviour
         if ((targetShip != null && targetShip.IsDead) || (targetShip != null && !AcceptsShip(targetShip.gameObject)))
         {
             target = null;
+            ordered = false; // Order done: free to pick targets again.
             return;
         }
 
         bool hardpointGone = targetHardpoint != null && targetShipHardpoints != null && !targetShipHardpoints.hardpoints.Contains(targetHardpoint);
         if (target.gameObject.activeInHierarchy && !hardpointGone) return;
 
+        if (ordered && !orderedWholeShip)
+        {
+            target = null; // The ordered hardpoint is down: free to pick targets again.
+            ordered = false;
+            return;
+        }
         target = targetShipHardpoints != null ? targetShipHardpoints.GetRandomHardpoint() : null;
     }
 
@@ -260,6 +278,7 @@ public class TurretController : MonoBehaviour
             if (!potentialTarget.root.TryGetComponent(out HardpointManager manager) || !AcceptsShip(manager.gameObject)) continue;
 
             float distanceSqr = (potentialTarget.position - transform.position).sqrMagnitude;
+            if (!InArc(potentialTarget.position)) distanceSqr *= 4f; // Prefer what the gun can bear on.
             if (manager.TryGetComponent(out Squadron _))
             {
                 if (distanceSqr < closestSquadronSqr)
@@ -280,6 +299,7 @@ public class TurretController : MonoBehaviour
         else chosen = closestShipSqr <= closestSquadronSqr ? closestShip : closestSquadron;
 
         target = chosen != null ? chosen.GetRandomHardpoint() : null;
+        ordered = false;
     }
     private bool restCaptured;
     private Quaternion baseRest;
@@ -405,6 +425,27 @@ public class TurretController : MonoBehaviour
         laser.timeOut = Mathf.Max(0.5f, range * shotLifetimeRangeMultiplier / Mathf.Max(1f, projectileSpeed));
         laser.SetSourcePool(pool);
         laser.Launch(temp.transform.forward * laser.speed + finalDirection * projectileSpeed);
+    }
+
+    public void SetArc(Arc newArc, float angle)
+    {
+        arc = newArc;
+        arcAngle = angle;
+    }
+
+    // Whether the ship is turned so this gun can fire at the point.
+    public bool InArc(Vector3 point)
+    {
+        if (arc == Arc.All) return true;
+
+        Transform ship = transform.root;
+        Vector3 toPoint = point - ship.position;
+        toPoint.y = 0f;
+        if (toPoint.sqrMagnitude < 0.01f) return true;
+
+        Vector3 forward = ship.forward;
+        forward.y = 0f;
+        return Vector3.Angle(forward, toPoint) <= arcAngle;
     }
 
     // Turns a point-defence turret into a CIWS gatling with the same damage output, spread over ~50 rounds a second.
@@ -579,7 +620,7 @@ public class TurretController : MonoBehaviour
 
         float distance = Vector3.Distance(transform.position, target.position);
 
-        float rangeFalloff = distance / range * rangeFallOffValue;
+        typedRangeFalloff = distance / range * rangeFallOffValue;
 
         if (target != typedTarget)
         {
@@ -588,6 +629,31 @@ public class TurretController : MonoBehaviour
             targetType = unit != null ? unit.shipType : target.GetComponent<Missile>() != null ? ShipType.Fighter : ShipType.Cruiser;
         }
 
+        return TypeAccuracy() * Aspect(target);
+    }
+
+    // Spread multiplier for the target's profile: easier to hit side-on, harder head-on or stern-on.
+    private const float HeadOnSpread = 1.35f;
+    private const float BroadsideSpread = 0.8f;
+
+    private float Aspect(Transform aimPoint)
+    {
+        if (targetType == ShipType.Fighter || targetType == ShipType.Station) return 1f;
+
+        Transform ship = aimPoint.root;
+        Vector3 lineOfFire = ship.position - transform.position;
+        lineOfFire.y = 0f;
+        Vector3 heading = ship.forward;
+        heading.y = 0f;
+        if (lineOfFire.sqrMagnitude < 0.01f || heading.sqrMagnitude < 0.01f) return 1f;
+
+        float side = Mathf.Abs(Vector3.Cross(heading.normalized, lineOfFire.normalized).y); // 1 = side-on.
+        return Mathf.Lerp(HeadOnSpread, BroadsideSpread, side);
+    }
+
+    private float TypeAccuracy()
+    {
+        float rangeFalloff = typedRangeFalloff;
         switch (targetType)
         {
             case ShipType.Station:
@@ -608,6 +674,16 @@ public class TurretController : MonoBehaviour
 
     public void AssignTurretTarget(Transform _target)
     {
-        target = _target;
+        Order(_target, false);
+    }
+
+    // An ordered target: fired on until it's destroyed (a hardpoint), or until its ship is (wholeShip),
+    // then the gun picks its own targets again.
+    public void Order(Transform aim, bool wholeShip)
+    {
+        target = aim;
+        ordered = aim != null;
+        orderedWholeShip = wholeShip;
+        timeOutOfLOS = 0f;
     }
 }

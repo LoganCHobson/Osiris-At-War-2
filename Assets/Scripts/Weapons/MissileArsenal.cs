@@ -64,7 +64,7 @@ public class MissileArsenal : ScriptableObject
         salvoSpacing = 0.25f,
         speed = 30f,
         turnRate = 70f,
-        damage = 10f,
+        damage = 13f,
         passesThroughShields = false,
         shieldMultiplier = 1.75f,
         hullMultiplier = 0.6f,

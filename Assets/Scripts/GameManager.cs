@@ -325,6 +325,10 @@ public class GameManager : MonoBehaviour
         BattleTerrain.Instance?.AddDefenseZone(health, false); // Attackers can't drop reinforcements near it.
     }
 
+    [Header("Firing arcs")]
+    [Tooltip("Avanti guns fire within this many degrees either side of the bow.")]
+    public float avantiFiringArc = 40f;
+
     public void ApplyAllegiance(GameObject spawned, bool attackerSide)
     {
         bool playerSide = attackerSide == PlayerIsAttacker;
@@ -353,13 +357,23 @@ public class GameManager : MonoBehaviour
 
         MissileLauncher.Fit(spawned, 1 << hostileLayer); // Destroyers and corvettes.
 
-        bool avantiTech = spawned.GetComponent<ShieldGenerator>() != null; // Human point defence is CIWS gatlings; Avanti use beams.
+        // Avanti: shields, forward-firing guns (point the bow at the target), point-defence beams.
+        // Humans: turrets that fire all round (ships still turn broadside), CIWS gatlings.
+        bool avantiTech = spawned.GetComponent<ShieldGenerator>() != null;
+        bool warship = spawned.TryGetComponent(out SpaceUnit spaceUnit) && spaceUnit.shipType != ShipType.Station && spawned.GetComponent<Squadron>() == null;
         foreach (TurretController turret in spawned.GetComponentsInChildren<TurretController>(true))
         {
-            if (turret.targetFilter != TurretController.TargetFilter.FightersOnly) continue;
-            if (avantiTech) turret.MakeBeam();
-            else turret.MakeGatling();
+            if (turret.targetFilter == TurretController.TargetFilter.FightersOnly)
+            {
+                if (avantiTech) turret.MakeBeam();
+                else turret.MakeGatling();
+            }
+            else if (warship && avantiTech)
+            {
+                turret.SetArc(TurretController.Arc.Forward, avantiFiringArc);
+            }
         }
+        if (warship) CombatFacing.Fit(spawned, avantiTech, 1 << hostileLayer);
 
         if (faction != null && faction.shipMaterial != null)
         {

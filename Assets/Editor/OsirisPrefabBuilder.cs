@@ -30,6 +30,8 @@ public static class OsirisPrefabBuilder
 
     const float AvantiPdDps = 1.2f, GlobalDps = 1.4f, AvantiSpeed = 1.1f, AvantiFireRate = 0.35f, AvantiPdFireRate = 0.3f;
     const float AvantiBuildTime = 1.4f; // Avanti craft take longer to build, like their ships.
+    // Humans out-range the Avanti, who have to close in and point their bows at the enemy.
+    const float HumanRange = 1.12f, AvantiRange = 0.9f;
     const float PdDamage = 0.5f, SystemHardpointWeight = 3f, EmitterHitRadius = 1.1f;
     static readonly Dictionary<ShipType, (int avantiPdEvery, float pdFireRate, float pdDps, float gunFighterAccuracy, float gunFighterDamage, bool gunsHuntFighters)> AntiFighter =
         new Dictionary<ShipType, (int, float, float, float, float, bool)>
@@ -47,17 +49,17 @@ public static class OsirisPrefabBuilder
     {
         ["Human_FighterSquadron"] = (10f, 32f, 2.2f, 1.2f, 0.45f, 60f, 70, 28),
         ["Human_InterceptorSquadron"] = (8f, 44f, 0.4f, 1.6f, 0.3f, 65f, 75, 28),
-        ["Human_BomberSquadron"] = (22f, 24f, 15f, 0.3f, 0.8f, 50f, 95, 40),
+        ["Human_BomberSquadron"] = (26f, 24f, 49f, 0.3f, 0.8f, 50f, 95, 40),
         ["Avanti_FighterSquadron"] = (14f, 35f, 2.75f, 1.6f, 0.45f, 60f, 95, 38),
         ["Avanti_InterceptorSquadron"] = (10f, 48f, 0.5f, 2.0f, 0.3f, 65f, 100, 38),
-        ["Avanti_BomberSquadron"] = (28f, 26f, 18f, 0.4f, 0.8f, 50f, 130, 55),
+        ["Avanti_BomberSquadron"] = (34f, 26f, 59f, 0.4f, 0.8f, 50f, 130, 55),
     };
 
     static readonly Dictionary<string, ((int fighters, int interceptors, int bombers) port, (int fighters, int interceptors, int bombers) starboard, float interval)> HangarComplement =
         new Dictionary<string, ((int, int, int), (int, int, int), float)>
     {
         ["Human"] = ((2, 1, 1), (1, 1, 2), 10f),
-        ["Avanti"] = ((1, 1, 1), (1, 0, 1), 14f),
+        ["Avanti"] = ((2, 1, 1), (1, 1, 1), 14f),
     };
 
     static readonly Dictionary<string, float> ShipDpsTuning = new Dictionary<string, float>
@@ -109,15 +111,15 @@ public static class OsirisPrefabBuilder
         return new[]
         {
             spec(h ? "Battleship" : "Capital", "ToOShipA", "ShipA Unit Icon", ShipType.Battleship, FleetRole.Line, 5, 170,
-                 (150, 120, 2, 100, 2000, 112), (205, 170, 3, 130, 3000, 165)),
+                 (128, 96, 2, 100, 2600, 112), (205, 170, 3, 160, 3000, 319)),
             spec("Carrier", "Carrier", "Carrier Unit Icon", ShipType.Carrier, FleetRole.Carrier, 4.5f, 150,
-                 (260, 140, 3, 140, 2200, 30), (360, 200, 4, 170, 2860, 39)),
+                 (220, 112, 3, 140, 2860, 30), (360, 200, 4, 229, 2860, 76)),
             spec("Cruiser", "ToOShipA", "ShipA Unit Icon", ShipType.Cruiser, FleetRole.Line, 6, 160,
-                 (120, 90, 2, 69, 1400, 75), (160, 125, 2, 90, 1950, 105)),
+                 (102, 72, 2, 69, 1820, 75), (160, 125, 2, 108, 2490, 224)),
             spec("Destroyer", "Picket", "Picket Unit Icon", ShipType.Destroyer, FleetRole.Screen, 7, 145,
-                 (90, 65, 1, 46, 950, 56), (125, 90, 2, 60, 1150, 68)),
+                 (77, 52, 1, 46, 1235, 56), (125, 90, 2, 75, 1540, 131)),
             spec("Corvette", "Picket", "Picket Unit Icon", ShipType.Corvette, FleetRole.Screen, 8, 135,
-                 (70, 45, 1, 29, 600, 40), (95, 65, 1, 38, 700, 44)),
+                 (60, 36, 1, 29, 780, 40), (95, 65, 1, 46, 700, 80)),
         };
     }
 
@@ -434,7 +436,7 @@ public static class OsirisPrefabBuilder
             if (icon != null) ship.icon = UnitIcon(spec.name, icon, spec.name);
             float tune = ShipDpsTuning.GetValueOrDefault(spec.name, 1f);
             ApplyAntiFighter(root, spec.type, !human);
-            string stats = Balance(root, spec.health, spec.dps * GlobalDps * tune, spec.range);
+            string stats = Balance(root, spec.health, spec.dps * GlobalDps * tune, spec.range * (human ? HumanRange : AvantiRange));
 
             string path = $"{dir}/{spec.name}.prefab";
             GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, path);

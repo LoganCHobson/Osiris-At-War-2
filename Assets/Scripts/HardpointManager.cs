@@ -5,6 +5,9 @@ public class HardpointManager : MonoBehaviour
 {
     public List<HardpointHealth> hardpoints = new List<HardpointHealth>();
 
+    // The last target this ship was ordered to attack (see AssignTarget); CombatFacing turns to it.
+    public Transform OrderedTarget { get; private set; }
+
     private UnitHealthManager unitHealthManager;
 
     private void Awake()
@@ -48,9 +51,11 @@ public class HardpointManager : MonoBehaviour
 
   
 
-    public void AssignTarget(Transform target)
+    // wholeShip: keep after this ship until it's destroyed, not just this hardpoint.
+    public void AssignTarget(Transform target, bool wholeShip = false)
     {
         if (target == null) return;
+        OrderedTarget = target;
 
         if (TryGetComponent(out Squadron squadron))
         {
@@ -61,7 +66,7 @@ public class HardpointManager : MonoBehaviour
         {
             if(health.gameObject.TryGetComponent(out TurretController turret) && turret.Accepts(target))
             {
-                turret.target = target;
+                turret.Order(target, wholeShip);
             }
             else
             {

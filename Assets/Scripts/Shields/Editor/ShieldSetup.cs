@@ -11,6 +11,8 @@ public static class ShieldSetup
     private const string FillMaterialPath = Folder + "/ShieldBarFill.mat";
     private const string BackgroundMaterialPath = Folder + "/ShieldBarBackground.mat";
     private const string FactionFolder = "Assets/Prefabs/Osiris/Avanti";
+    // Shield strength as a share of the ship's hull (balance knob - Avanti lean on their shields).
+    private const float Capacity = 0.8f;
     private static readonly Color BarColor = new Color(0.08f, 0.45f, 1f);
     private static readonly Color BackgroundColor = new Color(0.04f, 0.1f, 0.16f, 0.85f);
 
@@ -54,6 +56,11 @@ public static class ShieldSetup
         if (shield == null)
         {
             shield = root.AddComponent<ShieldGenerator>();
+            dirty = true;
+        }
+        if (!Mathf.Approximately(shield.capacityFraction, Capacity))
+        {
+            shield.capacityFraction = Capacity;
             dirty = true;
         }
         if (shield.shieldMaterial != material)
