@@ -38,7 +38,6 @@ public class BuildMenuTour : MonoBehaviour
         FleetPanel.Instance?.Show(planet); // Opened together, as clicking a planet does.
         PlanetBuildPanel.Instance.Show(planet);
         yield return Wait(1f);
-        LogRect("fleet panel", FleetPanel.Instance != null ? FleetPanel.Instance.panelRoot : null);
         yield return Shot("1_build_menu");
 
         foreach (Ship ship in planet.owner.roster.Where(s => s != null).Take(4))
@@ -54,19 +53,29 @@ public class BuildMenuTour : MonoBehaviour
         yield return Shot("3_build_menu_tooltip");
 
         if (card != null) ExecuteEvents.Execute(card.gameObject, new PointerEventData(EventSystem.current), ExecuteEvents.pointerExitHandler);
+
+        // Drag one ship out of the fleet's stack into an empty lane, the way a player would.
+        ShipIconDragHandler tile = FindObjectsByType<ShipIconDragHandler>(FindObjectsSortMode.None).FirstOrDefault(t => !t.IsLead);
+        FleetRowUI emptyLane = FindObjectsByType<FleetRowUI>(FindObjectsSortMode.None).FirstOrDefault(r => r.Fleet == null);
+        Debug.Log($"BUILDTOUR drag test: tile={(tile != null ? tile.Ship.name + " x" + tile.Count : "none")} lane={(emptyLane != null ? emptyLane.name : "none")} " +
+                  (tile != null && tile.SourceRow.Fleet != null ? $"fleet traveling={tile.SourceRow.Fleet.IsTraveling} at={tile.SourceRow.Fleet.currentPlanet?.planetName} faction={tile.SourceRow.Fleet.faction?.name}" : ""));
+        if (tile != null && emptyLane != null)
+        {
+            PointerEventData drag = new PointerEventData(EventSystem.current) { pointerDrag = tile.gameObject, position = tile.transform.position };
+            ExecuteEvents.Execute(tile.gameObject, drag, ExecuteEvents.beginDragHandler);
+            ExecuteEvents.Execute(emptyLane.gameObject, drag, ExecuteEvents.dropHandler);
+            ExecuteEvents.Execute(tile.gameObject, drag, ExecuteEvents.endDragHandler);
+        }
+        yield return Wait(0.5f);
+        int fleetsHere = GalacticFleet.All.Count(f => f.currentPlanet == planet && f.roster.Count > 0);
+        int strayTiles = FindObjectsByType<ShipIconDragHandler>(FindObjectsSortMode.None).Count(t => t.GetComponentInParent<FleetRowUI>() == null);
+        Debug.Log($"BUILDTOUR after drag: {fleetsHere} fleets at {planet.planetName}, {strayTiles} stray tiles");
+        yield return Shot("5_fleet_split");
         PlanetBuildPanel.Instance.Show(Planet.All.First(p => p.owner != null && !p.owner.isPlayerFaction));
         yield return Wait(0.5f);
         yield return Shot("4_build_menu_enemy");
 
         Quit();
-    }
-
-    private static void LogRect(string label, GameObject panel)
-    {
-        if (panel == null || !(panel.transform is RectTransform rect)) return;
-        Vector3[] corners = new Vector3[4];
-        rect.GetWorldCorners(corners);
-        Debug.Log($"BUILDTOUR {label} screen rect {corners[0]} to {corners[2]}");
     }
 
     private static void Quit()

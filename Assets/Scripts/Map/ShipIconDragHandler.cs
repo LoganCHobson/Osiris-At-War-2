@@ -8,13 +8,13 @@ using UnityEngine.UI;
 // the whole stack. The lead slot is the ship that deploys first when the fleet attacks.
 public class ShipIconDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler, IPointerEnterHandler, IPointerExitHandler
 {
-    public Image iconImage;
+    public const float Width = 96f;
+    public const float Height = 92f;
 
-    [Header("Markers")]
-    public Color leadColor = new Color(1f, 0.78f, 0.25f);
-    public Color dropHighlightColor = new Color(0.55f, 0.9f, 1f);
-    public Color invalidDropColor = new Color(1f, 0.35f, 0.3f);
-    public float leadOutlineWidth = 4f;
+    private static readonly Color Idle = new Color(1f, 1f, 1f, 0.06f);
+    private static readonly Color LeadIdle = new Color(1f, 0.74f, 0.32f, 0.1f);
+    private static readonly Color DropHighlight = new Color(0.55f, 0.9f, 1f, 0.3f);
+    private static readonly Color InvalidDrop = new Color(1f, 0.35f, 0.3f, 0.3f);
 
     public Ship Ship { get; private set; }
     public FleetRowUI SourceRow { get; private set; }
@@ -25,10 +25,18 @@ public class ShipIconDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandle
     private readonly List<int> indices = new List<int>();
     private RectTransform rect;
     private Canvas canvas;
+    private Image background;
     private Transform originalParent;
     private Vector3 originalPosition;
     private int originalSiblingIndex;
-    private Color baseColor = Color.white;
+
+    public static ShipIconDragHandler Create(Transform parent, Ship ship, FleetRowUI sourceRow, List<int> rosterIndices, bool isLead)
+    {
+        RectTransform tile = UIKit.Rect(ship.name, parent, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), Vector2.zero, new Vector2(Width, Height));
+        ShipIconDragHandler handler = tile.gameObject.AddComponent<ShipIconDragHandler>();
+        handler.Bind(ship, sourceRow, rosterIndices, isLead);
+        return handler;
+    }
 
     public void Bind(Ship ship, FleetRowUI sourceRow, List<int> rosterIndices, bool isLead)
     {
@@ -37,18 +45,9 @@ public class ShipIconDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandle
         IsLead = isLead;
         indices.Clear();
         indices.AddRange(rosterIndices);
-
-        if (iconImage != null)
-        {
-            Sprite sprite = ship.IconSprite;
-            if (sprite != null)
-            {
-                iconImage.sprite = sprite;
-            }
-            baseColor = iconImage.color;
-        }
-
-        BuildMarkers();
+        rect = (RectTransform)transform;
+        canvas = GetComponentInParent<Canvas>().rootCanvas;
+        Build();
     }
 
     // The roster positions a drag should move: the whole stack, or just one ship from the back of it.
@@ -57,65 +56,47 @@ public class ShipIconDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandle
         return wholeStack ? new List<int>(indices) : new List<int> { indices[indices.Count - 1] };
     }
 
-    private void Awake()
+    private void Build()
     {
-        rect = GetComponent<RectTransform>();
-        canvas = GetComponentInParent<Canvas>();
-    }
+        background = UIKit.Image(rect, IsLead ? LeadIdle : Idle, true);
 
-    private void BuildMarkers()
-    {
+        RectTransform iconRect = UIKit.Rect("Icon", rect, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -8f), new Vector2(-16f, 56f));
+        Image icon = UIKit.Image(iconRect, Color.white);
+        icon.sprite = Ship.IconSprite;
+        icon.preserveAspect = true;
+        icon.enabled = icon.sprite != null;
+
+        TMP_Text name = UIKit.Text(rect, ShipInfo.Name(Ship), 13f, UIKit.TextColor, TextAlignmentOptions.Bottom);
+        name.rectTransform.offsetMin = new Vector2(4f, 6f);
+        name.rectTransform.offsetMax = new Vector2(-4f, 0f);
+        name.overflowMode = TextOverflowModes.Ellipsis;
+
         if (Count > 1)
         {
-            // A dark plate behind the count keeps it readable over any ship art. (No TMP outline: the label
-            // can be built while the panel is still inactive, before TMP has a material to instance.)
-            GameObject plate = new GameObject("StackCount", typeof(RectTransform), typeof(Image));
-            plate.transform.SetParent(transform, false);
-            RectTransform plateRect = (RectTransform)plate.transform;
-            plateRect.anchorMin = plateRect.anchorMax = plateRect.pivot = new Vector2(1f, 0f);
-            plateRect.anchoredPosition = new Vector2(-2f, 2f);
-            plateRect.sizeDelta = new Vector2(38f, 24f);
-            Image plateImage = plate.GetComponent<Image>();
-            plateImage.color = new Color(0f, 0f, 0f, 0.7f);
-            plateImage.raycastTarget = false;
-
-            TMP_Text countLabel = CreateLabel("Count", TextAlignmentOptions.Center, 18f, plate.transform);
-            countLabel.text = $"<b>x{Count}</b>";
-            countLabel.color = Color.white;
+            RectTransform badge = UIKit.Rect("Count", rect, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-4f, -4f), new Vector2(34f, 22f));
+            UIKit.Image(badge, new Color(0f, 0f, 0f, 0.65f));
+            TMP_Text count = UIKit.Text(badge, $"×{Count}", 15f, UIKit.TextColor, TextAlignmentOptions.Center);
+            count.fontStyle = FontStyles.Bold;
         }
 
         if (!IsLead) return;
 
-        TMP_Text leadLabel = CreateLabel("LeadTag", TextAlignmentOptions.TopLeft, 16f);
-        leadLabel.text = "<b>LEAD</b>";
-        leadLabel.color = leadColor;
-
-        if (iconImage != null)
-        {
-            Outline leadOutline = iconImage.gameObject.AddComponent<Outline>();
-            leadOutline.effectColor = leadColor;
-            leadOutline.effectDistance = new Vector2(leadOutlineWidth, -leadOutlineWidth);
-        }
+        // Amber frame and tag: this ship leads the fleet into battle.
+        Frame(new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0f, 2f));
+        Frame(new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 2f));
+        Frame(new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(2f, 0f));
+        Frame(new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(2f, 0f));
+        TMP_Text tag = UIKit.Text(rect, "LEAD", 12f, UIKit.Accent, TextAlignmentOptions.TopLeft);
+        tag.fontStyle = FontStyles.Bold;
+        tag.characterSpacing = 4f;
+        tag.rectTransform.offsetMin = new Vector2(6f, 0f);
+        tag.rectTransform.offsetMax = new Vector2(0f, -4f);
     }
 
-    private TMP_Text CreateLabel(string objectName, TextAlignmentOptions alignment, float size, Transform parent = null)
+    private void Frame(Vector2 anchorMin, Vector2 anchorMax, Vector2 size)
     {
-        GameObject labelObject = new GameObject(objectName, typeof(RectTransform));
-        labelObject.transform.SetParent(parent != null ? parent : transform, false);
-
-        RectTransform labelRect = (RectTransform)labelObject.transform;
-        labelRect.anchorMin = Vector2.zero;
-        labelRect.anchorMax = Vector2.one;
-        Vector2 inset = parent != null ? Vector2.zero : new Vector2(4f, 2f);
-        labelRect.offsetMin = inset;
-        labelRect.offsetMax = -inset;
-
-        TextMeshProUGUI label = labelObject.AddComponent<TextMeshProUGUI>();
-        label.fontSize = size;
-        label.alignment = alignment;
-        label.raycastTarget = false;
-        label.textWrappingMode = TextWrappingModes.NoWrap;
-        return label;
+        RectTransform edge = UIKit.Rect("Frame", rect, anchorMin, anchorMax, new Vector2(0.5f, 0.5f), Vector2.zero, size);
+        UIKit.Image(edge, UIKit.Accent);
     }
 
     public void OnBeginDrag(PointerEventData eventData)
@@ -125,11 +106,7 @@ public class ShipIconDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandle
         originalSiblingIndex = rect.GetSiblingIndex();
         rect.SetParent(canvas.transform, true);
         rect.SetAsLastSibling();
-
-        if (iconImage != null)
-        {
-            iconImage.raycastTarget = false;
-        }
+        background.raycastTarget = false; // Let the drop land on whatever is under the pointer.
     }
 
     public void OnDrag(PointerEventData eventData)
@@ -139,16 +116,17 @@ public class ShipIconDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandle
 
     public void OnEndDrag(PointerEventData eventData)
     {
-        if (this == null || originalParent == null) return; // The drop refreshed the panel and this icon is gone.
+        if (this == null) return;
+        if (originalParent == null) // The drop rebuilt the panel; this dragged copy is left over.
+        {
+            Destroy(gameObject);
+            return;
+        }
 
         rect.SetParent(originalParent, true);
         rect.SetSiblingIndex(originalSiblingIndex);
         rect.position = originalPosition;
-
-        if (iconImage != null)
-        {
-            iconImage.raycastTarget = true;
-        }
+        background.raycastTarget = true;
     }
 
     public void OnDrop(PointerEventData eventData)
@@ -169,7 +147,7 @@ public class ShipIconDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandle
         if (dragged == null || dragged == this) return;
 
         bool allowed = !IsLead || dragged.Ship.CanLead;
-        SetHighlight(allowed ? dropHighlightColor : invalidDropColor);
+        SetHighlight(allowed ? DropHighlight : InvalidDrop);
     }
 
     public void OnPointerExit(PointerEventData eventData)
@@ -179,7 +157,7 @@ public class ShipIconDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandle
 
     private void SetHighlight(Color? color)
     {
-        if (iconImage == null) return;
-        iconImage.color = color ?? baseColor;
+        if (background == null) return;
+        background.color = color ?? (IsLead ? LeadIdle : Idle);
     }
 }

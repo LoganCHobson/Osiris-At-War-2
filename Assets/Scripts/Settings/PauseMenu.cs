@@ -61,7 +61,7 @@ public class PauseMenu : MonoBehaviour
     private static bool EscapeIsBusy()
     {
         if (CinematicCamera.Active || BattlePrompt.IsOpen) return true;
-        if (FleetPanel.Instance != null && FleetPanel.Instance.panelRoot != null && FleetPanel.Instance.panelRoot.activeSelf) return true;
+        if (FleetPanel.Instance != null && FleetPanel.Instance.IsOpen) return true;
         if (PlanetBuildPanel.Instance != null && PlanetBuildPanel.Instance.IsOpen) return true;
         if (RTSCameraController.instance != null && RTSCameraController.instance.followTransform != null) return true;
 
