@@ -852,7 +852,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   icon: {fileID: 6202422821313289453, guid: 9872545ab548f9f4e8f517f2f92e9462, type: 3}
   cost: 100
-  buildTime: 45
+  buildTime: 63
   combatPower: 38
   populationCost: 1
   fleetRole: 4

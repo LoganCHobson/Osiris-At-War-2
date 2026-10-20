@@ -8,6 +8,8 @@ public enum FleetRole { Line, Screen, Carrier, Fighter, Interceptor, Bomber }
 public class Ship : MonoBehaviour
 {
     public GameObject icon;
+    [Tooltip("Name shown in menus. Leave empty to derive it from the asset name (Human_FighterSquadron -> Fighter Squadron).")]
+    public string displayName;
 
     public GameObject prefab => gameObject;
 

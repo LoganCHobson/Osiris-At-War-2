@@ -2,13 +2,22 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 
-// Starts the dev recordings (run with -executeMethod): MissileShowcase and BattleCinematic. Each plays the
-// battle scene, writes frames under Logs/, and quits the editor when done.
+// Starts the dev recordings (run with -executeMethod): MissileShowcase, BattleCinematic and BuildMenuTour.
+// Each writes its frames or screenshots under Logs/ and quits the editor when done.
 public static class ShowcaseRunner
 {
     public static void RunMissiles() => Run<MissileShowcase>();
 
     public static void RunBattle() => Run<BattleCinematic>();
+
+    // Starts from the main menu so the galactic map loads the way it does in a real game.
+    public static void RunBuildMenuTour()
+    {
+        EditorSceneManager.OpenScene("Assets/Scenes/MainMenu.unity", OpenSceneMode.Single);
+        new GameObject("BuildMenuTour").AddComponent<BuildMenuTour>();
+        Application.runInBackground = true;
+        EditorApplication.EnterPlaymode();
+    }
 
     private static void Run<T>() where T : MonoBehaviour
     {

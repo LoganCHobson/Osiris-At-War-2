@@ -29,6 +29,7 @@ public static class OsirisPrefabBuilder
     }
 
     const float AvantiPdDps = 1.2f, GlobalDps = 1.4f, AvantiSpeed = 1.1f, AvantiFireRate = 0.35f, AvantiPdFireRate = 0.3f;
+    const float AvantiBuildTime = 1.4f; // Avanti craft take longer to build, like their ships.
     const float PdDamage = 0.5f, SystemHardpointWeight = 3f, EmitterHitRadius = 1.1f;
     static readonly Dictionary<ShipType, (int avantiPdEvery, float pdFireRate, float pdDps, float gunFighterAccuracy, float gunFighterDamage, bool gunsHuntFighters)> AntiFighter =
         new Dictionary<ShipType, (int, float, float, float, float, bool)>
@@ -739,6 +740,7 @@ public static class OsirisPrefabBuilder
             var stats = CraftStats[spec.name];
             var ship = root.GetComponent<Ship>();
             ship.cost = stats.cost;
+            if (spec.name.StartsWith("Avanti")) ship.buildTime = Mathf.RoundToInt(ship.buildTime * AvantiBuildTime);
             ship.combatPower = stats.power;
             if (ship.icon != null) ship.icon = UnitIcon(spec.name, ship.icon, spec.name.Replace("Squadron", ""));
             string path = $"{dir}/{spec.name}.prefab";

@@ -62,7 +62,7 @@ public class PauseMenu : MonoBehaviour
     {
         if (CinematicCamera.Active || BattlePrompt.IsOpen) return true;
         if (FleetPanel.Instance != null && FleetPanel.Instance.panelRoot != null && FleetPanel.Instance.panelRoot.activeSelf) return true;
-        if (PlanetBuildPanel.Instance != null && PlanetBuildPanel.Instance.panelRoot != null && PlanetBuildPanel.Instance.panelRoot.activeSelf) return true;
+        if (PlanetBuildPanel.Instance != null && PlanetBuildPanel.Instance.IsOpen) return true;
         if (RTSCameraController.instance != null && RTSCameraController.instance.followTransform != null) return true;
 
         PlayerSpaceManager space = FindFirstObjectByType<PlayerSpaceManager>();
