@@ -14,7 +14,6 @@ public class GameManager : MonoBehaviour
     public GameObject UnitsListUI;
     public Transform attackerShipSpawnPoint;
     public Transform defenderShipSpawnPoint;
-    public float defenderSpawnSpacing = 15f;
 
     [Header("Planet Defenses")]
     public GameObject shipyardDefenderPrefab;
@@ -211,7 +210,8 @@ public class GameManager : MonoBehaviour
             {
                 Vector3 position = attackerShipSpawnPoint != null ? attackerShipSpawnPoint.position : Vector3.zero;
                 Quaternion rotation = attackerShipSpawnPoint != null ? attackerShipSpawnPoint.rotation : Quaternion.identity;
-                SpawnShip(roster[0], position, rotation, true);
+                BattleDeployment.Placement lead = BattleDeployment.Arrange(new[] { roster[0] }, roster[0], position, rotation * Vector3.forward)[0];
+                SpawnShip(roster[0], lead.position, rotation, true);
             }
 
             for (int i = 1; i < roster.Count; i++)
@@ -223,7 +223,6 @@ public class GameManager : MonoBehaviour
 
         Vector3 basePosition = defenderShipSpawnPoint != null ? defenderShipSpawnPoint.position : Vector3.zero;
         Quaternion lineRotation = defenderShipSpawnPoint != null ? defenderShipSpawnPoint.rotation : Quaternion.identity;
-        Vector3 back = lineRotation * Vector3.back;
 
         List<Ship> deploying = new List<Ship>();
         int population = 0;
@@ -242,17 +241,11 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        float spacing = defenderSpawnSpacing;
-        foreach (Ship ship in deploying)
+        // The fleet's lead (first in its roster) at the centre of the battle line, screen ahead, carriers behind.
+        Ship fleetLead = deploying.Count > 0 ? deploying[0] : null;
+        foreach (BattleDeployment.Placement placement in BattleDeployment.Arrange(deploying, fleetLead, basePosition, lineRotation * Vector3.forward))
         {
-            spacing = Mathf.Max(spacing, FleetFormation.Spacing(ship.prefab));
-        }
-
-        for (int i = 0; i < deploying.Count; i++)
-        {
-            Vector3 sideOffset = (lineRotation * Vector3.right) * (i * spacing);
-            Vector3 depthJitter = back * Random.Range(0f, defenderSpawnSpacing);
-            SpawnShip(deploying[i], basePosition + sideOffset + depthJitter, lineRotation, false);
+            SpawnShip(placement.ship, placement.position, lineRotation, false);
         }
     }
 

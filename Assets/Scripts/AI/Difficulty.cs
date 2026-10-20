@@ -26,6 +26,8 @@ public class DifficultyProfile
     [Range(0f, 1f)] public float targetMistakeChance;
     public bool manageStance = true;
     public bool pickDropZones = true;
+    [Tooltip("Fields only what the fight needs and keeps the rest in reserve (undeployed ships escape for free). Off = throws everything in.")]
+    public bool holdReserves = true;
     [Tooltip("0 = never priority-moves through asteroids, 1 = only to escape, 2 = full judgement.")]
     [Range(0, 2)] public int priorityMoveSkill = 2;
     [Tooltip("Multiplier on the force ratio at which it decides to retreat (lower = holds on too long).")]
@@ -55,6 +57,7 @@ public class DifficultyProfile
                     targetMistakeChance = 0.35f,
                     manageStance = false,
                     pickDropZones = false,
+                    holdReserves = false,
                     priorityMoveSkill = 0,
                     retreatJudgement = 0.5f,
                     thinkIntervalScale = 2.5f,

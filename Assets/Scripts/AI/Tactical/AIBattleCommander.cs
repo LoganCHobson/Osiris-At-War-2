@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -61,6 +62,7 @@ public class AIBattleCommander : MonoBehaviour
     }
 
     private readonly List<Ship> reserve = new List<Ship>();
+    private Ship lead;
     private readonly List<Unit> units = new List<Unit>();
     private readonly List<Contact> enemies = new List<Contact>();
     private readonly List<UnitHealthManager> friendlyDefenses = new List<UnitHealthManager>();
@@ -90,17 +92,83 @@ public class AIBattleCommander : MonoBehaviour
         Patient = Random.value < personality.patience;
 
         reserve.AddRange(roster);
+        lead = BattleDeployment.ChooseLead(roster);
 
-        Vector3 origin = SpawnPosition();
         Vector3 forward = spawnPoint != null ? spawnPoint.forward : Vector3.forward;
-        Vector3 side = Vector3.Cross(Vector3.up, forward).normalized;
-        List<Ship> initial = TakeDeployable();
-        float spacing = SpawnSpacing(initial);
-
-        for (int i = 0; i < initial.Count; i++)
+        foreach (BattleDeployment.Placement placement in BattleDeployment.Arrange(ChooseOpening(), lead, SpawnPosition(), forward))
         {
-            Spawn(initial[i], origin + side * SlotOffset(i) * spacing, Quaternion.LookRotation(forward));
+            Spawn(placement.ship, placement.position, Quaternion.LookRotation(forward));
         }
+    }
+
+    // What to field at the start. Holding reserves, it opens with its lead and enough of the fleet to outgun
+    // what the other side can put on the field; the rest waits, and escapes for free if the battle goes badly.
+    private List<Ship> ChooseOpening()
+    {
+        if (!Difficulty.holdReserves) return TakeDeployable();
+        return TakeUpTo(ExpectedEnemyPower() * personality.pressAdvantageRatio, lead);
+    }
+
+    // Reserve ships until the power wanted is on the field (or the population cap is reached): the given
+    // ship first, then the strongest, strike craft last.
+    private List<Ship> TakeUpTo(float wantedPower, Ship first)
+    {
+        List<Ship> chosen = new List<Ship>();
+        int room = populationCap - FieldPopulation();
+        float power = 0f;
+
+        IEnumerable<Ship> order = reserve.Where(s => s != null)
+            .OrderByDescending(s => s == first)
+            .ThenBy(s => s.CanLead ? 0 : 1)
+            .ThenByDescending(s => s.combatPower);
+        foreach (Ship ship in order)
+        {
+            if (chosen.Count > 0 && power >= wantedPower) break;
+            if (ship.populationCost > room) continue;
+            chosen.Add(ship);
+            room -= ship.populationCost;
+            power += ship.combatPower;
+        }
+        return chosen;
+    }
+
+    // What the other side can put on the field: its best ships up to the population cap, plus planet defenses.
+    private float ExpectedEnemyPower()
+    {
+        BattleContext context = BattleContext.Instance;
+        if (context == null || !context.hasPendingBattle) return float.PositiveInfinity; // Unknown: field everything.
+
+        List<Ship> enemy = IsAttackerSide ? context.defenderRoster : context.attackerRoster;
+        float power = 0f;
+        int room = populationCap;
+        foreach (Ship ship in (enemy ?? new List<Ship>()).Where(s => s != null).OrderByDescending(s => s.combatPower))
+        {
+            if (ship.populationCost > room) continue;
+            room -= ship.populationCost;
+            power += ship.combatPower;
+        }
+
+        if (IsAttackerSide)
+        {
+            if (context.defenderHasShipyard) power += Strength.ShipyardPower;
+            if (context.defenderHasBattleStation) power += Strength.BattleStationPower;
+        }
+        return power;
+    }
+
+    private float FieldPower()
+    {
+        float power = 0f;
+        foreach (Unit unit in units) power += (unit.ship != null ? unit.ship.combatPower : Strength.DefaultShipPower) * HealthFraction(unit.health);
+        foreach (UnitHealthManager defense in friendlyDefenses) power += BasePower(defense) * HealthFraction(defense);
+        return power;
+    }
+
+    private float EnemyFieldPower()
+    {
+        float power = 0f;
+        foreach (Contact contact in enemies) power += contact.power;
+        return power;
     }
 
     private int FieldPopulation()
@@ -125,19 +193,6 @@ public class AIBattleCommander : MonoBehaviour
             room -= ship.populationCost;
         }
         return deployable;
-    }
-
-    private float SpawnSpacing(List<Ship> ships)
-    {
-        float spacing = formationSpacing;
-        foreach (Ship ship in ships)
-        {
-            if (ship != null)
-            {
-                spacing = Mathf.Max(spacing, FleetFormation.Spacing(ship.prefab));
-            }
-        }
-        return spacing;
     }
 
     private float FieldSpacing()
@@ -376,16 +431,25 @@ public class AIBattleCommander : MonoBehaviour
     {
         if (Abandoning || reserve.Count == 0 || Time.time < reinforceReadyAt) return;
 
-        List<Ship> deploying = TakeDeployable();
+        List<Ship> deploying;
+        if (Difficulty.holdReserves)
+        {
+            // Only what it takes to keep the upper hand; the rest stays safe in reserve.
+            float shortfall = EnemyFieldPower() * personality.pressAdvantageRatio - FieldPower();
+            if (shortfall <= 0f && units.Count > 0) return;
+            deploying = TakeUpTo(Mathf.Max(shortfall, 1f), null);
+        }
+        else
+        {
+            deploying = TakeDeployable();
+        }
         if (deploying.Count == 0) return;
 
-        Vector3 drop = ChooseDropZone();
+        Vector3 drop = DropPoint(ChooseDropZone());
         Quaternion facing = Quaternion.LookRotation(toEnemy);
-        float spacing = SpawnSpacing(deploying);
-
-        for (int i = 0; i < deploying.Count; i++)
+        foreach (BattleDeployment.Placement placement in BattleDeployment.Arrange(deploying, null, drop, toEnemy))
         {
-            Spawn(deploying[i], DropPoint(drop + lateral * SlotOffset(i) * spacing), facing, true);
+            Spawn(placement.ship, placement.position, facing, true);
         }
 
         reinforceReadyAt = Time.time + personality.reinforcementDelay;
