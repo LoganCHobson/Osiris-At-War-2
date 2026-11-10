@@ -196,6 +196,13 @@ public class SettingsPanel : MonoBehaviour
             GameSettings.Apply();
         });
 
+        // Anonymous: the AI's own decisions and the battle's outcome, nothing about you or your saves.
+        UIKit.Selector(UIKit.Row(content, "Share Grand Admiral Battles"), new[] { "Off", "On" }, GameSettings.ShareBattleData ? 1 : 0, i =>
+        {
+            GameSettings.ShareBattleData = i == 1;
+            GameSettings.Apply();
+        });
+
         RectTransform keys = UIKit.Rect("Hotkeys", content, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0f, 150f));
         keys.gameObject.AddComponent<LayoutElement>().preferredHeight = 150f;
         TMP_Text text = UIKit.Text(keys, "<b>HOTKEYS</b>\n" +

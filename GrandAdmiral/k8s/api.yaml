@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grand-admiral-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: grand-admiral-api }
+  template:
+    metadata:
+      labels: { app: grand-admiral-api }
+    spec:
+      automountServiceAccountToken: false   # the API never talks to Kubernetes
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: api
+          image: ghcr.io/loganchobson/grand-admiral-api:latest
+          ports: [{ containerPort: 8080 }]
+          env:
+            - name: GA_DB_URL
+              valueFrom: { secretKeyRef: { name: grand-admiral-api, key: db-url } }
+            - { name: GA_SERVER_KEY_FILE, value: /secrets/server-key }
+            - { name: GA_TRUSTED_PROXY_HOPS, value: "1" }
+            - { name: GA_POW_BITS, value: "20" }
+            - name: GA_SELFPLAY_INSTALLS
+              valueFrom: { configMapKeyRef: { name: grand-admiral-config, key: selfplay-installs } }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: [ALL] }
+          readinessProbe:
+            httpGet: { path: /healthz, port: 8080 }
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /healthz, port: 8080 }
+            periodSeconds: 30
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { memory: 384Mi }
+          volumeMounts:
+            - { name: server-key, mountPath: /secrets, readOnly: true }
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - name: server-key
+          secret:
+            secretName: grand-admiral-api
+            items: [{ key: server-key, path: server-key }]
+            defaultMode: 0400
+        - { name: tmp, emptyDir: { medium: Memory, sizeLimit: 16Mi } }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grand-admiral-api
+spec:
+  selector: { app: grand-admiral-api }
+  ports: [{ name: http, port: 8080, targetPort: 8080 }]
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: grand-admiral-api
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: { app: grand-admiral-api }

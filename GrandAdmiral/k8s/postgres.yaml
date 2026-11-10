@@ -1,0 +1,76 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: grand-admiral-db
+spec:
+  selector: { app: grand-admiral-db }
+  ports: [{ name: postgres, port: 5432, targetPort: 5432 }]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: grand-admiral-db
+spec:
+  serviceName: grand-admiral-db
+  replicas: 1
+  selector:
+    matchLabels: { app: grand-admiral-db }
+  template:
+    metadata:
+      labels: { app: grand-admiral-db }
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 70          # postgres in the alpine image
+        runAsGroup: 70
+        fsGroup: 70
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: postgres
+          image: postgres:16.4-alpine
+          ports: [{ containerPort: 5432 }]
+          env:
+            - { name: POSTGRES_DB, value: grand_admiral }
+            - { name: PGDATA, value: /var/lib/postgresql/data/pgdata }
+            - name: POSTGRES_PASSWORD
+              valueFrom: { secretKeyRef: { name: grand-admiral-db, key: admin-password } }
+            - name: GA_API_DB_PASSWORD
+              valueFrom: { secretKeyRef: { name: grand-admiral-db, key: api-password } }
+            - name: GA_TRAINER_DB_PASSWORD
+              valueFrom: { secretKeyRef: { name: grand-admiral-db, key: trainer-password } }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: [ALL] }
+          readinessProbe:
+            exec: { command: [pg_isready, -U, postgres, -d, grand_admiral] }
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { memory: 1Gi }
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/postgresql/data }
+            - { name: run, mountPath: /var/run/postgresql }
+            - { name: tmp, mountPath: /tmp }
+            - { name: init-script, mountPath: /docker-entrypoint-initdb.d, readOnly: true }
+            - { name: init-sql, mountPath: /init, readOnly: true }
+      volumes:
+        - { name: run, emptyDir: {} }
+        - { name: tmp, emptyDir: {} }
+        # The entrypoint runs everything in initdb.d, so only the wrapper goes there; the SQL needs
+        # the role passwords passed in as variables.
+        - name: init-script
+          configMap:
+            name: grand-admiral-db-init
+            items: [{ key: postgres-init.sh, path: 10-grand-admiral.sh }]
+        - name: init-sql
+          configMap:
+            name: grand-admiral-db-init
+            items: [{ key: postgres-init.sql, path: postgres-init.sql }]
+  volumeClaimTemplates:
+    - metadata: { name: data }
+      spec:
+        accessModes: [ReadWriteOnce]
+        storageClassName: longhorn-retain   # kept (and backed up) even if the StatefulSet is deleted
+        resources: { requests: { storage: 5Gi } }

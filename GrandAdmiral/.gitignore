@@ -1,0 +1,14 @@
+unity-tests/bin/
+unity-tests/obj/
+unity-tests/out/
+unity-tests/vectors/
+tools/unity-typecheck/bin/
+tools/unity-typecheck/obj/
+**/__pycache__/
+**/*.egg-info/
+**/.pytest_cache/
+*.pem
+
+# The game's .gitignore drops *.csproj; these two are real projects.
+!unity-tests/GrandAdmiral.Tests.csproj
+!tools/unity-typecheck/typecheck.csproj

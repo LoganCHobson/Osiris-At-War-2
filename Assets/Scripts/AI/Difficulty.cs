@@ -4,8 +4,8 @@ public enum DifficultyLevel
 {
     Cadet = 0,
     Captain = 1,
-    Admiral = 2
-    // Grand Admiral (machine-learned) comes later.
+    Admiral = 2,
+    GrandAdmiral = 3 // Machine-learned: see Scripts/AI/GrandAdmiral.
 }
 
 // How well the AI plays. Purely behaviour - every difficulty has the same ships, stats, build times and
@@ -46,6 +46,9 @@ public class DifficultyProfile
     {
         switch (level)
         {
+            case DifficultyLevel.GrandAdmiral:
+                return GrandAdmiralProfile();
+
             case DifficultyLevel.Cadet:
                 return new DifficultyProfile
                 {
@@ -106,6 +109,23 @@ public class DifficultyProfile
         }
     }
 
+    // Admiral's full playbook; its timing and margins come from the Grand Admiral model, so they can be
+    // retuned from the server without a game update (and are clamped, see GASpec.ClampKnob). The
+    // battle calls themselves are made by the network (AIBattleCommander.GrandAdmiral.cs).
+    private static DifficultyProfile GrandAdmiralProfile()
+    {
+        DifficultyProfile profile = For(DifficultyLevel.Admiral);
+        profile.level = DifficultyLevel.GrandAdmiral;
+        Osiris.GrandAdmiral.GAModel model = GrandAdmiral.Model;
+        if (model == null) return profile;
+        profile.decisionInterval = (float)model.Knob(Osiris.GrandAdmiral.GASpec.Knob.DecisionInterval);
+        profile.reinforcementDelayScale = (float)model.Knob(Osiris.GrandAdmiral.GASpec.Knob.ReinforcementDelayScale);
+        profile.thinkIntervalScale = (float)model.Knob(Osiris.GrandAdmiral.GASpec.Knob.ThinkIntervalScale);
+        profile.attackMarginScale = (float)model.Knob(Osiris.GrandAdmiral.GASpec.Knob.AttackMarginScale);
+        profile.retreatJudgement = (float)model.Knob(Osiris.GrandAdmiral.GASpec.Knob.RetreatJudgement);
+        return profile;
+    }
+
     // A copy of the faction's personality with this difficulty's playbook applied (assets stay untouched).
     public AIPersonality Apply(AIPersonality source)
     {
@@ -145,10 +165,19 @@ public static class Difficulty
 
     public static DifficultyProfile Profile => profile != null && profile.level == Current ? profile : (profile = DifficultyProfile.For(Current));
 
+    // A new Grand Admiral model may retune the profile.
+    public static void Invalidate() => profile = null;
+
+    public static string DisplayName(DifficultyLevel level) => level == DifficultyLevel.GrandAdmiral ? "Grand Admiral" : level.ToString();
+
     public static string Describe(DifficultyLevel level)
     {
         switch (level)
         {
+            case DifficultyLevel.GrandAdmiral:
+                return GrandAdmiral.Available
+                    ? $"Learns from every battle fought against it, by every player. Model v{GrandAdmiral.Model.Version}."
+                    : "Learns from every battle fought against it. (Model not installed yet: plays as Admiral.)";
             case DifficultyLevel.Cadet: return "A slow, predictable enemy that makes mistakes. Learn the ropes.";
             case DifficultyLevel.Admiral: return "A sharp commander: fast reactions, focused fire, smart retreats and a full strategic playbook.";
             default: return "A capable enemy that fights sensibly but can be outmanoeuvred.";

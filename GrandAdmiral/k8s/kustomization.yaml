@@ -1,0 +1,25 @@
+# kubectl apply -k grand-admiral/k8s   (secrets first: see README, "Deploy")
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: grand-admiral
+resources:
+  - namespace.yaml
+  - config.yaml
+  - networkpolicy.yaml
+  - postgres.yaml
+  - api.yaml
+  - ingress.yaml
+  - trainer.yaml
+  - selfplay.yaml
+configMapGenerator:
+  - name: grand-admiral-db-init
+    files: [postgres-init.sql, postgres-init.sh]
+  - name: grand-admiral-selfplay-script
+    files: [selfplay.sh]
+generatorOptions:
+  disableNameSuffixHash: true
+images:
+  - name: ghcr.io/loganchobson/grand-admiral-api
+    newTag: latest
+  - name: ghcr.io/loganchobson/grand-admiral-trainer
+    newTag: latest

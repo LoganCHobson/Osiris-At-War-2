@@ -262,7 +262,7 @@ public class MainMenuController : MonoBehaviour
         picker = UIKit.Fill("Difficulty", menuCanvas.transform);
         UIKit.Image(picker, UIKit.Dim, true);
 
-        RectTransform window = UIKit.Rect("Window", picker, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(900f, 640f));
+        RectTransform window = UIKit.Rect("Window", picker, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(900f, 770f));
         UIKit.Image(window, UIKit.PanelColor, true);
 
         RectTransform header = UIKit.Rect("Header", window, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0f, 100f));
@@ -275,10 +275,10 @@ public class MainMenuController : MonoBehaviour
         list.offsetMax = new Vector2(-60f, -120f);
         UIKit.List(list, 18f);
 
-        foreach (DifficultyLevel level in new[] { DifficultyLevel.Cadet, DifficultyLevel.Captain, DifficultyLevel.Admiral })
+        foreach (DifficultyLevel level in new[] { DifficultyLevel.Cadet, DifficultyLevel.Captain, DifficultyLevel.Admiral, DifficultyLevel.GrandAdmiral })
         {
             DifficultyLevel chosen = level;
-            UIKit.MenuButton(list, level.ToString().ToUpperInvariant() + (level == Difficulty.Current ? "   <size=60%><color=#FFBC52>LAST USED</color></size>" : ""), 38f, new Vector2(780f, 58f), () =>
+            UIKit.MenuButton(list, Difficulty.DisplayName(level).ToUpperInvariant() + (level == Difficulty.Current ? "   <size=60%><color=#FFBC52>LAST USED</color></size>" : ""), 38f, new Vector2(780f, 58f), () =>
             {
                 Difficulty.Current = chosen;
                 StartCampaign();

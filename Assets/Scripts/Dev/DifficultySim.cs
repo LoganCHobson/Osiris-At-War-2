@@ -15,9 +15,13 @@ public class DifficultySim : MonoBehaviour
     public float simSpeed = 6f;
     public float battleTimeLimit = 420f;
     public string reportPath;
+    [Tooltip("Grand Admiral self-play: only Grand Admiral vs Admiral, exploring, with records and win rates sent to the server.")]
+    public bool selfPlay;
+    public int selfPlayRounds = 10;
 
     private static readonly (DifficultyLevel stronger, DifficultyLevel weaker)[] Matchups =
     {
+        (DifficultyLevel.GrandAdmiral, DifficultyLevel.Admiral),
         (DifficultyLevel.Admiral, DifficultyLevel.Cadet),
         (DifficultyLevel.Admiral, DifficultyLevel.Captain),
         (DifficultyLevel.Captain, DifficultyLevel.Cadet)
@@ -29,14 +33,25 @@ public class DifficultySim : MonoBehaviour
     private IEnumerator Start()
     {
         yield return null;
+        if (selfPlay) yield return GrandAdmiralService.CheckNow(); // Play the newest released model.
         GameSpeed.SetSpeed(simSpeed);
         report.AppendLine($"DIFFICULTY SIM  {factionA?.name} vs {factionB?.name}  speed x{simSpeed}  limit {battleTimeLimit}s");
 
         Vector3 attackerStart = GameManager.Instance.attackerShipSpawnPoint.position;
         Vector3 defenderStart = GameManager.Instance.defenderShipSpawnPoint.position;
         int battle = 0;
+        int gaGames = 0, gaWins = 0, gaDraws = 0;
+        var matchups = new List<(DifficultyLevel stronger, DifficultyLevel weaker)>();
+        if (selfPlay)
+        {
+            for (int i = 0; i < selfPlayRounds; i++) matchups.Add((DifficultyLevel.GrandAdmiral, DifficultyLevel.Admiral));
+        }
+        else
+        {
+            matchups.AddRange(Matchups);
+        }
 
-        foreach ((DifficultyLevel stronger, DifficultyLevel weaker) in Matchups)
+        foreach ((DifficultyLevel stronger, DifficultyLevel weaker) in matchups)
         {
             int strongerWins = 0, weakerWins = 0, draws = 0;
             float marginTotal = 0f;
@@ -75,6 +90,16 @@ public class DifficultySim : MonoBehaviour
                 else { draws++; outcome = "draw"; }
                 marginTotal += strongLeft - weakLeft;
 
+                bool strongWon = outcome == stronger.ToString(), weakWon = outcome == weaker.ToString();
+                strong.NotifyBattleEnded(strongWon, strong.Retreating, weak.Retreating);
+                weak.NotifyBattleEnded(weakWon, weak.Retreating, strong.Retreating);
+                if (stronger == DifficultyLevel.GrandAdmiral && weaker == DifficultyLevel.Admiral && strong.GrandAdmiralActive)
+                {
+                    gaGames++;
+                    if (strongWon) gaWins++;
+                    else if (!weakWon) gaDraws++;
+                }
+
                 report.AppendLine($"  {stronger,-8}({strongFaction?.name}, {(strongerAttacks ? "attacker" : "defender")}) vs {weaker,-8}({weakFaction?.name})  "
                     + $"left {strongLeft:P0} vs {weakLeft:P0}  {Time.time - started:F0}s  terrain {terrainSeed}  winner={outcome}");
                 Debug.Log($"DIFFSIM {report.ToString().Split('\n')[^2]}");
@@ -86,6 +111,12 @@ public class DifficultySim : MonoBehaviour
 
         Clear();
         GameSpeed.Reset();
+        if (gaGames > 0 && GrandAdmiral.Model != null)
+        {
+            report.AppendLine($"GRAND ADMIRAL v{GrandAdmiral.Model.Version} vs Admiral: {gaWins} wins, {gaDraws} draws, {gaGames} games");
+            if (selfPlay) yield return GrandAdmiralService.ReportArena(GrandAdmiral.Model.Version, "admiral", gaGames, gaWins, gaDraws);
+        }
+        if (selfPlay) yield return GrandAdmiralService.WaitForUploads();
         string text = report.ToString();
         Debug.Log("DIFFSIM REPORT\n" + text);
         if (!string.IsNullOrEmpty(reportPath)) File.WriteAllText(reportPath, text);
@@ -101,6 +132,7 @@ public class DifficultySim : MonoBehaviour
         AIBattleCommander commander = go.AddComponent<AIBattleCommander>();
         commander.useDifficultyOverride = true;
         commander.difficultyOverride = DifficultyProfile.For(level);
+        commander.SelfPlay = selfPlay && level == DifficultyLevel.GrandAdmiral;
 
         Transform spawn = attackerSide ? GameManager.Instance.attackerShipSpawnPoint : GameManager.Instance.defenderShipSpawnPoint;
         commander.Initialize(faction, attackerSide, Fleet(faction).ConvertAll(ship => ShipEntry.New(ship, faction)), spawn, GameManager.Instance.populationCap);

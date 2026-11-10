@@ -1,0 +1,59 @@
+# Nightly training round: check new uploads, train, gate, and (only if every check passes) sign
+# and release a new model. The signing key exists only in this pod. It accepts no connections and
+# can reach nothing but the database (networkpolicy.yaml).
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: grand-admiral-trainer
+spec:
+  schedule: "17 9 * * *"          # 09:17 UTC, after the night's self-play
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 3600
+      ttlSecondsAfterFinished: 604800
+      template:
+        metadata:
+          labels: { app: grand-admiral-trainer }
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+            seccompProfile: { type: RuntimeDefault }
+          containers:
+            - name: trainer
+              image: ghcr.io/loganchobson/grand-admiral-trainer:latest
+              args: [round]
+              env:
+                - name: GA_DB_URL
+                  valueFrom: { secretKeyRef: { name: grand-admiral-trainer, key: db-url } }
+                - { name: GA_SIGNING_KEY_FILE, value: /secrets/signing-key.pem }
+                - name: GA_SIGNING_KEY_PASS
+                  valueFrom: { secretKeyRef: { name: grand-admiral-trainer, key: signing-key-pass, optional: true } }
+                - name: GA_KEY_ID
+                  valueFrom: { secretKeyRef: { name: grand-admiral-trainer, key: key-id } }
+                - name: GA_SELFPLAY_INSTALLS
+                  valueFrom: { configMapKeyRef: { name: grand-admiral-config, key: selfplay-installs } }
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: { drop: [ALL] }
+              resources:
+                requests: { cpu: 500m, memory: 512Mi }
+                limits: { cpu: "2", memory: 3Gi }
+              volumeMounts:
+                - { name: signing-key, mountPath: /secrets, readOnly: true }
+                - { name: tmp, mountPath: /tmp }
+          volumes:
+            - name: signing-key
+              secret:
+                secretName: grand-admiral-trainer
+                items: [{ key: signing-key.pem, path: signing-key.pem }]
+                defaultMode: 0400
+            - { name: tmp, emptyDir: { sizeLimit: 256Mi } }

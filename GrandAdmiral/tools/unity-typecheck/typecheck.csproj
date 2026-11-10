@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Type-checks the Grand Admiral game code without Unity: compiles it against Stubs.cs (just the
+       UnityEngine/game signatures it uses).   dotnet build GrandAdmiral/tools/unity-typecheck
+       Catches type and API mistakes; it does not replace opening the project in Unity. -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <GameScripts Condition="'$(GameScripts)' == ''">$(MSBuildThisFileDirectory)../../../Assets/Scripts</GameScripts>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <NoWarn>CS0414;CS0169;CS0649;CS0067</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(GameScripts)/AI/GrandAdmiral/**/*.cs" />
+    <Compile Include="$(GameScripts)/AI/Tactical/AIBattleCommander.cs" />
+    <Compile Include="$(GameScripts)/AI/Difficulty.cs" />
+    <Compile Include="$(GameScripts)/AI/Strategic/AIPersonality.cs" />
+    <Compile Include="Stubs.cs" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,64 @@
+# Nightly Grand Admiral vs Admiral battles in headless Unity (the shared unity-ci-build image).
+# Gives the trainer clean, high-exploration data and the win rates behind the automatic rollback.
+# Needs: the unity-license Secret (copied from the build pipeline's) and the grand-admiral-selfplay
+# Secret (README, "Self-play"). Suspended until those exist: set suspend: false to start it.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: grand-admiral-selfplay
+spec:
+  schedule: "17 3 * * *"          # 03:17 UTC, finishes well before the trainer at 09:17
+  suspend: true
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 19800
+      ttlSecondsAfterFinished: 259200
+      template:
+        metadata:
+          labels: { app: grand-admiral-selfplay }
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+            fsGroup: 10001
+            seccompProfile: { type: RuntimeDefault }
+          containers:
+            - name: unity
+              image: ghcr.io/logansorganization/unity-ci-build:v1
+              command: [/bin/bash, /scripts/selfplay.sh]
+              env:
+                - { name: GIT_REPO_URL, value: "https://github.com/LoganCHobson/Osiris-At-War-2" }
+                - { name: GIT_REF, value: main }
+                - { name: SELFPLAY_ROUNDS, value: "25" }
+                - name: UNITY_SERIAL
+                  valueFrom: { secretKeyRef: { name: unity-license, key: serial } }
+                - name: UNITY_EMAIL
+                  valueFrom: { secretKeyRef: { name: unity-license, key: email } }
+                - name: UNITY_PASSWORD
+                  valueFrom: { secretKeyRef: { name: unity-license, key: password } }
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities: { drop: [ALL] }
+              resources:
+                requests: { cpu: "1", memory: 4Gi }
+                limits: { cpu: "2", memory: 8Gi }
+              volumeMounts:
+                - { name: scripts, mountPath: /scripts, readOnly: true }
+                - { name: selfplay, mountPath: /secrets/selfplay, readOnly: true }
+                - { name: workspace, mountPath: /workspace }
+                - { name: tmp, mountPath: /tmp }
+          imagePullSecrets: [{ name: ghcr-pull-secret }]
+          volumes:
+            - name: scripts
+              configMap: { name: grand-admiral-selfplay-script }
+            - name: selfplay
+              secret: { secretName: grand-admiral-selfplay, defaultMode: 0400 }
+            - { name: workspace, emptyDir: { sizeLimit: 20Gi } }
+            - { name: tmp, emptyDir: { sizeLimit: 10Gi } }

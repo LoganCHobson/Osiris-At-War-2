@@ -1,0 +1,8 @@
+# Not secret. After creating the self-play identity (see README, "Self-play"), put its install id
+# here and re-apply: the API exempts it from rate limits and the trainer treats its data as trusted.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grand-admiral-config
+data:
+  selfplay-installs: ""

@@ -1,0 +1,97 @@
+name: Grand Admiral
+
+on:
+  pull_request:
+    paths: ["GrandAdmiral/**", "Assets/Scripts/AI/**", ".github/workflows/grand-admiral.yml"]
+  push:
+    branches: [main]
+    paths: ["GrandAdmiral/**", "Assets/Scripts/AI/**", ".github/workflows/grand-admiral.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: grand-admiral-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  test:
+    # GitHub-hosted on purpose: pull request code never runs on the cluster's self-hosted runner.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16.4-alpine
+        env: { POSTGRES_PASSWORD: ci-only, POSTGRES_DB: grand_admiral }
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 5s --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: "8.0.x" }
+      - name: Install
+        run: pip install -e "GrandAdmiral/ml[test,postgres]" -e GrandAdmiral/server httpx
+      - name: All tests
+        env:
+          GA_PG_ADMIN_URL: postgresql+psycopg://postgres:ci-only@localhost:5432/grand_admiral
+        run: GrandAdmiral/run-tests.sh
+      - name: Validate Kubernetes manifests
+        run: |
+          curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz | tar xz kubeconform
+          kubectl kustomize GrandAdmiral/k8s > rendered.yaml
+          ./kubeconform -strict -summary -kubernetes-version 1.30.0 rendered.yaml GrandAdmiral/k8s/bootstrap-job.yaml
+
+  images:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: tag
+        run: echo "tag=${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+      - uses: docker/login-action@v3
+        with: { registry: ghcr.io, username: "${{ github.actor }}", password: "${{ secrets.GITHUB_TOKEN }}" }
+      - uses: docker/build-push-action@v6
+        with:
+          context: grand-admiral
+          file: GrandAdmiral/server/Dockerfile
+          push: true
+          provenance: true
+          tags: ghcr.io/loganchobson/grand-admiral-api:${{ steps.tag.outputs.tag }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: grand-admiral
+          file: GrandAdmiral/ml/Dockerfile
+          push: true
+          provenance: true
+          tags: ghcr.io/loganchobson/grand-admiral-trainer:${{ steps.tag.outputs.tag }}
+
+  deploy:
+    needs: images
+    # The homelab runner: only ever runs code that is already on main.
+    runs-on: [self-hosted, homelab-k8s]
+    environment: grand-admiral   # add required reviewers in repo settings to gate deploys by hand
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply
+        env:
+          TAG: ${{ needs.images.outputs.tag }}
+        run: |
+          set -euo pipefail
+          kubectl apply -k GrandAdmiral/k8s
+          kubectl -n grand-admiral set image deployment/grand-admiral-api api=ghcr.io/loganchobson/grand-admiral-api:$TAG
+          kubectl -n grand-admiral patch cronjob grand-admiral-trainer --type=json \
+            -p "[{\"op\":\"replace\",\"path\":\"/spec/jobTemplate/spec/template/spec/containers/0/image\",\"value\":\"ghcr.io/loganchobson/grand-admiral-trainer:$TAG\"}]"
+          kubectl -n grand-admiral rollout status deployment/grand-admiral-api --timeout=180s
+      - name: Smoke test
+        run: |
+          kubectl -n grand-admiral exec deploy/grand-admiral-api -- python -c \
+            "import urllib.request as u; print(u.urlopen('http://localhost:8080/healthz', timeout=5).read().decode())"

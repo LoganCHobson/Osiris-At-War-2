@@ -124,7 +124,7 @@ public class SaveLoadPanel : MonoBehaviour
         name.rectTransform.offsetMin = new Vector2(24f, 0f);
         name.rectTransform.offsetMax = new Vector2(-80f, -10f);
 
-        string details = $"{(DifficultyLevel)save.data.difficulty}   ·   {save.data.playerPlanets} planets   ·   {save.data.playerShips} ships   ·   ${save.data.playerCredits:N0}   ·   {save.savedAt:MMM d, h:mm tt}";
+        string details = $"{Difficulty.DisplayName((DifficultyLevel)save.data.difficulty)}   ·   {save.data.playerPlanets} planets   ·   {save.data.playerShips} ships   ·   ${save.data.playerCredits:N0}   ·   {save.savedAt:MMM d, h:mm tt}";
         TMP_Text info = UIKit.Text(row, details, 20f, UIKit.MutedColor, TextAlignmentOptions.BottomLeft);
         info.rectTransform.offsetMin = new Vector2(24f, 10f);
         info.rectTransform.offsetMax = new Vector2(-80f, 0f);

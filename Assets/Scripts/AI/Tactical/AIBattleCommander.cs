@@ -3,7 +3,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.AI;
 
-public class AIBattleCommander : MonoBehaviour
+public partial class AIBattleCommander : MonoBehaviour
 {
     public enum Stance { Engage, Press, FallBack }
 
@@ -103,6 +103,7 @@ public class AIBattleCommander : MonoBehaviour
         personality = Difficulty.Apply(ResolvePersonality(faction));
         decisionInterval = Difficulty.decisionInterval;
         Patient = Random.value < personality.patience;
+        InitGrandAdmiral(roster);
 
         reserve.AddRange(roster);
         lead = BattleDeployment.ChooseLead(roster);
@@ -250,6 +251,7 @@ public class AIBattleCommander : MonoBehaviour
         if (enemies.Count == 0) return;
 
         ComputeGeometry();
+        if (GrandAdmiralActive) GrandAdmiralTick();
         EvaluateStance();
 
         if (Retreating)
@@ -311,9 +313,10 @@ public class AIBattleCommander : MonoBehaviour
         float ratio = theirs <= 0f ? 10f : ours / theirs;
         Outlook = Mathf.Lerp(Outlook, ratio, 0.5f);
 
+        bool? grandAdmiral = GrandAdmiralRetreat(Outlook);
         float threshold = personality.retreatRatio * (friendlyDefenses.Count > 0 ? personality.defendedRetreatFactor : 1f)
             * (1f - HeroForces.Buff(IsAttackerSide, HeroBuff.Resolve)); // A hero's presence holds the line.
-        if (Outlook >= threshold)
+        if (grandAdmiral.HasValue ? !grandAdmiral.Value : Outlook >= threshold)
         {
             Abandoning = false;
             return;
@@ -510,6 +513,12 @@ public class AIBattleCommander : MonoBehaviour
         float ratio = theirs <= 0f ? 10f : ours / theirs;
         ForceRatio = Mathf.Lerp(ForceRatio, ratio, 0.5f);
 
+        if (GrandAdmiralStance(out Stance learned))
+        {
+            CurrentStance = learned;
+            return;
+        }
+
         if (!personality.canManageStance)
         {
             CurrentStance = Stance.Engage;
@@ -544,7 +553,11 @@ public class AIBattleCommander : MonoBehaviour
         if (Abandoning || reserve.Count == 0 || Time.time < reinforceReadyAt) return;
 
         List<ShipEntry> deploying;
-        if (Difficulty.holdReserves)
+        if (GrandAdmiralCommit(out List<ShipEntry> learned))
+        {
+            deploying = learned;
+        }
+        else if (Difficulty.holdReserves)
         {
             // Only what it takes to keep the upper hand; the rest stays safe in reserve.
             float shortfall = EnemyFieldPower() * personality.pressAdvantageRatio - FieldPower();
@@ -620,24 +633,11 @@ public class AIBattleCommander : MonoBehaviour
         foreach (Contact contact in enemies)
         {
             contact.incomingDps = 0f;
-
-            float distance = Vector3.Distance(contact.health.transform.position, ourCenter);
-            float proximity = 1f / (1f + distance / Mathf.Max(1f, ourRange * 2f));
-            float health = Mathf.Max(1f, contact.health.currentHealth);
-            contact.priority = (contact.dps + contact.power * 0.05f) / health * proximity;
-
-            if (contact.health.IsDefense && HasEnemyShips())
-            {
-                contact.priority *= 0.35f;
-            }
-
-            if (enemyRetreating && !contact.health.IsDefense)
-            {
-                contact.priority *= LiveEngine(contact.hardpoints) != null ? 4f : 0.25f;
-            }
+            contact.priority = HeuristicPriority(contact, enemyRetreating);
         }
 
         enemies.Sort((a, b) => b.priority.CompareTo(a.priority));
+        GrandAdmiralFocus(); // Grand Admiral's chosen focus target goes first.
 
         // Fighters flex: as many as the interceptors can't cover go after enemy craft; the rest strike ships.
         int enemyCraft = 0;
@@ -735,6 +735,27 @@ public class AIBattleCommander : MonoBehaviour
             if (score > bestScore) { bestScore = score; best = contact; }
         }
         return best;
+    }
+
+    // Damage per second it deals, per hull point it has, nearer first; defenses after ships; engines of
+    // a fleeing enemy first (they're about to escape).
+    private float HeuristicPriority(Contact contact, bool enemyRetreating)
+    {
+        float distance = Vector3.Distance(contact.health.transform.position, ourCenter);
+        float proximity = 1f / (1f + distance / Mathf.Max(1f, ourRange * 2f));
+        float health = Mathf.Max(1f, contact.health.currentHealth);
+        float priority = (contact.dps + contact.power * 0.05f) / health * proximity;
+
+        if (contact.health.IsDefense && HasEnemyShips())
+        {
+            priority *= 0.35f;
+        }
+
+        if (enemyRetreating && !contact.health.IsDefense)
+        {
+            priority *= LiveEngine(contact.hardpoints) != null ? 4f : 0.25f;
+        }
+        return priority;
     }
 
     private Contact PickFocusTarget()

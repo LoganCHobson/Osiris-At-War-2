@@ -149,6 +149,14 @@ public class GameManager : MonoBehaviour
     {
         if (battleEnded) return;
         battleEnded = true;
+
+        // Grand Admiral learns from how it went (before retreating ships leave the field).
+        foreach (AIBattleCommander commander in GetComponents<AIBattleCommander>())
+        {
+            bool lost = commander.IsAttackerSide == attackerLost;
+            bool enemyRetreated = byRetreat && !lost;
+            commander.NotifyBattleEnded(!lost, byRetreat && lost, enemyRetreated);
+        }
         RetreatManager.Instance?.Finish();
 
         BattleContext context = BattleContext.Instance;
@@ -259,6 +267,9 @@ public class GameManager : MonoBehaviour
     private void DeployAISide(Faction faction, List<ShipEntry> roster, bool attackerSide)
     {
         AIBattleCommander commander = gameObject.AddComponent<AIBattleCommander>();
+        BattleContext context = BattleContext.Instance;
+        commander.OpponentIsPlayer = context == null || !context.hasPendingBattle
+            || Strength.IsPlayer(attackerSide ? context.defenderFaction : context.attackerFaction);
         commander.Initialize(faction, attackerSide, roster, attackerSide ? attackerShipSpawnPoint : defenderShipSpawnPoint, populationCap);
     }
 

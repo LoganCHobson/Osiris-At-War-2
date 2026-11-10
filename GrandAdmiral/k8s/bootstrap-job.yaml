@@ -1,0 +1,54 @@
+# One-off: release Grand Admiral v1 into an empty database, from the exact bundle that ships in
+# the game (public data, so a ConfigMap is fine):
+#   kubectl -n grand-admiral create configmap grand-admiral-baseline --from-file=baseline.bytes
+#   kubectl -n grand-admiral apply -f k8s/bootstrap-job.yaml
+#   kubectl -n grand-admiral logs job/grand-admiral-bootstrap -f
+# Refuses to run if any model already exists. Not part of the kustomization on purpose.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: grand-admiral-bootstrap
+  namespace: grand-admiral
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels: { app: grand-admiral-trainer }
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: bootstrap
+          image: ghcr.io/loganchobson/grand-admiral-trainer:latest
+          args: [bootstrap, --from-bundle, /baseline/baseline.bytes]
+          env:
+            - name: GA_DB_URL
+              valueFrom: { secretKeyRef: { name: grand-admiral-trainer, key: db-url } }
+            - { name: GA_SIGNING_KEY_FILE, value: /secrets/signing-key.pem }
+            - name: GA_SIGNING_KEY_PASS
+              valueFrom: { secretKeyRef: { name: grand-admiral-trainer, key: signing-key-pass, optional: true } }
+            - name: GA_KEY_ID
+              valueFrom: { secretKeyRef: { name: grand-admiral-trainer, key: key-id } }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: [ALL] }
+          volumeMounts:
+            - { name: signing-key, mountPath: /secrets, readOnly: true }
+            - { name: baseline, mountPath: /baseline, readOnly: true }
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - name: baseline
+          configMap: { name: grand-admiral-baseline }
+        - name: signing-key
+          secret:
+            secretName: grand-admiral-trainer
+            items: [{ key: signing-key.pem, path: signing-key.pem }]
+            defaultMode: 0400
+        - { name: tmp, emptyDir: {} }

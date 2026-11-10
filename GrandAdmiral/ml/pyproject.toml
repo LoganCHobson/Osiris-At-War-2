@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "osiris-ml"
+version = "1.0.0"
+description = "Grand Admiral: the learned AI for Osiris at War (shared spec, trainer, record schema)"
+requires-python = ">=3.11"
+# The API only needs the record schema and tables; the trainer adds numpy + crypto.
+dependencies = ["pydantic>=2.6,<3", "sqlalchemy>=2.0,<3"]
+
+[project.optional-dependencies]
+train = ["numpy>=1.26,<3", "cryptography>=42"]
+postgres = ["psycopg[binary]>=3.1,<4"]
+test = ["pytest>=8", "numpy>=1.26,<3", "cryptography>=42"]
+
+[project.scripts]
+osiris-ml = "osiris_ml.cli:main"
+
+[tool.setuptools]
+packages = ["osiris_ml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["slow: multi-round training runs (a minute or two each)"]
