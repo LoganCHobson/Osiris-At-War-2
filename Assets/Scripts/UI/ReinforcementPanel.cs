@@ -48,9 +48,10 @@ public class ReinforcementPanel : MonoBehaviour
         int count = 0;
         foreach (Transform child in iconContainer)
         {
-            if (child.GetComponent<IconShipRef>() != null)
+            IconShipRef icon = child.GetComponent<IconShipRef>();
+            if (icon != null)
             {
-                count++;
+                count += Mathf.Max(1, icon.Count);
             }
         }
         return count;

@@ -48,6 +48,12 @@ public class CinematicCamera : MonoBehaviour
     private UnitHealthManager target;
     private HullDamage targetHull;
     private Squadron targetSquadron;
+    // In a fight the camera follows one pilot of the squadron, keeping whoever he's fighting in frame.
+    private Fighter featured;
+    private float featuredSince;
+    private Vector3 featuredVelocity;
+    private Vector3 lastSquadronCenter = Vector3.positiveInfinity;
+    private float squadronYaw = float.NaN;
     private Transform follow;
     private float followSize;
     private float followYaw;
@@ -80,7 +86,7 @@ public class CinematicCamera : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetKeyDown(overviewKey))
+        if (Keybinds.Down(KeyAction.Overview))
         {
             if (!Active)
             {
@@ -100,7 +106,7 @@ public class CinematicCamera : MonoBehaviour
             return;
         }
 
-        if (Input.GetKeyDown(toggleKey))
+        if (Keybinds.Down(KeyAction.CinematicCamera))
         {
             if (Active) Exit();
             else Enter();
@@ -118,7 +124,7 @@ public class CinematicCamera : MonoBehaviour
         if (Input.GetMouseButtonDown(0)) Cycle(-1);
         else if (Input.GetMouseButtonDown(1)) Cycle(1);
 
-        if (Time.unscaledTime >= nextScanAt) HideInterface();
+        if (PresentationClock.Now >= nextScanAt) HideInterface();
     }
 
     private void LateUpdate()
@@ -129,7 +135,7 @@ public class CinematicCamera : MonoBehaviour
             if (Active)
             {
                 bool watchingDeath = lostAt >= 0f || (target != null && target.IsDead);
-                if (!watchingDeath && Time.unscaledTime >= shotEndsAt) NextShot();
+                if (!watchingDeath && PresentationClock.Now >= shotEndsAt) NextShot();
                 Frame();
             }
         }
@@ -142,7 +148,7 @@ public class CinematicCamera : MonoBehaviour
         float goal = Active ? 1f : 0f;
         if (lookBlend == goal && !Active) return;
 
-        lookBlend = Mathf.MoveTowards(lookBlend, goal, lookBlendSpeed * Time.unscaledDeltaTime);
+        lookBlend = Mathf.MoveTowards(lookBlend, goal, lookBlendSpeed * PresentationClock.Delta);
         float eased = lookBlend * lookBlend * (3f - 2f * lookBlend);
         LookWeight = eased;
 
@@ -164,8 +170,34 @@ public class CinematicCamera : MonoBehaviour
             float screenAspect = (float)Screen.width / Mathf.Max(1, Screen.height);
             float bar = Mathf.Max(0f, (1f - screenAspect / letterboxAspect) * 0.5f) * eased;
             viewCamera.rect = new Rect(0f, bar, 1f, 1f - bar * 2f);
+            UpdateBarFill(bar > 0.0005f);
         }
     }
+
+    // The letterbox narrows the camera's viewport, and nothing draws outside it - in a build the bars would
+    // show stale garbage. A camera that renders nothing, behind everything, clears the whole screen to black.
+    private Camera barFill;
+
+    private void UpdateBarFill(bool needed)
+    {
+        if (barFill == null)
+        {
+            if (!needed) return;
+            barFill = new GameObject("LetterboxFill").AddComponent<Camera>();
+            barFill.transform.SetParent(transform, false);
+            barFill.clearFlags = CameraClearFlags.SolidColor;
+            barFill.backgroundColor = Color.black;
+            barFill.cullingMask = 0;
+            barFill.depth = viewCamera.depth - 50f;
+            barFill.useOcclusionCulling = false;
+            barFill.allowHDR = false;
+            barFill.allowMSAA = false;
+        }
+        if (barFill.enabled != needed) barFill.enabled = needed;
+    }
+
+    private float savedFarClip;
+    private float savedLodBias = 1f;
 
     public void Enter()
     {
@@ -181,6 +213,13 @@ public class CinematicCamera : MonoBehaviour
         savedLocalPosition = camTransform.localPosition;
         savedLocalRotation = camTransform.localRotation;
         savedFov = viewCamera.fieldOfView;
+
+        // The RTS view's draw distance and LOD settings cull ships that are small or far on screen; cinematic
+        // shots are wider and lower, so open both up while directing (restored on Exit).
+        savedFarClip = viewCamera.farClipPlane;
+        savedLodBias = QualitySettings.lodBias;
+        viewCamera.farClipPlane = Mathf.Max(savedFarClip, 6000f);
+        QualitySettings.lodBias = Mathf.Max(savedLodBias, 4f);
 
         foreach (Behaviour behaviour in disableWhileActive)
         {
@@ -226,7 +265,12 @@ public class CinematicCamera : MonoBehaviour
             camTransform.localPosition = savedLocalPosition;
             camTransform.localRotation = savedLocalRotation;
         }
-        if (viewCamera != null) viewCamera.fieldOfView = savedFov;
+        if (viewCamera != null)
+        {
+            viewCamera.fieldOfView = savedFov;
+            viewCamera.farClipPlane = savedFarClip;
+        }
+        QualitySettings.lodBias = savedLodBias;
 
         foreach (Behaviour behaviour in disabled)
         {
@@ -261,7 +305,24 @@ public class CinematicCamera : MonoBehaviour
     public void Spectate(UnitHealthManager unit)
     {
         if (!Active || !IsWatchable(unit)) return;
+        overviewLocked = false;
         SetTarget(unit);
+    }
+
+    // Scripted direction (recordings): watch this unit from a slow orbit (good for watching something happen to it).
+    public void SpectateOrbit(UnitHealthManager unit)
+    {
+        Spectate(unit);
+        if (target == unit) BeginShot(Shot.Orbit);
+    }
+
+    // Scripted direction (recordings): hold the wide view of the whole battle until the next Spectate.
+    public void ShowOverview()
+    {
+        if (!Active) Enter();
+        if (!Active) return;
+        overviewLocked = true;
+        BeginShot(Shot.Overview);
     }
 
     public void Cycle(int direction)
@@ -276,7 +337,7 @@ public class CinematicCamera : MonoBehaviour
 
     private void HideInterface()
     {
-        nextScanAt = Time.unscaledTime;
+        nextScanAt = PresentationClock.Now + 0.25f; // A full scene search: a few times a second catches new UI without costing every frame.
 
         foreach (Canvas canvas in FindObjectsByType<Canvas>(FindObjectsSortMode.None))
         {
@@ -340,9 +401,16 @@ public class CinematicCamera : MonoBehaviour
 
     private void SetTarget(UnitHealthManager unit)
     {
+        // Hold the subject at full detail: hull scorch marks and breaches are built on the LOD0 model, and a
+        // lower LOD's slightly different surface hides them - flipping LODs as the camera moves made damaged
+        // hulls flicker between charred and clean.
+        ForceDetail(target, false);
+        ForceDetail(unit, true);
         target = unit;
         targetHull = unit.GetComponent<HullDamage>();
         targetSquadron = targetHull == null ? unit.GetComponent<Squadron>() : null;
+        lastSquadronCenter = Vector3.positiveInfinity;
+        squadronYaw = float.NaN;
         follow = unit.transform;
         lostAt = -1f;
         Measure();
@@ -373,28 +441,68 @@ public class CinematicCamera : MonoBehaviour
             }
 
             Fighter lead = LeadFighter(targetSquadron);
-            if (count > 0)
+            if (count > 0 && lead != null)
             {
-                followCenter = sum / count;
+                // The formation around the lead: craft that have strayed far off (dogfighting, going down)
+                // would otherwise blow the frame up until every fighter is a dot.
+                Vector3 leadAt = lead.transform.position;
+                Vector3 close = Vector3.zero;
+                int near = 0;
                 foreach (Fighter fighter in targetSquadron.fighters)
                 {
-                    if (fighter != null && fighter.Alive) spread = Mathf.Max(spread, Vector3.Distance(fighter.transform.position, followCenter));
+                    if (fighter == null || !fighter.Alive || Vector3.Distance(fighter.transform.position, leadAt) > FormationReach) continue;
+                    close += fighter.transform.position;
+                    near++;
                 }
+                followCenter = near > 0 ? close / near : leadAt;
+                foreach (Fighter fighter in targetSquadron.fighters)
+                {
+                    if (fighter == null || !fighter.Alive) continue;
+                    float d = Vector3.Distance(fighter.transform.position, followCenter);
+                    if (d <= FormationReach) spread = Mathf.Max(spread, d);
+                }
+            }
+            else if (count > 0)
+            {
+                followCenter = sum / count;
             }
             else
             {
                 followCenter = targetSquadron.transform.position;
             }
 
-            followLead = lead != null ? lead.transform.position : followCenter;
-            followYaw = lead != null ? lead.transform.eulerAngles.y : targetSquadron.transform.eulerAngles.y;
-            followSize = Mathf.Max(squadronFraming, spread * 1.2f);
+            // Frame the whole squadron, not the lead fighter: fighters jink constantly, so the camera follows
+            // the group's smoothed direction of travel and keeps a wider, steadier frame.
+            followLead = followCenter;
+            Vector3 travel = followCenter - lastSquadronCenter;
+            travel.y = 0f;
+            float dt = Mathf.Max(0.0001f, PresentationClock.Delta);
+            if (lastSquadronCenter != Vector3.positiveInfinity && travel.sqrMagnitude > 0.0001f && travel.magnitude / dt < 400f)
+            {
+                float rawYaw = Mathf.Atan2(travel.x, travel.z) * Mathf.Rad2Deg;
+                squadronYaw = float.IsNaN(squadronYaw) ? rawYaw : Mathf.LerpAngle(squadronYaw, rawYaw, 1f - Mathf.Exp(-0.7f * dt));
+            }
+            else if (float.IsNaN(squadronYaw))
+            {
+                squadronYaw = lead != null ? lead.transform.eulerAngles.y : targetSquadron.transform.eulerAngles.y;
+            }
+            lastSquadronCenter = followCenter;
+            followYaw = squadronYaw;
+            followSize = Mathf.Max(squadronFraming * 1.2f, spread * 1.3f);
             return;
         }
 
         followCenter = target.transform.position;
         followLead = followCenter;
         followYaw = target.transform.eulerAngles.y;
+    }
+
+    private const float FormationReach = 45f;
+
+    private static void ForceDetail(UnitHealthManager unit, bool full)
+    {
+        if (unit == null || (!full && unit.IsDead)) return;
+        foreach (LODGroup group in unit.GetComponentsInChildren<LODGroup>(true)) group.ForceLOD(full ? 0 : -1);
     }
 
     private static Fighter LeadFighter(Squadron squadron)
@@ -425,14 +533,14 @@ public class CinematicCamera : MonoBehaviour
 
         if (lostAt < 0f)
         {
-            lostAt = Time.unscaledTime;
+            lostAt = PresentationClock.Now;
             follow = LargestWreckNear(followCenter, followSize);
         }
 
         if (follow != null) followCenter = follow.position;
         followLead = followCenter;
 
-        if (Time.unscaledTime - lostAt < deathLinger) return;
+        if (PresentationClock.Now - lostAt < deathLinger) return;
 
         List<UnitHealthManager> units = Targets();
         if (units.Count == 0)
@@ -481,8 +589,9 @@ public class CinematicCamera : MonoBehaviour
             return;
         }
 
+        // The overhead wide is a rare change of pace, not one angle in eight: close angles carry the action.
         Shot next = shot;
-        for (int attempt = 0; attempt < 8 && (next == shot || (next == Shot.Duel && Opponent() == null)); attempt++)
+        for (int attempt = 0; attempt < 8 && (next == shot || (next == Shot.Duel && Opponent() == null) || (next == Shot.Overview && Random.value > 0.25f)); attempt++)
         {
             next = Rotation[Random.Range(0, Rotation.Length)];
         }
@@ -492,8 +601,8 @@ public class CinematicCamera : MonoBehaviour
     private void BeginShot(Shot next)
     {
         shot = next;
-        shotStartedAt = Time.unscaledTime;
-        shotEndsAt = Time.unscaledTime + Random.Range(shotDuration.x, shotDuration.y);
+        shotStartedAt = PresentationClock.Now;
+        shotEndsAt = PresentationClock.Now + Random.Range(shotDuration.x, shotDuration.y);
         if (shot == Shot.Overview && overviewLocked) shotEndsAt = float.PositiveInfinity; // Hold until V again.
         side = Random.value < 0.5f ? -1f : 1f;
         orbitAngle = followYaw + Random.Range(0f, 360f);
@@ -535,20 +644,88 @@ public class CinematicCamera : MonoBehaviour
         return best != null ? best.position : (Vector3?)null;
     }
 
+    // A squadron in a fight (not just flying somewhere, and not bombers on a run, where the formation is the
+    // show): follow one pilot. Keep him while he's alive or going down in flames; then pick the busiest.
+    private Fighter Featured()
+    {
+        if (targetSquadron == null || targetSquadron.IsMoving || targetSquadron.FlyingBombingRuns || !targetSquadron.Engaging)
+        {
+            featured = null;
+            return null;
+        }
+        bool keep = featured != null && featured.gameObject.activeInHierarchy && featured.transform.IsChildOf(targetSquadron.transform);
+        if (keep && !featured.Alive && !featured.IsDying) keep = false;
+        if (keep && PresentationClock.Now - featuredSince > 12f && featured.Alive && featured.Interest < 1f) keep = false; // Gone quiet: find the action.
+        if (!keep)
+        {
+            Fighter best = null;
+            float bestScore = float.MinValue;
+            foreach (Fighter fighter in targetSquadron.fighters)
+            {
+                if (fighter == null || !fighter.Alive) continue;
+                float score = fighter.Interest + Random.value * 0.5f;
+                if (score > bestScore) { bestScore = score; best = fighter; }
+            }
+            if (best != featured) { featuredSince = PresentationClock.Now; snap = featured == null; }
+            featured = best;
+        }
+        return featured;
+    }
+
+    // Behind the pilot and a little above, pulled back far enough that whoever he's fighting - the bandit
+    // he's chasing, the one on his tail, the ship he's strafing - is in the shot too.
+    private void FrameFighter(Fighter pilot, float dt, out Vector3 position, out Vector3 look, out float fov)
+    {
+        Vector3 here = pilot.transform.position;
+        Vector3 velocity = pilot.Velocity.sqrMagnitude > 1f ? pilot.Velocity : pilot.transform.forward * 20f;
+        featuredVelocity = Vector3.Lerp(featuredVelocity.sqrMagnitude > 0.01f ? featuredVelocity : velocity, velocity, 1f - Mathf.Exp(-2.5f * dt));
+        Vector3 heading = featuredVelocity.normalized;
+
+        Vector3? other = null;
+        if (pilot.Pursuer != null && pilot.Pursuer.gameObject.activeInHierarchy) other = pilot.Pursuer.transform.position;
+        else if (pilot.Prey != null && pilot.Prey.gameObject.activeInHierarchy) other = pilot.Prey.transform.position;
+        else if (pilot.ShipAim != null) other = pilot.ShipAim.position;
+
+        // Only bring the other party into the shot when it's close - pulling back to fit a distant one shrinks
+        // the pilot to a speck.
+        if (other.HasValue && Vector3.Distance(here, other.Value) > 55f) other = null;
+        float spread = other.HasValue ? Vector3.Distance(here, other.Value) : 0f;
+        float back = Mathf.Clamp(6f + spread * 0.3f, 6f, 20f);
+        Vector3 side = Vector3.Cross(Vector3.up, heading);
+        if (side.sqrMagnitude < 0.01f) side = Vector3.right;
+        side.Normalize();
+
+        position = here - heading * back + Vector3.up * back * 0.28f + side * this.side * back * 0.18f;
+        // Look between the two, weighted toward the pilot so he stays the subject.
+        look = other.HasValue ? Vector3.Lerp(here, other.Value, 0.38f) : here + heading * 12f;
+        fov = Mathf.Lerp(48f, 60f, Mathf.InverseLerp(0f, 55f, spread));
+    }
+
     private void Frame()
     {
-        float dt = Time.unscaledDeltaTime;
+        float dt = PresentationClock.Delta;
         float L = followSize;
         Vector3 c = followCenter;
         Vector3 lead = followLead;
         Quaternion yaw = Quaternion.Euler(0f, followYaw, 0f);
-        float t = Mathf.Clamp01((Time.unscaledTime - shotStartedAt) / Mathf.Max(0.1f, shotEndsAt - shotStartedAt));
+        float t = Mathf.Clamp01((PresentationClock.Now - shotStartedAt) / Mathf.Max(0.1f, shotEndsAt - shotStartedAt));
 
         Vector3 position;
         Vector3 look;
         float fov;
 
-        switch (shot)
+        Fighter pilot = Featured();
+        if (pilot != null)
+        {
+            FrameFighter(pilot, dt, out position, out look, out fov);
+            goto Apply;
+        }
+
+        // Close angles (bow, bridge, broadside) don't work on a swarm of jinking fighters: use the wider ones.
+        Shot framing = shot;
+        if (targetSquadron != null && (framing == Shot.LowBow || framing == Shot.Bridge || framing == Shot.Broadside)) framing = Shot.Chase;
+
+        switch (framing)
         {
             case Shot.Chase:
                 position = lead + yaw * new Vector3(side * 0.08f, 0.2f, -0.85f) * L;
@@ -614,6 +791,7 @@ public class CinematicCamera : MonoBehaviour
             }
         }
 
+        Apply:
         position = AvoidRocks(position);
 
         Vector3 direction = look - position;
@@ -628,9 +806,12 @@ public class CinematicCamera : MonoBehaviour
             return;
         }
 
-        float smoothing = targetSquadron != null ? positionSmoothing * 0.6f : positionSmoothing;
+        // A featured pilot is chased tightly - fighters move 30-50 units a second and turn hard, so a lazy camera
+        // loses them out of the frame; a formation is framed a little more lazily.
+        float smoothing = pilot != null ? positionSmoothing * 0.18f : targetSquadron != null ? positionSmoothing * 0.9f : positionSmoothing;
+        float sharpness = pilot != null ? rotationSharpness * 2.5f : targetSquadron != null ? rotationSharpness * 1.6f : rotationSharpness;
         camTransform.position = Vector3.SmoothDamp(camTransform.position, position, ref moveVelocity, smoothing, Mathf.Infinity, dt);
-        camTransform.rotation = Quaternion.Slerp(camTransform.rotation, rotation, 1f - Mathf.Exp(-rotationSharpness * dt));
+        camTransform.rotation = Quaternion.Slerp(camTransform.rotation, rotation, 1f - Mathf.Exp(-sharpness * dt));
         viewCamera.fieldOfView = Mathf.Lerp(viewCamera.fieldOfView, fov, 1f - Mathf.Exp(-fovSharpness * dt));
     }
 

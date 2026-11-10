@@ -40,7 +40,6 @@ public class DifficultyProfile
     public float attackMarginScale = 1f;
     public bool switchCampaigns = true;
     public bool garrisonChokepoints = true;
-    public bool splitFleets = true;
     public bool buildBattleStations = true;
 
     public static DifficultyProfile For(DifficultyLevel level)
@@ -64,7 +63,6 @@ public class DifficultyProfile
                     attackMarginScale = 0.8f,
                     switchCampaigns = false,
                     garrisonChokepoints = false,
-                    splitFleets = false,
                     buildBattleStations = false
                 };
 
@@ -84,7 +82,6 @@ public class DifficultyProfile
                     attackMarginScale = 1.1f,
                     switchCampaigns = true,
                     garrisonChokepoints = true,
-                    splitFleets = true,
                     buildBattleStations = true
                 };
 
@@ -104,7 +101,6 @@ public class DifficultyProfile
                     attackMarginScale = 1f,
                     switchCampaigns = true,
                     garrisonChokepoints = true,
-                    splitFleets = false,
                     buildBattleStations = true
                 };
         }
@@ -125,7 +121,6 @@ public class DifficultyProfile
         tuned.attackPowerMargin *= attackMarginScale;
         tuned.canSwitchCampaigns &= switchCampaigns;
         tuned.canGarrisonChokepoints &= garrisonChokepoints;
-        tuned.canSplitFleets &= splitFleets;
         tuned.canBuildBattleStations &= buildBattleStations;
         return tuned;
     }

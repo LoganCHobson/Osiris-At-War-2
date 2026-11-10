@@ -58,7 +58,7 @@ public class HangarHardpoint : MonoBehaviour
         if (owner != null && owner.IsDead) return;
         if (Time.time < nextLaunchAt) return;
 
-        nextLaunchAt = Time.time + launchInterval;
+        nextLaunchAt = Time.time + launchInterval / (1f + HeroForces.BuffFor(this, HeroBuff.FighterLaunch));
 
         while (launched.Count < complement.Count)
         {
@@ -69,6 +69,20 @@ public class HangarHardpoint : MonoBehaviour
         if (bay < 0) return;
 
         Launch(bay);
+    }
+
+    // Scramble Squadrons: launch every missing squadron right now.
+    public void ScrambleAll()
+    {
+        if (IsDestroyed || complement.Count == 0 || GameManager.Instance == null || GameManager.CombatOver) return;
+        while (launched.Count < complement.Count) launched.Add(new List<UnitHealthManager>());
+
+        for (int bay = 0; bay < complement.Count; bay++)
+        {
+            if (complement[bay] == null || complement[bay].squadron == null) continue;
+            for (int missing = complement[bay].count - ActiveCount(bay); missing > 0; missing--) Launch(bay);
+        }
+        nextLaunchAt = Time.time + launchInterval;
     }
 
     private int NeediestBay()
@@ -102,7 +116,34 @@ public class HangarHardpoint : MonoBehaviour
 
         UnitHealthManager unit = spawned.GetComponent<UnitHealthManager>();
         if (unit != null) launched[bay].Add(unit);
+        SendAfterCarrierTarget(spawned);
         onLaunch.Invoke();
+    }
+
+    // A fresh squadron goes after whatever its carrier has been ordered to attack, instead of idling beside
+    // the carrier at the back of the fleet until something wanders into range.
+    private void SendAfterCarrierTarget(GameObject spawned)
+    {
+        HardpointManager carrier = owner != null ? owner.GetComponent<HardpointManager>() : null;
+        Transform target = carrier != null ? carrier.OrderedTarget : null;
+        if (target == null || !target.gameObject.activeInHierarchy) return;
+
+        UnitHealthManager targetHealth = target.GetComponentInParent<UnitHealthManager>();
+        if (targetHealth == null || targetHealth.IsDead) return;
+
+        if (spawned.TryGetComponent(out HardpointManager hardpoints)) hardpoints.AssignTarget(target);
+
+        SpaceUnit unit = spawned.GetComponent<SpaceUnit>();
+        if (unit == null || unit.moveState == null || unit.stateMachine == null) return;
+
+        Vector3 toCarrier = spawned.transform.position - targetHealth.transform.position;
+        toCarrier.y = 0f;
+        Vector3 destination = targetHealth.transform.position + (toCarrier.sqrMagnitude > 0.01f ? toCarrier.normalized : Vector3.forward) * 40f;
+        if (NavMesh.SamplePosition(destination, out NavMeshHit hit, 100f, NavMesh.AllAreas)) destination = hit.position;
+
+        unit.moveState.ClearDestinations();
+        unit.moveState.AddDestination(destination);
+        unit.stateMachine.SetState(unit.moveState);
     }
 
     private static Vector3 Flat(Vector3 vector)

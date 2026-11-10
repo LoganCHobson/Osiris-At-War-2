@@ -56,8 +56,50 @@ public class ShipSpeed : MonoBehaviour
         Apply();
     }
 
+    // Hero speed buff (HeroForces), refreshed by the battle's hero ticker.
+    private float heroFactor = 1f;
+
+    private float abilityFactor = 1f;
+
+    public void SetAbilityFactor(float factor)
+    {
+        if (Mathf.Approximately(factor, abilityFactor)) return;
+        abilityFactor = factor;
+        Apply();
+    }
+
+    public void SetHeroFactor(float factor)
+    {
+        if (Mathf.Approximately(factor, heroFactor)) return;
+        heroFactor = factor;
+        Apply();
+    }
+
+    // Warships don't crab sideways: while the bow is still swinging onto the course, they ease off the
+    // throttle (down to a fifth of full speed when heading the wrong way), then open up once lined up.
+    private float headingFactor = 1f;
+    public bool throttleWhileTurning;
+
+    private void Update()
+    {
+        if (!throttleWhileTurning || agent == null || !agent.isOnNavMesh) return;
+        float wanted = 1f;
+        Vector3 desired = agent.desiredVelocity;
+        desired.y = 0f;
+        if (agent.hasPath && desired.sqrMagnitude > 0.01f)
+        {
+            Vector3 forward = transform.forward;
+            forward.y = 0f;
+            float angle = Vector3.Angle(forward, desired);
+            wanted = Mathf.Lerp(1f, 0.2f, Mathf.InverseLerp(20f, 90f, angle));
+        }
+        if (Mathf.Abs(wanted - headingFactor) < 0.05f && !(wanted == 1f && headingFactor != 1f)) return;
+        headingFactor = wanted;
+        Apply();
+    }
+
     private void Apply()
     {
-        if (agent != null) agent.speed = Mathf.Min(baseSpeed * engineFactor * terrainFactor, groupCap);
+        if (agent != null) agent.speed = Mathf.Min(baseSpeed * engineFactor * terrainFactor * heroFactor * abilityFactor * headingFactor, groupCap);
     }
 }

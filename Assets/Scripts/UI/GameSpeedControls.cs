@@ -56,10 +56,22 @@ public class GameSpeedControls : MonoBehaviour
             events.SetSelectedGameObject(null);
         }
 
-        if (Input.GetKeyDown(pauseToggleKey)) TogglePause();
-        else if (Input.GetKeyDown(normalSpeedKey) || Input.GetKeyDown(KeyCode.Keypad1)) GameSpeed.SetSpeed(1f);
-        else if (Input.GetKeyDown(fastSpeedKey) || Input.GetKeyDown(KeyCode.Keypad2)) GameSpeed.SetSpeed(fastSpeed);
-        else if (Input.GetKeyDown(fastestSpeedKey) || Input.GetKeyDown(KeyCode.Keypad3)) GameSpeed.SetSpeed(fastestSpeed);
+        if (Keybinds.Down(KeyAction.Pause)) TogglePause();
+        else if (SpeedKey(normalSpeedKey) || Input.GetKeyDown(KeyCode.Keypad1)) GameSpeed.SetSpeed(1f);
+        else if (SpeedKey(fastSpeedKey) || Input.GetKeyDown(KeyCode.Keypad2)) GameSpeed.SetSpeed(fastSpeed);
+        else if (SpeedKey(fastestSpeedKey) || Input.GetKeyDown(KeyCode.Keypad3)) GameSpeed.SetSpeed(fastestSpeed);
+    }
+
+    // A number key that holds a battle control group (or is being used to set one with Ctrl) belongs to
+    // the group, not to game speed - the keypad keys always work for speed.
+    private static bool SpeedKey(KeyCode key)
+    {
+        if (!Input.GetKeyDown(key)) return false;
+        if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) return false;
+
+        int number = key - KeyCode.Alpha0;
+        PlayerSpaceManager selection = PlayerSpaceManager.Instance;
+        return number < 0 || number > 9 || selection == null || !selection.HasGroup(number);
     }
 
     // Space flips between paused and whatever speed you were running at.

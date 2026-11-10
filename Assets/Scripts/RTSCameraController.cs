@@ -156,6 +156,7 @@ public class RTSCameraController : MonoBehaviour
         //Let us control Camera
         else
         {
+            HandleOrbit();
             HandleCameraMovement();
             HandleZoom();
         }
@@ -186,19 +187,19 @@ public class RTSCameraController : MonoBehaviour
                 movementSpeed = normalSpeed * GameSettings.CameraSpeed;
             }
 
-            if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow))
+            if (Keybinds.Held(KeyAction.CameraForward) || Input.GetKey(KeyCode.UpArrow))
             {
                 newPosition += (transform.forward * movementSpeed);
             }
-            if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow))
+            if (Keybinds.Held(KeyAction.CameraBack) || Input.GetKey(KeyCode.DownArrow))
             {
                 newPosition += (transform.forward * -movementSpeed);
             }
-            if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow))
+            if (Keybinds.Held(KeyAction.CameraRight) || Input.GetKey(KeyCode.RightArrow))
             {
                 newPosition += (transform.right * movementSpeed);
             }
-            if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow))
+            if (Keybinds.Held(KeyAction.CameraLeft) || Input.GetKey(KeyCode.LeftArrow))
             {
                 newPosition += (transform.right * -movementSpeed);
             }
@@ -297,6 +298,8 @@ public class RTSCameraController : MonoBehaviour
 
     private void HandleMouseDragInput()
     {
+        if (OrbitHeld) return; // Alt + middle mouse orbits instead.
+
         if (Input.GetMouseButtonDown(2) && !UIKit.PointerOverScreenUI())
         {
             Plane plane = new Plane(Vector3.up, Vector3.zero);
@@ -325,9 +328,99 @@ public class RTSCameraController : MonoBehaviour
         }
     }
 
+    // ---------------- Orbit (battles only - space is 3D there) ----------------
+    //   Q / E                 swing the view around the point you're looking at
+    //   Alt + middle-drag     orbit and tilt freely
+
+    [Header("Orbit (battle)")]
+    [SerializeField] float orbitKeySpeed = 90f;      // Degrees per second.
+    [SerializeField] float orbitMouseSpeed = 0.25f;  // Degrees per pixel.
+    [SerializeField] float minTilt = 15f;            // Degrees below the horizon the camera looks (galactic map).
+    [SerializeField] float maxTilt = 85f;
+    // Battles are 3D: the camera can swing right under the battle plane and look up at ships below it.
+    private const float BattleMinTilt = -80f;
+    private const float BattleMaxTilt = 85f;
+
+    private static bool OrbitHeld => (Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt)) && Input.GetMouseButton(2);
+    private bool CanOrbit => BattleTerrain.Instance != null && Planet.All.Count == 0;
+    private Vector3 lastOrbitMouse;
+
+    private void HandleOrbit()
+    {
+        if (!CanOrbit || cam == null) return;
+
+        float yaw = 0f;
+        float pitch = 0f;
+        if (Keybinds.Held(KeyAction.RotateLeft)) yaw += orbitKeySpeed * Time.unscaledDeltaTime;
+        if (Keybinds.Held(KeyAction.RotateRight)) yaw -= orbitKeySpeed * Time.unscaledDeltaTime;
+
+        if (OrbitHeld)
+        {
+            if (Input.GetMouseButtonDown(2)) lastOrbitMouse = Input.mousePosition;
+            Vector3 delta = Input.mousePosition - lastOrbitMouse;
+            lastOrbitMouse = Input.mousePosition;
+            yaw += delta.x * orbitMouseSpeed;
+            pitch -= delta.y * orbitMouseSpeed;
+        }
+
+        if (Mathf.Approximately(yaw, 0f) && Mathf.Approximately(pitch, 0f)) return;
+
+        Vector3 focus = transform.position + LookOffset();
+
+        if (!Mathf.Approximately(yaw, 0f))
+        {
+            transform.RotateAround(focus, Vector3.up, yaw);
+            newPosition = transform.position;
+        }
+
+        if (!Mathf.Approximately(pitch, 0f))
+        {
+            // Signed: positive looking down at the plane, negative looking up at it from below.
+            float tilt = Mathf.Asin(Mathf.Clamp(-cameraTransform.forward.y, -1f, 1f)) * Mathf.Rad2Deg;
+            float clamped = Mathf.Clamp(tilt + pitch, BattleMinTilt, BattleMaxTilt);
+            float applied = clamped - tilt;
+            if (!Mathf.Approximately(applied, 0f))
+            {
+                cameraTransform.RotateAround(focus, transform.right, applied);
+                targetZoom = cameraTransform.localPosition.y;
+                orbitDistance = Vector3.Distance(cameraTransform.position, focus);
+            }
+        }
+    }
+
+    // Battle zoom: closer to or further from the point under the screen centre, along the view - so it works
+    // the same from above the plane or below it.
+    private float orbitDistance = -1f;
+
+    private void BattleZoom(float scrollInput)
+    {
+        Vector3 focus = FocusPoint();
+        float current = Vector3.Distance(cameraTransform.position, focus);
+        if (orbitDistance < 0f) orbitDistance = current;
+        orbitDistance = Mathf.Clamp(orbitDistance - scrollInput * zoomSpeed * 1.4f, minZoom, maxZoom * 1.6f);
+        float next = Mathf.Lerp(current, orbitDistance, Time.unscaledDeltaTime * zoomSpeed);
+        cameraTransform.position = focus - cameraTransform.forward * next;
+        targetZoom = cameraTransform.localPosition.y;
+    }
+
+    // The point the camera is looking at: where its view meets the battle plane, or (looking along the
+    // plane) a point in front of it.
+    private Vector3 FocusPoint()
+    {
+        Ray ray = new Ray(cameraTransform.position, cameraTransform.forward);
+        Plane plane = new Plane(Vector3.up, Vector3.zero);
+        if (plane.Raycast(ray, out float distance) && distance < maxZoom * 4f) return ray.GetPoint(distance);
+        return cameraTransform.position + cameraTransform.forward * Mathf.Max(minZoom, orbitDistance > 0f ? orbitDistance : maxZoom * 0.6f);
+    }
+
     void HandleZoom()
     {
-        float scrollInput = Input.GetAxis("Mouse ScrollWheel");
+        float scrollInput = PlacementManager.Instance != null && PlacementManager.Instance.IsPreviewing ? 0f : Input.GetAxis("Mouse ScrollWheel");
+        if (CanOrbit)
+        {
+            BattleZoom(scrollInput);
+            return;
+        }
         targetZoom -= scrollInput * zoomSpeed;
         targetZoom = Mathf.Clamp(targetZoom, minZoom, maxZoom);
 

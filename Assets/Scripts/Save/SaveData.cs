@@ -15,6 +15,10 @@ public class SaveData
     public int difficulty;
     public float galacticTime;
     public float taxTimer;
+    public List<DefensePlans.Assignment> defensePlans = new List<DefensePlans.Assignment>();
+    public List<StandingOrders.Order> standingOrders = new List<StandingOrders.Order>();
+    public List<string> heroesJoined = new List<string>();
+    public List<string> heroesFallen = new List<string>();
 
     // Shown in the save list.
     public int playerPlanets;
@@ -44,6 +48,7 @@ public class BuildSave
 {
     public string ship;
     public float remainingTime;
+    public string deliverTo;
 }
 
 [System.Serializable]
@@ -53,6 +58,9 @@ public class FleetSave
     public string faction;
     public string planet;
     public List<string> roster = new List<string>();
+    // Parallel to roster: each ship's own name and hero id (older saves have neither - names are generated).
+    public List<string> names = new List<string>();
+    public List<string> heroes = new List<string>();
     public GalacticFleet.TravelState travel;
 }
 
@@ -126,6 +134,7 @@ public class CampaignSave
     public float requiredPower;
     public float stagedPower;
     public bool suspended;
+    public float lastProgressAt;
 }
 
 [System.Serializable]

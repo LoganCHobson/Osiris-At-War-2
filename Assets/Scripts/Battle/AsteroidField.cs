@@ -68,6 +68,10 @@ public class AsteroidField : MonoBehaviour
         return false;
     }
 
+    // Rocks spread from below the lowest to above the highest a ship can fly (see ShipAltitude).
+    public const float VerticalExtent = ShipAltitude.MaxAltitude + 25f;
+    public const float VerticalDensity = 2.5f;
+
     public void Build(int seed, Material rockMaterial, int rockLayer)
     {
         material = rockMaterial;
@@ -77,7 +81,7 @@ public class AsteroidField : MonoBehaviour
         Bounds bounds = new Bounds(new Vector3(blobs[0].centre.x, 0f, blobs[0].centre.y), Vector3.zero);
         foreach (Blob blob in blobs)
         {
-            bounds.Encapsulate(new Bounds(new Vector3(blob.centre.x, 0f, blob.centre.y), new Vector3(blob.radius * 2f, 80f, blob.radius * 2f)));
+            bounds.Encapsulate(new Bounds(new Vector3(blob.centre.x, 0f, blob.centre.y), new Vector3(blob.radius * 2f, VerticalExtent * 2f + 40f, blob.radius * 2f)));
         }
         Bounds = bounds;
 
@@ -88,7 +92,8 @@ public class AsteroidField : MonoBehaviour
 
         foreach (Blob blob in blobs)
         {
-            int count = Mathf.CeilToInt(Mathf.PI * blob.radius * blob.radius / (spacing * spacing));
+            // The field fills the whole flight ceiling (ships can't fly over it), so it needs more rocks.
+            int count = Mathf.CeilToInt(Mathf.PI * blob.radius * blob.radius / (spacing * spacing) * VerticalDensity);
             for (int i = 0; i < count; i++)
             {
                 // Uniform in the disc, but skip spots another blob already filled heavily.
@@ -98,7 +103,7 @@ public class AsteroidField : MonoBehaviour
                 if (OverlapsEarlierBlob(blob, flat) && random.NextDouble() < 0.5) continue;
 
                 float size = Mathf.Lerp(sizeRange.x, sizeRange.y, Mathf.Pow((float)random.NextDouble(), 2.2f));
-                float height = Mathf.Lerp(-12f, 28f, (float)random.NextDouble());
+                float height = Mathf.Lerp(-VerticalExtent, VerticalExtent, (float)random.NextDouble());
                 Vector3 stretch = new Vector3(Mathf.Lerp(0.75f, 1.3f, (float)random.NextDouble()), Mathf.Lerp(0.6f, 1f, (float)random.NextDouble()), Mathf.Lerp(0.8f, 1.4f, (float)random.NextDouble()));
 
                 Rock rock = new Rock

@@ -161,9 +161,10 @@ public class BalanceSim : MonoBehaviour
         // Fronts 110 apart, like two fleets that have just closed to fighting range.
         Vector3 front = centre - forward * 55f;
         List<UnitHealthManager> units = new List<UnitHealthManager>();
-        foreach (BattleDeployment.Placement placement in BattleDeployment.Arrange(ships, BattleDeployment.ChooseLead(ships), front, forward))
+        List<ShipEntry> entries = ships.ConvertAll(ship => ShipEntry.New(ship));
+        foreach (BattleDeployment.Placement placement in BattleDeployment.Arrange(entries, BattleDeployment.ChooseLead(entries), front, forward))
         {
-            GameObject go = GameManager.Instance.SpawnShip(placement.ship, placement.position, Quaternion.LookRotation(forward), attacker, false);
+            GameObject go = GameManager.Instance.SpawnShip(placement.ship.type, placement.position, Quaternion.LookRotation(forward), attacker, false);
             if (go == null) continue;
             if (go.TryGetComponent(out NavMeshAgent agent) && agent.isOnNavMesh) agent.ResetPath();
             units.Add(go.GetComponent<UnitHealthManager>());
@@ -201,7 +202,7 @@ public class BalanceSim : MonoBehaviour
                 total[side]++;
                 if (gun.target == null) continue;
                 withTarget[side]++;
-                if (gun.InArc(gun.target.position)) bearing[side]++;
+                if (gun.CanFire) bearing[side]++;
             }
         }
     }

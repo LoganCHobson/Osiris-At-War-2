@@ -272,7 +272,7 @@ public class FTLJump : MonoBehaviour
             glow = glow,
             particleRenderer = particles.GetComponent<ParticleSystemRenderer>(),
             length = length,
-            started = Time.unscaledTime,
+            started = PresentationClock.Now,
             duration = Mathf.Max(0.1f, duration)
         };
     }
@@ -291,7 +291,7 @@ public class FTLJump : MonoBehaviour
             }
 
             Spool spool = entry.Value;
-            float u = Mathf.Clamp01((Time.unscaledTime - spool.started) / spool.duration);
+            float u = Mathf.Clamp01((PresentationClock.Now - spool.started) / spool.duration);
             Transform ship = entry.Key.transform;
 
             ParticleSystem.EmissionModule emission = spool.particles.emission;
@@ -299,7 +299,7 @@ public class FTLJump : MonoBehaviour
             SetGlow(spool.particleRenderer, energyColor, glowIntensity * Mathf.Lerp(0.4f, 1f, u));
 
             Vector3 bow = spool.root.transform.position + ship.forward * spool.length * 0.5f;
-            float pulse = 1f + 0.12f * Mathf.Sin(Time.unscaledTime * Mathf.Lerp(6f, 28f, u));
+            float pulse = 1f + 0.12f * Mathf.Sin(PresentationClock.Now * Mathf.Lerp(6f, 28f, u));
             PlaceSprite(spool.glow, bow, spool.length * Mathf.Lerp(0.05f, 0.7f, u * u) * pulse, glowIntensity * u);
         }
 
@@ -311,7 +311,7 @@ public class FTLJump : MonoBehaviour
 
     private IEnumerator DepartRoutine(GameObject ship, float delay)
     {
-        for (float t = 0f; t < delay; t += Time.unscaledDeltaTime) yield return null;
+        for (float t = 0f; t < delay; t += PresentationClock.Delta) yield return null;
         if (ship == null || !ship.activeInHierarchy) yield break;
         UnitHealthManager health = ship.GetComponent<UnitHealthManager>();
         if (health != null && health.IsDead) yield break; // Shot down while waiting its turn.
@@ -319,7 +319,7 @@ public class FTLJump : MonoBehaviour
         if (!spools.ContainsKey(ship))
         {
             StartSpool(ship, quickSpoolTime);
-            for (float t = 0f; t < quickSpoolTime; t += Time.unscaledDeltaTime) yield return null;
+            for (float t = 0f; t < quickSpoolTime; t += PresentationClock.Delta) yield return null;
             if (ship == null) yield break;
         }
 
@@ -348,7 +348,7 @@ public class FTLJump : MonoBehaviour
         LineRenderer ring = CreateRing("FTLRing", energyColor);
         Light flare = CreateLight(bow, length * 4f);
 
-        for (float t = 0f; t < jumpTime; t += Time.unscaledDeltaTime)
+        for (float t = 0f; t < jumpTime; t += PresentationClock.Delta)
         {
             float u = t / jumpTime;
             float k = u * u * u; // Ease in - punches out at full speed.
@@ -367,7 +367,7 @@ public class FTLJump : MonoBehaviour
         }
 
         Vector3 far = origin + forward * distance;
-        for (float t = 0f; t < afterglowTime; t += Time.unscaledDeltaTime)
+        for (float t = 0f; t < afterglowTime; t += PresentationClock.Delta)
         {
             float u = t / afterglowTime;
             float fade = (1f - u) * (1f - u);

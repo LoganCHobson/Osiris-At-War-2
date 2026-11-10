@@ -19,6 +19,17 @@ public class UnitHealthManager : MonoBehaviour
     private Camera cam;
 
     public Ship sourceShip;
+    public ShipEntry entry; // The individual ship (name, hero) - null for launched strike craft and defenses.
+    // Firing gives a concealed ship away (BattleSensors); ambushers hold fire until they spring the trap.
+    public float LastFiredAt
+    {
+        get => lastFiredAt;
+        set { lastFiredAt = value; LastShotAnywhere = value; }
+    }
+    private float lastFiredAt = float.NegativeInfinity;
+    // When anyone last fired - the music uses it to tell a fight from a lull.
+    public static float LastShotAnywhere { get; private set; } = float.NegativeInfinity;
+    public bool HoldFire { get; set; }
     public bool isAttackerSide;
     public bool isShipyardBonus;
     public bool isBattleStation;
@@ -84,6 +95,19 @@ public class UnitHealthManager : MonoBehaviour
         if (healthSlider != null) healthSlider.value = currentHealth;
     }
 
+    // Patches a living hardpoint back up (hero repair crews). Never above its maximum.
+    public void Repair(HardpointHealth hardpoint, float amount)
+    {
+        if (dead || hardpoint == null || hardpoint.currentHealth <= 0f || amount <= 0f) return;
+        float healed = Mathf.Min(amount, hardpoint.maxHealth - hardpoint.currentHealth);
+        if (healed <= 0f) return;
+
+        hardpoint.currentHealth += healed;
+        currentHealth = Mathf.Min(maxHealth, currentHealth + healed);
+        if (healthSlider != null) healthSlider.value = currentHealth;
+        hardpoint.UpdateHealth(hardpoint.currentHealth / Mathf.Max(0.01f, hardpoint.maxHealth));
+    }
+
     public void HardpointDeath(HardpointHealth hardpoint)
     {
         SubtractHealth(hardpoint.currentHealth, hardpoint);
@@ -108,6 +132,7 @@ public class UnitHealthManager : MonoBehaviour
         if (hardpointManager.hardpoints.Count <= 0 && !dead)
         {
             dead = true;
+            DamageLedger.Died(this);
             onDie.Invoke();
 
             if (isShipyardBonus)
@@ -120,7 +145,7 @@ public class UnitHealthManager : MonoBehaviour
             }
             else if (!IsFreeUnit)
             {
-                BattleContext.Instance?.ReportLoss(isAttackerSide, sourceShip, battleToken);
+                BattleContext.Instance?.ReportLoss(isAttackerSide, entry, battleToken);
             }
 
             if (destroyDelay >= 0f) Destroy(gameObject, destroyDelay);

@@ -7,7 +7,25 @@ public class GalacticFleet : MonoBehaviour
     public static readonly List<GalacticFleet> All = new List<GalacticFleet>();
 
     [Header("Roster")]
-    public List<Ship> roster = new List<Ship>();
+    // The fleet's individual ships (each with its own name; heroes ride here too). Built from the authored
+    // `roster` below when the fleet first appears, then carried through battles, saves and scene changes.
+    [System.NonSerialized] public List<ShipEntry> ships = new List<ShipEntry>();
+
+    // Ship classes as laid out in the scene/prefab (the map's starting fleets). Kept under its original
+    // serialized name and type so existing scene data loads unchanged; only used to seed `ships`.
+    [SerializeField] private List<Ship> roster = new List<Ship>();
+
+    // For editor tools that lay out starting fleets (the authored classes, not the live ships).
+    public List<Ship> AuthoredRoster => roster;
+
+    private void SeedShips()
+    {
+        if (ships.Count > 0 || roster == null || roster.Count == 0) return;
+        foreach (Ship type in roster)
+        {
+            if (type != null) ships.Add(ShipEntry.New(type, faction));
+        }
+    }
 
     [Header("Map state")]
     public Faction faction;
@@ -16,6 +34,10 @@ public class GalacticFleet : MonoBehaviour
     public float stopoverDuration = 0.75f;
     public bool preferFriendlyRoute = true;
     public float postBattleHoldDuration = 5f;
+
+    // Production deliveries: ships collecting at a shipyard until its share of the order is done, then
+    // sent to this planet (by name). Null for ordinary fleets.
+    public string pendingDelivery;
 
     public bool IsTraveling { get; private set; }
     public bool IsHolding => holdTimer > 0f;
@@ -44,6 +66,7 @@ public class GalacticFleet : MonoBehaviour
         public float holdTimer;
         public Vector3 position;
         public int parkedSlot = -1;
+        public string pendingDelivery;
     }
 
     public TravelState CaptureTravel()
@@ -57,7 +80,8 @@ public class GalacticFleet : MonoBehaviour
             stopoverTimer = stopoverTimer,
             holdTimer = holdTimer,
             position = transform.position,
-            parkedSlot = currentPlanet != null ? currentPlanet.SlotOf(this) : -1
+            parkedSlot = currentPlanet != null ? currentPlanet.SlotOf(this) : -1,
+            pendingDelivery = pendingDelivery
         };
         foreach (Planet stop in route)
         {
@@ -72,6 +96,7 @@ public class GalacticFleet : MonoBehaviour
         if (state == null) return;
 
         holdTimer = state.holdTimer;
+        pendingDelivery = string.IsNullOrEmpty(state.pendingDelivery) ? null : state.pendingDelivery;
 
         if (!state.traveling)
         {
@@ -125,6 +150,7 @@ public class GalacticFleet : MonoBehaviour
 
     private void Awake()
     {
+        SeedShips();
         mapIcon = GetComponent<FleetMapIcon>();
         if (mapIcon == null) mapIcon = gameObject.AddComponent<FleetMapIcon>();
     }
@@ -252,9 +278,9 @@ public class GalacticFleet : MonoBehaviour
     {
         if (!CanReorganizeWith(target)) return false;
 
-        target.roster.AddRange(roster); // The target keeps its lead ship.
+        target.ships.AddRange(ships); // The target keeps its lead ship.
         target.EnsureValidLead();
-        roster.Clear();
+        ships.Clear();
         currentPlanet.ReleaseSlot(this);
         Destroy(gameObject);
         return true;
@@ -303,11 +329,11 @@ public class GalacticFleet : MonoBehaviour
     }
 
     // Roster position 0 is the lead ship - the one that deploys first when this fleet attacks.
-    public Ship LeadShip => roster.Count > 0 ? roster[0] : null;
+    public ShipEntry LeadShip => ships.Count > 0 ? ships[0] : null;
 
-    public bool TransferShipTo(Ship ship, GalacticFleet destination, int index = -1)
+    public bool TransferShipTo(ShipEntry ship, GalacticFleet destination, int index = -1)
     {
-        int from = roster.IndexOf(ship);
+        int from = ships.IndexOf(ship);
         return from >= 0 && destination != this && MoveShips(new List<int> { from }, destination, index);
     }
 
@@ -322,11 +348,11 @@ public class GalacticFleet : MonoBehaviour
 
         List<int> sorted = new List<int>(fromIndices);
         sorted.Sort();
-        if (sorted[0] < 0 || sorted[sorted.Count - 1] >= roster.Count) return false;
+        if (sorted[0] < 0 || sorted[sorted.Count - 1] >= ships.Count) return false;
 
-        List<Ship> moving = sorted.ConvertAll(i => roster[i]);
+        List<ShipEntry> moving = sorted.ConvertAll(i => ships[i]);
         bool sameFleet = destination == this;
-        int othersInDestination = sameFleet ? roster.Count - moving.Count : destination.roster.Count;
+        int othersInDestination = sameFleet ? ships.Count - moving.Count : destination.ships.Count;
         if (index == 0 && othersInDestination > 0 && !moving[0].CanLead) return false; // Squadrons can't lead.
 
         if (sameFleet && index >= 0)
@@ -337,17 +363,17 @@ public class GalacticFleet : MonoBehaviour
 
         for (int i = sorted.Count - 1; i >= 0; i--)
         {
-            roster.RemoveAt(sorted[i]);
+            ships.RemoveAt(sorted[i]);
         }
 
-        List<Ship> target = destination.roster;
+        List<ShipEntry> target = destination.ships;
         if (index < 0 || index > target.Count) index = target.Count;
         target.InsertRange(index, moving);
         destination.EnsureValidLead();
 
         if (sameFleet) return true;
 
-        if (roster.Count == 0)
+        if (ships.Count == 0)
         {
             currentPlanet.ReleaseSlot(this);
             Destroy(gameObject);
@@ -363,21 +389,21 @@ public class GalacticFleet : MonoBehaviour
     // Keeps a squadron from ending up in the lead spot (e.g. after the old lead was moved away).
     public void EnsureValidLead()
     {
-        if (roster.Count < 2 || roster[0] == null || roster[0].CanLead) return;
+        if (ships.Count < 2 || ships[0] == null || ships[0].CanLead) return;
 
-        int capital = roster.FindIndex(ship => ship != null && ship.CanLead);
+        int capital = ships.FindIndex(ship => ship != null && ship.CanLead);
         if (capital <= 0) return;
 
-        Ship lead = roster[capital];
-        roster.RemoveAt(capital);
-        roster.Insert(0, lead);
+        ShipEntry lead = ships[capital];
+        ships.RemoveAt(capital);
+        ships.Insert(0, lead);
     }
 
-    public void RemoveShip(Ship ship)
+    public void RemoveShip(ShipEntry ship)
     {
-        if (!roster.Remove(ship)) return;
+        if (!ships.Remove(ship)) return;
 
-        if (roster.Count == 0)
+        if (ships.Count == 0)
         {
             currentPlanet?.ReleaseSlot(this);
             Destroy(gameObject);
@@ -445,8 +471,8 @@ public class GalacticFleet : MonoBehaviour
             return false;
         }
 
-        targetFleet.roster.AddRange(roster);
-        roster.Clear();
+        targetFleet.ships.AddRange(ships);
+        ships.Clear();
         Destroy(gameObject);
         return true;
     }
@@ -537,7 +563,7 @@ public class GalacticFleet : MonoBehaviour
 
         if (path.Count < 2)
         {
-            roster.Clear();
+            ships.Clear();
             Destroy(gameObject);
             return null;
         }

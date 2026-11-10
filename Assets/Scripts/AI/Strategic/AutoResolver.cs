@@ -8,7 +8,8 @@ using UnityEngine;
 // craft, the battle line beats escorts but can't track fighters, and so on. The side with more effective
 // power (after a modest roll) wins and the loser is wiped out. The winner's losses follow a square law
 // (loser strength squared over winner strength), so a token force does next to nothing and an even fight
-// is bloody, and they fall first on the ships the enemy counters best.
+// is bloody. Those losses are shared across the fleet by how hard the enemy counters each ship type and
+// how exposed it is - screened carriers sit at the back and rarely die.
 public static class AutoResolver
 {
     public const float RollVariance = 0.25f;
@@ -62,10 +63,10 @@ public static class AutoResolver
 
     private static bool Resolve(GalacticFleet attacker, GalacticFleet defender, Planet planet, bool includeDefenses)
     {
-        List<Ship> defenderRoster = defender != null ? defender.roster : new List<Ship>();
+        List<ShipEntry> defenderRoster = defender != null ? defender.ships : new List<ShipEntry>();
         float defenses = includeDefenses ? Strength.Defenses(planet) : 0f;
 
-        List<Force> attackers = Forces(attacker.roster, 0f);
+        List<Force> attackers = Forces(attacker.ships, 0f);
         List<Force> defenders = Forces(defenderRoster, defenses);
 
         float attackerRoll = Effective(attackers, defenders) * Roll();
@@ -83,7 +84,7 @@ public static class AutoResolver
 
         if (attackerWon)
         {
-            report.attackerLosses = ApplyWinnerLosses(attacker.roster, defenders, attackerRoll, defenderRoll);
+            report.attackerLosses = ApplyWinnerLosses(attacker.ships, defenders, attackerRoll, defenderRoll);
             report.defenderLosses = Strength.Of(defenderRoster) + defenses;
 
             if (defender != null)
@@ -99,8 +100,8 @@ public static class AutoResolver
         }
         else
         {
-            report.defenderLosses = defender != null ? ApplyWinnerLosses(defender.roster, attackers, defenderRoll, attackerRoll) : 0f;
-            report.attackerLosses = Strength.Of(attacker.roster);
+            report.defenderLosses = defender != null ? ApplyWinnerLosses(defender.ships, attackers, defenderRoll, attackerRoll) : 0f;
+            report.attackerLosses = Strength.Of(attacker.ships);
 
             Eliminate(attacker);
             defender?.HoldAfterBattle();
@@ -112,7 +113,7 @@ public static class AutoResolver
 
     // A fleet's fighting power against this particular enemy: each ship's power spread over the enemy's
     // composition (by power share) and scaled by how well it counters each part of it.
-    public static float Effective(List<Ship> roster, List<Ship> enemy, float enemyDefenses = 0f)
+    public static float Effective(List<ShipEntry> roster, List<ShipEntry> enemy, float enemyDefenses = 0f)
     {
         return Effective(Forces(roster, 0f), Forces(enemy, enemyDefenses));
     }
@@ -143,12 +144,12 @@ public static class AutoResolver
         return threat;
     }
 
-    private static List<Force> Forces(List<Ship> roster, float defenses)
+    private static List<Force> Forces(List<ShipEntry> roster, float defenses)
     {
         List<Force> forces = new List<Force>();
         if (roster != null)
         {
-            foreach (Ship ship in roster)
+            foreach (ShipEntry ship in roster)
             {
                 if (ship != null) forces.Add(new Force { role = RoleOf(ship), power = ship.combatPower });
             }
@@ -175,42 +176,150 @@ public static class AutoResolver
         return Random.Range(1f - RollVariance, 1f + RollVariance);
     }
 
-    private static float ApplyWinnerLosses(List<Ship> roster, List<Force> enemy, float winnerRoll, float loserRoll)
+    private static float ApplyWinnerLosses(List<ShipEntry> roster, List<Force> enemy, float winnerRoll, float loserRoll)
     {
         float damage = WinnerLossScale * loserRoll * loserRoll / Mathf.Max(winnerRoll, 1f);
         return ApplyLosses(roster, enemy, damage);
     }
 
-    // The ships the enemy counters best go first (smallest first among equals). A ship is lost outright if
-    // the damage covers it; leftover damage short of a whole ship only kills it if it's at least
-    // KillThreshold of its worth, and then only by chance. The fleet always keeps at least one ship.
-    private static float ApplyLosses(List<Ship> roster, List<Force> enemy, float damage)
+    // How much of the fighting each kind of ship actually stands in. Screens are out front, the line takes
+    // the brunt, strike craft fly into the guns; carriers hang back behind the rest of the fleet and are only
+    // really exposed once nothing is screening them.
+    private static float Exposure(Role role, bool screened)
+    {
+        switch (role)
+        {
+            case Role.Screen: return 1.2f;
+            case Role.Carrier: return screened ? 0.3f : 1f;
+            case Role.Fighter:
+            case Role.Interceptor:
+            case Role.Bomber: return 1.1f;
+            default: return 1f;
+        }
+    }
+
+    // The damage is shared out across the fleet's ship types in proportion to how much of each is present,
+    // how hard this particular enemy counters it, and how exposed it is (Exposure). Within a type, ships die
+    // in random order. A ship is lost outright if its type's share covers it; leftover damage short of a
+    // whole ship only kills it if it's at least KillThreshold of its worth, and then only by chance. The
+    // fleet always keeps at least one ship.
+    private static float ApplyLosses(List<ShipEntry> roster, List<Force> enemy, float damage)
     {
         float lost = 0f;
-        List<Ship> exposure = roster.Where(s => s != null)
-            .OrderByDescending(s => Vulnerability(RoleOf(s), enemy))
-            .ThenBy(s => s.combatPower)
-            .ToList();
+        if (damage <= 0f) return lost;
 
-        foreach (Ship ship in exposure)
+        bool screened = roster.Exists(s => s != null && (RoleOf(s) == Role.Line || RoleOf(s) == Role.Screen));
+        Dictionary<Role, List<ShipEntry>> byRole = new Dictionary<Role, List<ShipEntry>>();
+        Dictionary<Role, float> weight = new Dictionary<Role, float>();
+        float totalWeight = 0f;
+
+        foreach (ShipEntry ship in roster)
         {
-            if (damage <= 0f || roster.Count <= 1) break;
+            if (ship == null) continue;
+            Role role = RoleOf(ship);
+            if (!byRole.TryGetValue(role, out List<ShipEntry> list))
+            {
+                byRole[role] = list = new List<ShipEntry>();
+                weight[role] = 0f;
+            }
+            list.Add(ship);
+        }
 
-            float worth = Mathf.Max(1f, ship.combatPower);
-            bool killed = damage >= worth || (damage >= worth * KillThreshold && Random.value < damage / worth);
-            if (!killed) break; // Not enough left to take down even the most exposed ship.
+        foreach (KeyValuePair<Role, List<ShipEntry>> entry in byRole)
+        {
+            float w = entry.Value.Sum(s => Mathf.Max(1f, s.combatPower)) * Vulnerability(entry.Key, enemy) * Exposure(entry.Key, screened);
+            weight[entry.Key] = w;
+            totalWeight += w;
+        }
+        if (totalWeight <= 0f) return lost;
 
-            roster.Remove(ship);
-            lost += ship.combatPower;
-            damage -= worth;
+        // Most-hit types first, so if the "keep one ship" floor kicks in it's the sheltered ones that survive.
+        foreach (Role role in byRole.Keys.OrderByDescending(r => weight[r]).ToList())
+        {
+            float share = damage * weight[role] / totalWeight;
+            List<ShipEntry> ships = byRole[role].OrderBy(_ => Random.value).ToList();
+
+            foreach (ShipEntry ship in ships)
+            {
+                if (share <= 0f || roster.Count <= 1) break;
+
+                float worth = Mathf.Max(1f, ship.combatPower);
+                bool killed = share >= worth || (share >= worth * KillThreshold && Random.value < share / worth);
+                if (!killed) break;
+
+                roster.Remove(ship);
+                lost += ship.combatPower;
+                share -= worth;
+            }
         }
 
         return lost;
     }
 
+    // ---------------- Forecast ----------------
+
+    public class Forecast
+    {
+        public float attackerWinChance;
+        // Average ships lost per class (by display name), for each side.
+        public readonly Dictionary<string, float> attackerLosses = new Dictionary<string, float>();
+        public readonly Dictionary<string, float> defenderLosses = new Dictionary<string, float>();
+    }
+
+    // What autoresolving is likely to do, by running the same maths many times on copies of the fleets
+    // (nothing is changed). All the defending fleets and the planet's defenses are treated as one force.
+    public static Forecast Predict(List<ShipEntry> attacker, List<ShipEntry> defender, float defenses, int samples = 80)
+    {
+        Forecast forecast = new Forecast();
+        List<Force> attackers = Forces(attacker, 0f);
+        List<Force> defenders = Forces(defender, defenses);
+        float attackEffective = Effective(attackers, defenders);
+        float defendEffective = Effective(defenders, attackers);
+
+        int wins = 0;
+        for (int i = 0; i < samples; i++)
+        {
+            float attackerRoll = attackEffective * Roll();
+            float defenderRoll = defendEffective * Roll();
+            bool attackerWon = attackerRoll > defenderRoll;
+            if (attackerWon) wins++;
+
+            List<ShipEntry> attackerCopy = attacker.Where(s => s != null).ToList();
+            List<ShipEntry> defenderCopy = defender.Where(s => s != null).ToList();
+            if (attackerWon)
+            {
+                ApplyWinnerLosses(attackerCopy, defenders, attackerRoll, defenderRoll);
+                Tally(forecast.attackerLosses, attacker, attackerCopy);
+                Tally(forecast.defenderLosses, defender, new List<ShipEntry>());
+            }
+            else
+            {
+                ApplyWinnerLosses(defenderCopy, attackers, defenderRoll, attackerRoll);
+                Tally(forecast.defenderLosses, defender, defenderCopy);
+                Tally(forecast.attackerLosses, attacker, new List<ShipEntry>());
+            }
+        }
+
+        forecast.attackerWinChance = wins / (float)samples;
+        foreach (string key in forecast.attackerLosses.Keys.ToList()) forecast.attackerLosses[key] /= samples;
+        foreach (string key in forecast.defenderLosses.Keys.ToList()) forecast.defenderLosses[key] /= samples;
+        return forecast;
+    }
+
+    private static void Tally(Dictionary<string, float> losses, List<ShipEntry> before, List<ShipEntry> after)
+    {
+        HashSet<ShipEntry> survivors = new HashSet<ShipEntry>(after);
+        foreach (ShipEntry ship in before)
+        {
+            if (ship == null || ship.type == null || survivors.Contains(ship)) continue;
+            string name = ship.IsHero ? ship.shipName : ShipInfo.Name(ship.type);
+            losses[name] = losses.TryGetValue(name, out float lost) ? lost + 1f : 1f;
+        }
+    }
+
     private static void Eliminate(GalacticFleet fleet)
     {
-        fleet.roster.Clear();
+        fleet.ships.Clear();
         fleet.Destination?.ReleaseSlot(fleet);
         fleet.currentPlanet?.ReleaseSlot(fleet);
         Object.Destroy(fleet.gameObject);

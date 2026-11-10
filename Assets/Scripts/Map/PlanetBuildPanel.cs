@@ -55,6 +55,8 @@ public class PlanetBuildPanel : MonoBehaviour
     private readonly List<QueueRow> queueRows = new List<QueueRow>();
     private RectTransform tooltip;
     private TMP_Text tooltipText;
+    private RectTransform actions;
+    private UIBits.PillButton yardOrderButton;
     private BuildCard tooltipCard;
 
     private class StructureRow
@@ -211,6 +213,8 @@ public class PlanetBuildPanel : MonoBehaviour
         ownerName.text = owner == null ? "UNCLAIMED" : (string.IsNullOrEmpty(owner.factionName) ? owner.name : owner.factionName).ToUpperInvariant();
         ownerName.color = owner != null ? Color.Lerp(owner.color, Color.white, 0.25f) : UIKit.MutedColor;
 
+        actions.gameObject.SetActive(mine);
+        yardOrderButton.button.gameObject.SetActive(mine && currentPlanet.hasCapitalShipyard);
         RefreshStructures(mine, known);
         RefreshCards(mine);
         RefreshQueue(mine);
@@ -457,6 +461,26 @@ public class PlanetBuildPanel : MonoBehaviour
         BuildShipyard();
         BuildQueueColumn();
         BuildTooltip();
+        BuildActions();
+    }
+
+    // Buttons sitting on top of the dock for your own planets: lay out how it defends, order a fleet
+    // delivered here from every shipyard, or (at a shipyard) build a designed fleet right here.
+    private void BuildActions()
+    {
+        actions = UIKit.Rect("Actions", dock, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 0f), new Vector2(0f, 8f), new Vector2(760f, 42f));
+        HorizontalLayoutGroup row = actions.gameObject.AddComponent<HorizontalLayoutGroup>();
+        row.spacing = 8f;
+        row.childControlWidth = true;
+        row.childControlHeight = true;
+        row.childForceExpandWidth = false;
+
+        UIBits.PillButton defense = UIBits.Button(actions, "DEFENSE LAYOUT", 15f, new Vector2(200f, 42f), () => DefensePlanner.Open(currentPlanet));
+        defense.background.color = UIKit.PanelColor;
+        UIBits.PillButton send = UIBits.Button(actions, "BUILD & SEND HERE", 15f, new Vector2(230f, 42f), () => ProductionWindow.Open(currentPlanet));
+        send.background.color = UIKit.PanelColor;
+        yardOrderButton = UIBits.Button(actions, "BUILD FLEET AT THIS YARD", 15f, new Vector2(280f, 42f), () => ProductionWindow.Open(currentPlanet, currentPlanet));
+        yardOrderButton.background.color = UIKit.PanelColor;
     }
 
     // A full-height column pinned to the dock's left or right edge.

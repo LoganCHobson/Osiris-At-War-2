@@ -17,6 +17,7 @@ public class ShipIconDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandle
     private static readonly Color InvalidDrop = new Color(1f, 0.35f, 0.3f, 0.3f);
 
     public Ship Ship { get; private set; }
+    public ShipEntry Entry { get; private set; } // The first ship of the tile (the only one for singles and heroes).
     public FleetRowUI SourceRow { get; private set; }
     public bool IsLead { get; private set; }
     public int Count => indices.Count;
@@ -30,17 +31,18 @@ public class ShipIconDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandle
     private Vector3 originalPosition;
     private int originalSiblingIndex;
 
-    public static ShipIconDragHandler Create(Transform parent, Ship ship, FleetRowUI sourceRow, List<int> rosterIndices, bool isLead)
+    public static ShipIconDragHandler Create(Transform parent, ShipEntry ship, FleetRowUI sourceRow, List<int> rosterIndices, bool isLead)
     {
-        RectTransform tile = UIKit.Rect(ship.name, parent, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), Vector2.zero, new Vector2(Width, Height));
+        RectTransform tile = UIKit.Rect(ship.type.name, parent, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), Vector2.zero, new Vector2(Width, Height));
         ShipIconDragHandler handler = tile.gameObject.AddComponent<ShipIconDragHandler>();
         handler.Bind(ship, sourceRow, rosterIndices, isLead);
         return handler;
     }
 
-    public void Bind(Ship ship, FleetRowUI sourceRow, List<int> rosterIndices, bool isLead)
+    public void Bind(ShipEntry ship, FleetRowUI sourceRow, List<int> rosterIndices, bool isLead)
     {
-        Ship = ship;
+        Entry = ship;
+        Ship = ship.type;
         SourceRow = sourceRow;
         IsLead = isLead;
         indices.Clear();
@@ -62,11 +64,14 @@ public class ShipIconDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandle
 
         RectTransform iconRect = UIKit.Rect("Icon", rect, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -8f), new Vector2(-16f, 56f));
         Image icon = UIKit.Image(iconRect, Color.white);
-        icon.sprite = Ship.IconSprite;
+        HeroDefinition hero = Entry != null ? Entry.Hero : null;
+        icon.sprite = hero != null && hero.Portrait != null ? hero.Portrait : Ship.IconSprite;
         icon.preserveAspect = true;
         icon.enabled = icon.sprite != null;
 
-        TMP_Text name = UIKit.Text(rect, ShipInfo.Name(Ship), 13f, UIKit.TextColor, TextAlignmentOptions.Bottom);
+        // Stacks show the class; a lone ship its own name; a hero their name in gold.
+        string label = hero != null ? hero.name : Count == 1 && Entry != null && !string.IsNullOrEmpty(Entry.shipName) ? Entry.shipName : ShipInfo.Name(Ship);
+        TMP_Text name = UIKit.Text(rect, label, 13f, hero != null ? UIKit.Accent : UIKit.TextColor, TextAlignmentOptions.Bottom);
         name.rectTransform.offsetMin = new Vector2(4f, 6f);
         name.rectTransform.offsetMax = new Vector2(-4f, 0f);
         name.overflowMode = TextOverflowModes.Ellipsis;

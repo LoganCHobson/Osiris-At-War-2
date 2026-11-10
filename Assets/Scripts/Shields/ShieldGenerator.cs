@@ -58,7 +58,40 @@ public class ShieldGenerator : MonoBehaviour
 
     public float Capacity { get; private set; }
     public float Current { get; private set; }
-    public bool IsUp => built && !collapsed && Current > 0f && !health.IsDead;
+    public bool IsUp => built && !collapsed && !GeneratorDestroyed && Current > 0f && !health.IsDead;
+
+    // The shield is projected by a generator hardpoint on the ship's spine. Knock it out and the shield is
+    // gone for good: no recharge, no Shield Surge.
+    public HardpointHealth Generator { get; private set; }
+    public bool GeneratorDestroyed { get; private set; }
+
+    public static HardpointHealth LiveGenerator(GameObject ship)
+    {
+        return ship != null && ship.TryGetComponent(out ShieldGenerator shield) && !shield.GeneratorDestroyed ? shield.Generator : null;
+    }
+
+    private ShipAbility surgeAbility;
+    private float SurgeFactor
+    {
+        get
+        {
+            if (surgeAbility == null) surgeAbility = GetComponent<ShipAbility>();
+            return surgeAbility != null ? surgeAbility.ShieldRegenMultiplier : 1f;
+        }
+    }
+
+    // Shield Surge: brings a collapsed shield straight back and tops it up by this share of capacity.
+    public void Surge(float fraction)
+    {
+        if (!built || health == null || health.IsDead || GeneratorDestroyed) return;
+        if (collapsed)
+        {
+            collapsed = false;
+            bubbleCollider.enabled = true;
+        }
+        Current = Mathf.Min(Capacity, Current + Capacity * fraction);
+        RefreshSlider();
+    }
     public float Fraction => Capacity > 0f ? Current / Capacity : 0f;
 
     private UnitHealthManager health;
@@ -83,10 +116,90 @@ public class ShieldGenerator : MonoBehaviour
         hull = GetComponent<HullDamage>();
         block = new MaterialPropertyBlock();
 
+        float total = 0f;
+        int count = 0;
         foreach (HardpointHealth hardpoint in GetComponentsInChildren<HardpointHealth>(true))
         {
             hardpoint.maxHealth *= hullHealthMultiplier;
+            total += hardpoint.maxHealth;
+            count++;
         }
+        BuildGenerator(count > 0 ? total / count : 100f);
+    }
+
+    // A hardpoint on top of the hull, sharing the look (health marker, layer) of the ship's other hardpoints.
+    private void BuildGenerator(float hitPoints)
+    {
+        HardpointHealth template = null;
+        foreach (HardpointHealth hardpoint in GetComponentsInChildren<HardpointHealth>(true))
+        {
+            if (template == null || (template.healthVisual == null && hardpoint.healthVisual != null)) template = hardpoint;
+        }
+
+        Bounds local = HullBounds();
+        GameObject node = new GameObject("ShieldGenerator");
+        node.layer = template != null ? template.gameObject.layer : gameObject.layer;
+        node.transform.SetParent(transform, false);
+        node.transform.localPosition = new Vector3(local.center.x, local.max.y * 0.9f + local.center.y * 0.1f, local.center.z - local.extents.z * 0.15f);
+
+        float reach = Mathf.Max(local.size.x, local.size.z);
+        SphereCollider collider = node.AddComponent<SphereCollider>();
+        collider.radius = Mathf.Max(0.5f, reach * 0.06f);
+        if (template != null && template.TryGetComponent(out Collider source)) collider.isTrigger = source.isTrigger;
+
+        HardpointHealth generator = node.AddComponent<HardpointHealth>();
+        generator.maxHealth = hitPoints;
+        generator.currentHealth = hitPoints;
+        generator.die = new UnityEngine.Events.UnityEvent();
+        generator.dealDamage = new UnityEngine.Events.UnityEvent();
+        generator.die.AddListener(OnGeneratorDestroyed);
+
+        // Copy the template's health marker so the generator can be seen and clicked like the others.
+        if (template != null && template.healthVisual != null)
+        {
+            Canvas canvas = template.healthVisual.GetComponentInParent<Canvas>(true);
+            if (canvas != null)
+            {
+                Image[] originals = canvas.GetComponentsInChildren<Image>(true);
+                int index = System.Array.IndexOf(originals, template.healthVisual);
+                GameObject copy = Instantiate(canvas.gameObject, node.transform);
+                copy.transform.localPosition = canvas.transform.localPosition;
+                Image[] copies = copy.GetComponentsInChildren<Image>(true);
+                if (index >= 0 && index < copies.Length) generator.healthVisual = copies[index];
+            }
+        }
+
+        Generator = generator;
+        if (TryGetComponent(out HardpointManager manager) && !manager.hardpoints.Contains(generator)) manager.hardpoints.Add(generator);
+    }
+
+    private Bounds HullBounds()
+    {
+        Bounds bounds = new Bounds(Vector3.zero, Vector3.zero);
+        bool any = false;
+        foreach (MeshRenderer renderer in GetComponentsInChildren<MeshRenderer>(true))
+        {
+            if (renderer.GetComponentInParent<Canvas>() != null) continue;
+            Bounds world = renderer.bounds;
+            Vector3 min = transform.InverseTransformPoint(world.min), max = transform.InverseTransformPoint(world.max);
+            Bounds part = new Bounds((min + max) * 0.5f, new Vector3(Mathf.Abs(max.x - min.x), Mathf.Abs(max.y - min.y), Mathf.Abs(max.z - min.z)));
+            if (!any) { bounds = part; any = true; }
+            else bounds.Encapsulate(part);
+        }
+        return any ? bounds : new Bounds(Vector3.zero, Vector3.one * 10f);
+    }
+
+    private void OnGeneratorDestroyed()
+    {
+        if (GeneratorDestroyed) return;
+        GeneratorDestroyed = true;
+        Vector3 point = Generator != null ? Generator.transform.position : transform.position;
+        if (built && Current > 0f) AddRipple(point, 1.6f, Mathf.Max(size * 0.25f, minimumReach * 1.5f)); // One last flare as it fails.
+        Current = 0f;
+        collapsed = true;
+        collapsedUntil = float.PositiveInfinity;
+        if (bubbleCollider != null) bubbleCollider.enabled = false;
+        RefreshSlider();
     }
 
     private IEnumerator Start()
@@ -145,6 +258,7 @@ public class ShieldGenerator : MonoBehaviour
     {
         if (!IsUp) return false;
 
+        DamageLedger.Shield(health, Mathf.Min(damage, Current));
         Current -= damage;
         lastHitAt = Time.time;
 
@@ -202,6 +316,24 @@ public class ShieldGenerator : MonoBehaviour
             return;
         }
 
+        if (BattleHazards.InNebula(transform.position))
+        {
+            // Shields can't hold inside a nebula.
+            if (Current > 0f)
+            {
+                Current = Mathf.Max(0f, Current - Capacity * BattleHazards.NebulaDrainPerSecond * Time.deltaTime);
+                RefreshSlider();
+            }
+            Render();
+            return;
+        }
+
+        if (GeneratorDestroyed)
+        {
+            Render();
+            return;
+        }
+
         if (collapsed)
         {
             if (Time.time >= collapsedUntil)
@@ -214,7 +346,7 @@ public class ShieldGenerator : MonoBehaviour
         }
         else if (Current < Capacity && Time.time - lastHitAt >= rechargeDelay)
         {
-            Current = Mathf.Min(Capacity, Current + Capacity * rechargeRate * Time.deltaTime);
+            Current = Mathf.Min(Capacity, Current + Capacity * rechargeRate * (1f + HeroForces.BuffFor(this, HeroBuff.ShieldRegen)) * SurgeFactor * Time.deltaTime);
             RefreshSlider();
         }
 

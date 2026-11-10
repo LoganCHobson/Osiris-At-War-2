@@ -219,7 +219,7 @@ public class FleetMapIcon : MonoBehaviour
     {
         if (fleet == null) return;
 
-        int count = fleet.roster.Count;
+        int count = fleet.ships.Count;
         int tier = Mathf.Min(markers.Length, TierFor(Strength.Of(fleet), powerThresholds));
         Color factionColor = fleet.faction != null ? fleet.faction.color : Color.gray;
 

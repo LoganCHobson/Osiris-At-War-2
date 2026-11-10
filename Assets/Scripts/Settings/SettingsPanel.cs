@@ -36,6 +36,11 @@ public class SettingsPanel : MonoBehaviour
 
     private void Update()
     {
+        if (listening != null)
+        {
+            CaptureKey(); // Escape here cancels the rebind rather than closing the window.
+            return;
+        }
         if (Input.GetKeyDown(KeyCode.Escape)) Close();
     }
 
@@ -200,5 +205,91 @@ public class SettingsPanel : MonoBehaviour
         text.textWrappingMode = TextWrappingModes.Normal;
         text.lineSpacing = 18f;
         text.rectTransform.offsetMin = new Vector2(24f, 0f);
+
+        BuildKeyBindings();
+    }
+
+    // ---------------- Key bindings ----------------
+
+    private KeyAction? listening;
+    private readonly Dictionary<KeyAction, TMP_Text> keyLabels = new Dictionary<KeyAction, TMP_Text>();
+
+    private void BuildKeyBindings()
+    {
+        keyLabels.Clear();
+        listening = null;
+
+        RectTransform header = UIKit.Rect("KeyHeader", content, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0f, 34f));
+        header.gameObject.AddComponent<LayoutElement>().preferredHeight = 34f;
+        TMP_Text title = UIKit.Text(header, "KEY BINDINGS  -  click one, then press the new key", 16f, UIKit.MutedColor, TextAlignmentOptions.BottomLeft);
+        title.characterSpacing = 4f;
+        UIBits.PillButton reset = UIBits.Button(header, "RESET", 14f, new Vector2(120f, 30f), () =>
+        {
+            Keybinds.ResetAll();
+            RefreshKeyLabels();
+        });
+        RectTransform resetRect = (RectTransform)reset.button.transform;
+        resetRect.anchorMin = resetRect.anchorMax = resetRect.pivot = new Vector2(1f, 0f);
+        resetRect.anchoredPosition = Vector2.zero;
+
+        RectTransform area = UIKit.Rect("KeyList", content, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0f, 200f));
+        area.gameObject.AddComponent<LayoutElement>().preferredHeight = 200f;
+        RectTransform list = UIBits.ScrollList(area, 4f);
+
+        foreach (KeyAction action in System.Enum.GetValues(typeof(KeyAction)))
+        {
+            KeyAction captured = action;
+            RectTransform row = UIKit.Rect(action.ToString(), list, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0f, 36f));
+            UIKit.Image(row, UIKit.RowColor);
+            row.gameObject.AddComponent<LayoutElement>().preferredHeight = 36f;
+            TMP_Text name = UIKit.Text(row, Keybinds.Label(action), 18f, UIKit.TextColor, TextAlignmentOptions.MidlineLeft);
+            name.rectTransform.offsetMin = new Vector2(16f, 0f);
+
+            UIBits.PillButton key = UIBits.Button(row, Keybinds.KeyName(Keybinds.Get(action)), 16f, new Vector2(170f, 30f), () => Listen(captured));
+            RectTransform keyRect = (RectTransform)key.button.transform;
+            keyRect.anchorMin = keyRect.anchorMax = keyRect.pivot = new Vector2(1f, 0.5f);
+            keyRect.anchoredPosition = new Vector2(-8f, 0f);
+            keyLabels[action] = key.label;
+        }
+    }
+
+    private void Listen(KeyAction action)
+    {
+        listening = action;
+        RefreshKeyLabels();
+    }
+
+    private void RefreshKeyLabels()
+    {
+        foreach (KeyValuePair<KeyAction, TMP_Text> entry in keyLabels)
+        {
+            if (entry.Value == null) continue;
+            entry.Value.text = listening == entry.Key ? "PRESS A KEY" : Keybinds.KeyName(Keybinds.Get(entry.Key));
+        }
+    }
+
+    // While listening, the next key pressed becomes the binding (Escape cancels).
+    private void CaptureKey()
+    {
+        if (listening == null || !Input.anyKeyDown) return;
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            listening = null;
+            RefreshKeyLabels();
+            return;
+        }
+
+        foreach (KeyCode key in System.Enum.GetValues(typeof(KeyCode)))
+        {
+            if (key == KeyCode.None || (key >= KeyCode.Mouse0 && key <= KeyCode.Mouse6) || key >= KeyCode.JoystickButton0) continue;
+            if (!Input.GetKeyDown(key) || Keybinds.Reserved.Contains(key)) continue;
+
+            KeyAction action = listening.Value;
+            KeyAction? swapped = Keybinds.Set(action, key);
+            listening = null;
+            RefreshKeyLabels();
+            if (swapped.HasValue) Toast.Show($"{Keybinds.Label(swapped.Value)} moved to {Keybinds.KeyName(Keybinds.Get(swapped.Value))}");
+            return;
+        }
     }
 }

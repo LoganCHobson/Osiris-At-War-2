@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   conventional:
     name: Missile
-    destroyerSalvo: 4
-    corvetteSalvo: 2
-    reload: 15
+    destroyerSalvo: 6
+    corvetteSalvo: 3
+    reload: 12
     salvoSpacing: 0.15
     speed: 42
     turnRate: 120
@@ -36,8 +36,8 @@ MonoBehaviour:
     explosionScale: 1
   plasma:
     name: Plasma Torpedo
-    destroyerSalvo: 3
-    corvetteSalvo: 2
+    destroyerSalvo: 2
+    corvetteSalvo: 1
     reload: 15
     salvoSpacing: 0.25
     speed: 30

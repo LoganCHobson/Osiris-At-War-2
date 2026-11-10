@@ -20,6 +20,13 @@ public class PlacementManager : MonoBehaviour
     private GameObject hologram;
     private Renderer[] hologramRenderers;
 
+    // Height reinforcements drop in at, set with the mouse wheel (or PageUp/PageDown) while dragging one.
+    // Remembered between drags so a whole wave can come in at the same height.
+    public static float DropHeight { get; private set; }
+    public bool IsPreviewing => hologram != null;
+    private const float WheelStep = 10f;
+    private LineRenderer dropStalk;
+
     // Building a hologram instantiates the whole ship prefab, which hitches - so each ship type's hologram is
     // built once (ahead of time where possible) and reused for every drag.
     private class CachedHologram
@@ -64,8 +71,12 @@ public class PlacementManager : MonoBehaviour
         prewarmQueue.Enqueue(ship.prefab);
     }
 
+    private Vector2 lastPreviewScreen;
+
     private void Update()
     {
+        if (hologram != null && AdjustDropHeight()) UpdatePreview(lastPreviewScreen); // Wheel works without moving the mouse.
+
         // One per few frames, never mid-drag, so the cost is spread out where nobody notices.
         if (prewarmQueue.Count == 0 || hologram != null || Time.timeSinceLevelLoad < prewarmDelay || Time.frameCount % 4 != 0) return;
         GetHologram(prewarmQueue.Dequeue());
@@ -81,7 +92,7 @@ public class PlacementManager : MonoBehaviour
         return cached;
     }
 
-    public bool TryPlace(Ship ship, Vector2 screenPosition, GameObject sourceIcon)
+    public bool TryPlace(ShipEntry ship, Vector2 screenPosition, GameObject sourceIcon)
     {
         EndPreview();
 
@@ -90,12 +101,90 @@ public class PlacementManager : MonoBehaviour
         if (!TryGetPlacementPoint(screenPosition, out Vector3 point)) return false;
         if (!CanDropAt(point)) return false; // Asteroids or an enemy shipyard/station in the way.
 
+        Deploy(ship, point);
+
+        IconShipRef stack = sourceIcon != null ? sourceIcon.GetComponent<IconShipRef>() : null;
+        if (stack != null) stack.Consume(ship);
+        else if (sourceIcon != null) Destroy(sourceIcon);
+        return true;
+    }
+
+    // Shift-drop: deploys as much of a reinforcement stack as the population cap allows, in formation
+    // around the drop point. Returns how many ships were deployed.
+    public int TryPlaceStack(IconShipRef icon, Vector2 screenPosition)
+    {
+        EndPreview();
+        if (icon == null || icon.Count == 0) return 0;
+        if (!TryGetPlacementPoint(screenPosition, out Vector3 point)) return 0;
+
+        List<ShipEntry> fitting = new List<ShipEntry>();
+        int room = GameManager.Instance != null ? GameManager.Instance.PopulationCapFor(PlayerSide) - GameManager.PopulationInPlay(PlayerSide) : int.MaxValue;
+        foreach (ShipEntry candidate in icon.Ships)
+        {
+            if (candidate == null || candidate.populationCost > room) continue;
+            fitting.Add(candidate);
+            room -= candidate.populationCost;
+        }
+        if (fitting.Count == 0 || PlayerSpaceManager.PlayerRetreating) return 0;
+
+        Camera cam = Camera.main;
+        Vector3 forward = cam != null ? cam.transform.forward : Vector3.forward;
+        forward.y = 0f;
+
+        int deployed = 0;
+        foreach (BattleDeployment.Placement placement in BattleDeployment.Arrange(fitting, null, point, forward))
+        {
+            if (!CanDeploy(placement.ship) || !CanDropAt(placement.position)) continue;
+
+            Deploy(placement.ship, placement.position);
+            icon.Consume(placement.ship);
+            deployed++;
+        }
+        return deployed;
+    }
+
+    private static void Deploy(ShipEntry ship, Vector3 point)
+    {
         GameObject spawned = Instantiate(ship.prefab, point, Quaternion.identity);
         GameManager.TagShip(spawned, ship, PlayerSide);
+        if (spawned.TryGetComponent(out ShipAltitude altitude)) altitude.SnapAltitude(DropHeight);
         FTLJump.Arrive(spawned);
+    }
 
-        Destroy(sourceIcon);
+    private static bool AdjustDropHeight()
+    {
+        float change = Input.GetAxis("Mouse ScrollWheel") * WheelStep * 10f;
+        if (Keybinds.Down(KeyAction.Climb)) change += ShipAltitude.Step;
+        if (Keybinds.Down(KeyAction.Dive)) change -= ShipAltitude.Step;
+        if (Keybinds.Down(KeyAction.ToPlane)) change = -DropHeight;
+        if (Mathf.Approximately(change, 0f)) return false;
+
+        DropHeight = Mathf.Clamp(Mathf.Round((DropHeight + change) / 5f) * 5f, -ShipAltitude.MaxAltitude, ShipAltitude.MaxAltitude);
         return true;
+    }
+
+    // How high the ship's hull sits above the plane at altitude 0.
+    private static float PrefabLift(Ship ship)
+    {
+        if (ship == null || !ship.TryGetComponent(out UnityEngine.AI.NavMeshAgent agent)) return 0f;
+        return agent.baseOffset * ship.transform.localScale.y;
+    }
+
+    private void ShowStalk(Vector3 ground, Vector3 ship)
+    {
+        if (dropStalk == null)
+        {
+            dropStalk = new GameObject("DropHeightStalk").AddComponent<LineRenderer>();
+            dropStalk.positionCount = 2;
+            dropStalk.widthMultiplier = 1.2f;
+            dropStalk.sharedMaterial = new Material(Shader.Find("Sprites/Default"));
+            dropStalk.startColor = dropStalk.endColor = new Color(0.3f, 0.85f, 1f, 0.6f);
+        }
+        bool show = Mathf.Abs(DropHeight) > 1f;
+        dropStalk.enabled = show;
+        if (!show) return;
+        dropStalk.SetPosition(0, ground);
+        dropStalk.SetPosition(1, ship);
     }
 
     public void BeginPreview(Ship ship)
@@ -122,7 +211,10 @@ public class PlacementManager : MonoBehaviour
         }
         if (!hasPoint) return;
 
-        hologram.transform.SetPositionAndRotation(point, Quaternion.identity);
+        lastPreviewScreen = screenPosition;
+        Vector3 lifted = point + Vector3.up * (PrefabLift(previewShip) + DropHeight);
+        hologram.transform.SetPositionAndRotation(lifted, Quaternion.identity);
+        ShowStalk(point, lifted);
 
         int validity = CanDeploy(previewShip) && CanDropAt(point) ? 1 : 0;
         if (validity != shownValidity)
@@ -139,6 +231,7 @@ public class PlacementManager : MonoBehaviour
             hologram.SetActive(false); // Kept for the next drag.
         }
         DropZoneOverlay.Hide();
+        if (dropStalk != null) dropStalk.enabled = false;
 
         hologram = null;
         hologramRenderers = null;

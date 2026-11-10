@@ -67,7 +67,7 @@ public class BuildMenuTour : MonoBehaviour
             ExecuteEvents.Execute(tile.gameObject, drag, ExecuteEvents.endDragHandler);
         }
         yield return Wait(0.5f);
-        int fleetsHere = GalacticFleet.All.Count(f => f.currentPlanet == planet && f.roster.Count > 0);
+        int fleetsHere = GalacticFleet.All.Count(f => f.currentPlanet == planet && f.ships.Count > 0);
         int strayTiles = FindObjectsByType<ShipIconDragHandler>(FindObjectsSortMode.None).Count(t => t.GetComponentInParent<FleetRowUI>() == null);
         Debug.Log($"BUILDTOUR after drag: {fleetsHere} fleets at {planet.planetName}, {strayTiles} stray tiles");
         yield return Shot("5_fleet_split");

@@ -41,7 +41,7 @@ public class FleetRowUI : MonoBehaviour, IDropHandler
         heading.rectTransform.offsetMin = new Vector2(20f, 0f);
         heading.rectTransform.offsetMax = new Vector2(-20f, -14f);
 
-        if (Fleet == null || Fleet.roster.Count == 0)
+        if (Fleet == null || Fleet.ships.Count == 0)
         {
             TMP_Text empty = UIKit.Text(lane, canSplitInto ? "Empty lane\n<size=15><color=#FFFFFF66>Drag ships here to form a new fleet</color></size>" : "Empty lane",
                                         19f, UIKit.MutedColor, TextAlignmentOptions.Center);
@@ -56,8 +56,8 @@ public class FleetRowUI : MonoBehaviour, IDropHandler
         owner.rectTransform.offsetMin = new Vector2(20f, 0f);
         owner.rectTransform.offsetMax = new Vector2(-20f, -15f);
 
-        int ships = Fleet.roster.Count(s => s != null);
-        float strength = Fleet.roster.Where(s => s != null).Sum(s => s.combatPower);
+        int ships = Fleet.ships.Count(s => s != null);
+        float strength = Fleet.ships.Where(s => s != null).Sum(s => s.combatPower);
         TMP_Text summary = UIKit.Text(lane, $"{ships} ship{(ships == 1 ? "" : "s")}  <color=#FFFFFF59>·</color>  {strength:0} strength", 18f, UIKit.TextColor, TextAlignmentOptions.TopLeft);
         summary.richText = true;
         summary.rectTransform.offsetMin = new Vector2(20f, 0f);
@@ -85,16 +85,18 @@ public class FleetRowUI : MonoBehaviour, IDropHandler
         scroll.movementType = ScrollRect.MovementType.Clamped;
         scroll.scrollSensitivity = 30f;
 
-        Spawn(Fleet.roster[0], new List<int> { 0 }, true);
+        Spawn(Fleet.ships[0], new List<int> { 0 }, true);
 
-        List<Ship> stackShips = new List<Ship>();
+        // Identical ordinary ships share a tile; a hero's flagship always has its own.
+        List<ShipEntry> stackShips = new List<ShipEntry>();
         List<List<int>> stackIndices = new List<List<int>>();
-        for (int i = 1; i < Fleet.roster.Count; i++)
+        for (int i = 1; i < Fleet.ships.Count; i++)
         {
-            int stack = stackShips.IndexOf(Fleet.roster[i]);
+            ShipEntry ship = Fleet.ships[i];
+            int stack = ship == null || ship.IsHero ? -1 : stackShips.FindIndex(s => !s.IsHero && s.type == ship.type);
             if (stack < 0)
             {
-                stackShips.Add(Fleet.roster[i]);
+                stackShips.Add(Fleet.ships[i]);
                 stackIndices.Add(new List<int>());
                 stack = stackShips.Count - 1;
             }
@@ -122,7 +124,7 @@ public class FleetRowUI : MonoBehaviour, IDropHandler
         return "In orbit";
     }
 
-    private void Spawn(Ship ship, List<int> indices, bool isLead)
+    private void Spawn(ShipEntry ship, List<int> indices, bool isLead)
     {
         if (ship == null) return;
         ShipIconDragHandler.Create(tiles, ship, this, indices, isLead);

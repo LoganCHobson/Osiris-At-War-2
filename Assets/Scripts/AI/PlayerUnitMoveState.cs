@@ -47,6 +47,7 @@ namespace SolarStudios
         private PlayerUnitStateMachine machine;
         private NavMeshAgent ownAgent;
         private UnitHealthManager health;
+        private ShipAltitude altitude;
 
         private bool hasActiveDestination;
         private Vector3 activeDestination;
@@ -250,6 +251,7 @@ namespace SolarStudios
                 if (orderGroup != 0 && other.orderGroup == orderGroup) continue;
                 if (!other.IsParked && Vector3.Dot(other.TravelDirection, heading) > sameDirectionThreshold) continue;
                 if (Flat(other.Position - start).magnitude < BlockRadius(other, selfRadius)) continue;
+                if (!ShipAltitude.SharesHeight(ownAgent.transform, other.ownAgent.transform)) continue; // Flies over/under us.
                 obstacles.Add(other);
             }
 
@@ -382,6 +384,7 @@ namespace SolarStudios
             {
                 if (other == this || other.airborne || other.ownAgent == null || !other.IsParked || other.IsDead) continue;
                 if (other.ownAgent.gameObject.layer != layer || !other.ownAgent.isOnNavMesh) continue;
+                if (!ShipAltitude.SharesHeight(agent.transform, other.ownAgent.transform)) continue;
 
                 Vector3 offset = Flat(other.ownAgent.transform.position - position);
                 float along = Vector3.Dot(offset, heading);
@@ -449,7 +452,10 @@ namespace SolarStudios
                 currentTilt = Mathf.Lerp(currentTilt, 0, Time.deltaTime * 5f);
             }
 
-            gfx.transform.localRotation = Quaternion.Euler(0, 0, currentTilt);
+            // With a ShipAltitude the bank is layered on top of its pitch/roll; otherwise drive GFX directly.
+            if (altitude == null) altitude = ownAgent != null ? ownAgent.GetComponent<ShipAltitude>() : null;
+            if (altitude != null) altitude.Bank = currentTilt;
+            else gfx.transform.localRotation = Quaternion.Euler(0, 0, currentTilt);
         }
 
         public void AddDestination(Vector3 destination)

@@ -29,6 +29,7 @@ public class EconomyManager : MonoBehaviour
         }
 
         AdvanceBuildQueues();
+        StandingOrders.Tick(Time.time);
     }
 
     private void CollectTaxes()
@@ -56,7 +57,7 @@ public class EconomyManager : MonoBehaviour
             if (order.remainingTime <= 0f)
             {
                 planet.shipBuildQueue.RemoveAt(0);
-                CompleteBuild(planet, order.ship);
+                if (!ProductionOrders.TryDeliver(planet, order)) CompleteBuild(planet, order.ship);
             }
         }
     }
@@ -68,9 +69,10 @@ public class EconomyManager : MonoBehaviour
         for (int slot = 0; slot < Planet.FleetSlotCount; slot++)
         {
             GalacticFleet occupant = planet.GetFleetInSlot(slot);
-            if (occupant != null && occupant.faction == planet.owner && !occupant.IsTraveling && occupant.currentPlanet == planet)
+            if (occupant != null && occupant.faction == planet.owner && !occupant.IsTraveling && occupant.currentPlanet == planet
+                && string.IsNullOrEmpty(occupant.pendingDelivery)) // Don't mix local builds into a delivery bound elsewhere.
             {
-                occupant.roster.Add(ship);
+                occupant.ships.Add(ShipEntry.New(ship, planet.owner));
                 return;
             }
         }
@@ -78,6 +80,17 @@ public class EconomyManager : MonoBehaviour
         int openSlot = FindOpenSlot(planet);
         if (openSlot < 0)
         {
+            // Every slot taken by deliveries: ride along with one rather than lose the ship.
+            for (int slot = 0; slot < Planet.FleetSlotCount; slot++)
+            {
+                GalacticFleet occupant = planet.GetFleetInSlot(slot);
+                if (occupant != null && occupant.faction == planet.owner && !occupant.IsTraveling && occupant.currentPlanet == planet)
+                {
+                    occupant.ships.Add(ShipEntry.New(ship, planet.owner));
+                    return;
+                }
+            }
+
             Debug.LogWarning($"No open fleet slot at {planet.planetName} to deliver the newly built ship - it was lost.");
             return;
         }
@@ -92,7 +105,7 @@ public class EconomyManager : MonoBehaviour
         if (newFleet == null) return;
 
         newFleet.faction = planet.owner;
-        newFleet.roster.Add(ship);
+        newFleet.ships.Add(ShipEntry.New(ship, planet.owner));
     }
 
     private int FindOpenSlot(Planet planet)

@@ -54,6 +54,8 @@ public class ShipDestruction : MonoBehaviour
     {
         if (dying) return;
         dying = true;
+        // Full detail for the death: the breakup, seams and hull scars are all built on the LOD0 model.
+        foreach (LODGroup group in GetComponentsInChildren<LODGroup>(true)) group.ForceLOD(0);
 
         profile = hull.profile;
         HideInterface();
@@ -86,6 +88,70 @@ public class ShipDestruction : MonoBehaviour
         maxSink = profile.maxSinkSpeed * Random.Range(0.6f, 1.2f);
 
         if (hull.gfxRoot != null) gfxRestPosition = hull.gfxRoot.localPosition;
+
+        // Decide now where the hull will break, so the seams can be seen giving way during the death throes.
+        plannedPieces = Mathf.Clamp(profile.PickPieceCount(sizeT), 1, 8);
+        PlanCuts(plannedPieces);
+        seamGlowsPlaced = 0;
+        nextSeamAt = Time.time + 0.2f;
+        nextVentAt = Time.time + Random.Range(0.2f, 0.6f);
+    }
+
+    // ---------------- Planned break (seams) ----------------
+    private int plannedPieces;
+    private Vector3[] cutPointsLocal = new Vector3[0];
+    private Vector3[] cutNormalsLocal = new Vector3[0];
+    private int seamGlowsPlaced;
+    private float nextSeamAt;
+    private float nextVentAt;
+
+    private void PlanCuts(int pieceCount)
+    {
+        Bounds bounds = hull.LocalBounds;
+        Vector3 size = bounds.size;
+        int axisIndex = size.z >= size.x ? (size.z >= size.y ? 2 : 1) : (size.x >= size.y ? 0 : 1);
+        Vector3 axis = axisIndex == 0 ? Vector3.right : axisIndex == 1 ? Vector3.up : Vector3.forward;
+        cutPointsLocal = new Vector3[Mathf.Max(0, pieceCount - 1)];
+        cutNormalsLocal = new Vector3[Mathf.Max(0, pieceCount - 1)];
+        for (int i = 1; i < pieceCount; i++)
+        {
+            float t = (i + Random.Range(-0.25f, 0.25f)) / pieceCount;
+            Vector3 pointLocal = bounds.center;
+            pointLocal[axisIndex] = Mathf.Lerp(bounds.min[axisIndex], bounds.max[axisIndex], t);
+            Vector3 tiltAxis = Vector3.Cross(axis, Random.onUnitSphere);
+            if (tiltAxis.sqrMagnitude < 0.001f) tiltAxis = Vector3.Cross(axis, Vector3.up + Vector3.right);
+            cutPointsLocal[i - 1] = pointLocal;
+            cutNormalsLocal[i - 1] = Quaternion.AngleAxis(Random.Range(-profile.cutTilt, profile.cutTilt), tiltAxis.normalized) * axis;
+        }
+    }
+
+    // Molten cracks spreading along the planned break lines, plating venting, as the ship comes apart.
+    private void UpdateSeams(float progress)
+    {
+        HullScarring scarring = GetComponent<HullScarring>();
+        if (scarring != null && cutPointsLocal.Length > 0 && Time.time >= nextSeamAt)
+        {
+            int wanted = Mathf.CeilToInt(Mathf.Lerp(2f, 9f, progress)) * cutPointsLocal.Length;
+            nextSeamAt = Time.time + Mathf.Lerp(0.25f, 0.08f, progress);
+            for (int tries = 0; tries < 24 && seamGlowsPlaced < wanted; tries++)
+            {
+                int cut = seamGlowsPlaced % cutPointsLocal.Length;
+                Vector3 point = hull.RandomSurfacePoint(out Vector3 normal);
+                Vector3 planeNormal = transform.TransformDirection(cutNormalsLocal[cut]).normalized;
+                float off = Vector3.Dot(point - transform.TransformPoint(cutPointsLocal[cut]), planeNormal);
+                if (Mathf.Abs(off) > hull.Size * 0.025f) continue;
+                Vector3 along = Vector3.Cross(planeNormal, normal);
+                scarring.SeamGlow(point - planeNormal * off, normal, along, hull.Size * Random.Range(0.035f, 0.055f), 12f);
+                seamGlowsPlaced++;
+            }
+        }
+
+        if (Time.time >= nextVentAt && profile.breachVent != null)
+        {
+            nextVentAt = Time.time + Random.Range(0.4f, 1.1f) * Mathf.Lerp(1f, 0.5f, progress);
+            Vector3 point = hull.RandomSurfacePoint(out Vector3 normal);
+            DestructionFx.Attach(profile.breachVent, hull.EffectsRoot, point, hull.SizeScale * Random.Range(0.3f, 0.55f), normal);
+        }
     }
 
     private Vector3 ThroeAcceleration(Throe style)
@@ -174,6 +240,7 @@ public class ShipDestruction : MonoBehaviour
         transform.position += Velocity * dt;
 
         if (Time.time >= nextChainAt) ChainExplosion(progress);
+        UpdateSeams(progress);
         UpdateShudder(dt);
 
         if (Time.time >= breakupAt) Breakup();
@@ -183,7 +250,7 @@ public class ShipDestruction : MonoBehaviour
     {
         nextChainAt = Time.time + Mathf.Lerp(profile.chainInterval.x, profile.chainInterval.y, progress) * Random.Range(0.7f, 1.3f);
 
-        Vector3 point = hull.RandomSurfacePoint(out _);
+        Vector3 point = hull.RandomSurfacePoint(out Vector3 normal);
         bool big = Random.value < progress * 0.6f;
 
         hull.Explode(big ? profile.mediumExplosion : profile.smallExplosion, point, big ? profile.mediumExplosionScale : profile.smallExplosionScale);
@@ -191,7 +258,7 @@ public class ShipDestruction : MonoBehaviour
 
         if (Random.value < profile.chainFireChance && hull.DamageEffectCount < 24)
         {
-            hull.SpawnDamageEffect(point);
+            hull.SpawnDamageEffect(point, normal);
         }
 
         if (big && Random.value < profile.joltChance)
@@ -226,7 +293,7 @@ public class ShipDestruction : MonoBehaviour
         float scale = hull.SizeScale;
         Vector3 center = transform.TransformPoint(hull.LocalBounds.center);
 
-        int pieceCount = Mathf.Clamp(profile.PickPieceCount(sizeT), 1, 8);
+        int pieceCount = plannedPieces > 0 ? plannedPieces : Mathf.Clamp(profile.PickPieceCount(sizeT), 1, 8);
         PieceCount = pieceCount;
         bool intact = pieceCount == 1;
         Vector3 inheritedSpin = transform.TransformDirection(angularVelocity) * 0.8f;
@@ -252,13 +319,14 @@ public class ShipDestruction : MonoBehaviour
         }
         if (intact)
         {
-            for (int i = 0; i < 3; i++) hull.SpawnDamageEffect(hull.RandomSurfacePoint(out _));
+            for (int i = 0; i < 3; i++) hull.SpawnDamageEffect(hull.RandomSurfacePoint(out Vector3 normal), normal);
             foreach (Transform effect in hull.EffectsRoot) effect.SetParent(containers[0], true);
         }
-        DestructionFx.Flash(center, profile.flashColor, profile.flashIntensity * blastScale * Mathf.Lerp(0.6f, 1.5f, sizeT), hull.Size * profile.flashRange, profile.flashDuration * Mathf.Lerp(0.8f, 1.5f, sizeT));
+        DestructionFx.Flash(center, profile.flashColor, profile.flashIntensity * 0.55f * blastScale * Mathf.Lerp(0.6f, 1.5f, sizeT), hull.Size * profile.flashRange, profile.flashDuration * Mathf.Lerp(0.8f, 1.5f, sizeT));
+        Shockwave.Maybe(center, transform.up, hull.Size * Mathf.Lerp(1.6f, 2.6f, sizeT) * blastScale, Mathf.Lerp(1.1f, 1.8f, sizeT), sizeT);
         DestructionFx.Blast(profile.largeBlastClips, center, profile, Mathf.Lerp(1.1f, 0.7f, sizeT));
         CameraShake.Shake(center, profile.breakupShake * blastScale * Mathf.Lerp(0.4f, 1.2f, sizeT));
-        ImpactFlash.Pulse(center, Mathf.Lerp(0.35f, 0.9f, sizeT) * blastScale);
+        ImpactFlash.Pulse(center, Mathf.Lerp(0.2f, 0.45f, sizeT) * blastScale);
 
         for (int k = 0; k < pieceCount; k++)
         {
@@ -299,6 +367,19 @@ public class ShipDestruction : MonoBehaviour
 
         Plane[] planes = new Plane[pieceCount - 1];
         cutPoints = new Vector3[pieceCount - 1];
+
+        if (cutPointsLocal.Length == pieceCount - 1)
+        {
+            // The break planned when the ship started dying (its seams have been glowing along these lines).
+            for (int i = 0; i < cutPointsLocal.Length; i++)
+            {
+                Vector3 point = transform.TransformPoint(cutPointsLocal[i]);
+                planes[i] = new Plane(transform.TransformDirection(cutNormalsLocal[i]).normalized, point);
+                cutPoints[i] = point;
+            }
+            axisWorld = transform.TransformDirection(axis).normalized;
+            return planes;
+        }
 
         for (int i = 1; i < pieceCount; i++)
         {

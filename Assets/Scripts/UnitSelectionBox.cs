@@ -29,7 +29,9 @@ public class UnitSelectionBox : MonoBehaviour
         //Clicked
         if (Input.GetMouseButtonDown(0))
         {
-            startedOverUI = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+            // Alt + drag is a height pick for a move order (PlayerSpaceManager), not a selection box.
+            bool altHeld = Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt);
+            startedOverUI = altHeld || (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject());
             startPosition = Input.mousePosition;
 
             // For selection the Units

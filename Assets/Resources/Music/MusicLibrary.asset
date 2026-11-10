@@ -19,6 +19,12 @@ MonoBehaviour:
     license: CC0
     source: https://opengameart.org/content/eclipse-legion
     volume: 1
+  - clip: {fileID: 8300000, guid: dc148399efb54586ba8bb0cffe1d7863, type: 3}
+    title: Olympus
+    artist: Ross Bugden
+    license: Free to use with credit
+    source: https://www.youtube.com/watch?v=BnmglWHoVrk
+    volume: 1
   galacticMap:
   - clip: {fileID: 8300000, guid: 4d9387cb9f474a55885692e6e4ea368d, type: 3}
     title: Eclipse Legion
@@ -44,6 +50,12 @@ MonoBehaviour:
     license: CC BY 4.0
     source: https://www.scottbuckley.com.au
     volume: 1
+  - clip: {fileID: 8300000, guid: 7fa6ff41522a4295957baf04ea9d63db, type: 3}
+    title: Launch of the Black Pearl
+    artist: TeknoAXE
+    license: CC BY 4.0
+    source: https://teknoaxe.com
+    volume: 1
   battle:
   - clip: {fileID: 8300000, guid: 4d9387cb9f474a55885692e6e4ea368d, type: 3}
     title: Eclipse Legion
@@ -62,6 +74,19 @@ MonoBehaviour:
     artist: Shane Ivers
     license: CC BY 4.0
     source: https://www.silvermansound.com
+    volume: 1
+  - clip: {fileID: 8300000, guid: 685c038a298d4f9296f035a91dc7d488, type: 3}
+    title: Legionnaire
+    artist: Scott Buckley
+    license: CC BY 4.0
+    source: https://www.scottbuckley.com.au
+    volume: 1
+  battleCalm:
+  - clip: {fileID: 8300000, guid: f89c9f91cb7847669f6348387b15b89e, type: 3}
+    title: Starfire
+    artist: Scott Buckley
+    license: CC BY 4.0
+    source: https://www.scottbuckley.com.au
     volume: 1
   - clip: {fileID: 8300000, guid: 848ba3c893174ef9b2ab0367051af27b, type: 3}
     title: Proxima Centauri

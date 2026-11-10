@@ -15,11 +15,13 @@ public static class DestructionFx
         EffectPool.Play("Destruction/" + template.name, template, position, template.transform.rotation, lifetime, template.transform.localScale * scale);
     }
 
-    public static GameObject Attach(ParticleSystem template, Transform parent, Vector3 position, float scale)
+    // outward: which way is "up" for the effect (the surface normal it burns out of); default keeps the template's.
+    public static GameObject Attach(ParticleSystem template, Transform parent, Vector3 position, float scale, Vector3 outward = default)
     {
         if (template == null) return null;
 
-        ParticleSystem instance = Object.Instantiate(template, position, template.transform.rotation, parent);
+        Quaternion rotation = outward.sqrMagnitude > 0.01f ? Quaternion.FromToRotation(Vector3.up, outward) * template.transform.rotation : template.transform.rotation;
+        ParticleSystem instance = Object.Instantiate(template, position, rotation, parent);
         instance.transform.localScale = template.transform.localScale * scale;
 
         foreach (CFX_AutoDestructShuriken autoDestruct in instance.GetComponentsInChildren<CFX_AutoDestructShuriken>(true))

@@ -42,6 +42,28 @@ public class PlayerSpaceManager : MonoBehaviour
 
     private HardpointManager lastHighlight;
 
+    // Double-clicking a friendly ship selects every ship of that class.
+    public const float DoubleClickTime = 0.35f;
+    private SpaceUnit lastClickedUnit;
+    private float lastClickTime = float.NegativeInfinity;
+
+    // Ctrl+number saves the selection as a group, number recalls it (Shift+number adds it to the selection).
+    private readonly Dictionary<int, List<SpaceUnit>> controlGroups = new Dictionary<int, List<SpaceUnit>>();
+
+    public static PlayerSpaceManager Instance { get; private set; }
+    public event System.Action SelectionChanged;
+
+    private void Awake()
+    {
+        Instance = this;
+    }
+
+    // True once a control group lives on this number key (it then takes the key over from game speed).
+    public bool HasGroup(int number)
+    {
+        return controlGroups.TryGetValue(number, out List<SpaceUnit> group) && group.Exists(u => u != null && !IsDead(u));
+    }
+
     void Start()
     {
         cam = Camera.main;
@@ -71,6 +93,8 @@ public class PlayerSpaceManager : MonoBehaviour
         }
 
         bool pointerOverUI = UIKit.PointerOverScreenUI(); // Target icons and health bars on the ships don't block clicks.
+
+        if (HandleHeightPick(pointerOverUI)) return;
 
         if (Input.GetMouseButtonDown(0) && !pointerOverUI && Mode != CommandMode.None)
         {
@@ -120,7 +144,7 @@ public class PlayerSpaceManager : MonoBehaviour
             }
 
         }
-        else if (Input.GetMouseButtonDown(1)) // Clear selection
+        else if (Input.GetMouseButtonDown(1) && !pointerOverUI) // Clear selection (right-clicks on the HUD are the HUD's)
         {
             DeselectAllUnits();
         }
@@ -191,9 +215,280 @@ public class PlayerSpaceManager : MonoBehaviour
 
     private void HandleCommandKeys()
     {
-        if (Input.GetKeyDown(guardKey)) BeginCommand(CommandMode.Guard);
-        else if (Input.GetKeyDown(priorityMoveKey)) BeginCommand(CommandMode.PriorityMove);
+        HandleControlGroups();
+        HandleFlightKeys();
+
+        if (Keybinds.Down(KeyAction.Guard)) BeginCommand(CommandMode.Guard);
+        else if (Keybinds.Down(KeyAction.PriorityMove)) BeginCommand(CommandMode.PriorityMove);
         else if (Input.GetKeyDown(cancelCommandKey)) CancelCommand();
+    }
+
+    // ---------------- 3D flight ----------------
+    //   PageUp / PageDown  climb / dive (Shift: three steps)      End   back down to the battle plane
+    //   Z / X              roll left / right                       R / T pitch nose up / down
+    //   Home               level out, back to automatic angling
+    //   Alt + drag on open space: move there, dragging up/down to choose the height.
+
+    private void HandleFlightKeys()
+    {
+        if (PlacementManager.Instance != null && PlacementManager.Instance.IsPreviewing) return; // Those keys set the drop height.
+        bool shift = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+        float step = ShipAltitude.Step * (shift ? 3f : 1f);
+
+        if (Keybinds.Down(KeyAction.Climb)) ForSelectedAltitude(a => a.ChangeAltitude(step));
+        else if (Keybinds.Down(KeyAction.Dive)) ForSelectedAltitude(a => a.ChangeAltitude(-step));
+        else if (Keybinds.Down(KeyAction.ToPlane)) ForSelectedAltitude(a => a.SetTargetAltitude(0f));
+        else if (Keybinds.Down(KeyAction.RollLeft)) ForSelectedAltitude(a => a.Roll(ShipAltitude.AttitudeStep));
+        else if (Keybinds.Down(KeyAction.RollRight)) ForSelectedAltitude(a => a.Roll(-ShipAltitude.AttitudeStep));
+        else if (Keybinds.Down(KeyAction.PitchUp)) ForSelectedAltitude(a => a.Pitch(-ShipAltitude.AttitudeStep));
+        else if (Keybinds.Down(KeyAction.PitchDown)) ForSelectedAltitude(a => a.Pitch(ShipAltitude.AttitudeStep));
+        else if (Keybinds.Down(KeyAction.Level)) ForSelectedAltitude(a => a.Level());
+        else if (Keybinds.Down(KeyAction.VerticalFormation)) CycleVerticalFormation();
+        else if (Keybinds.Down(KeyAction.Stance)) CycleStance();
+        else if (Keybinds.Down(KeyAction.Ability)) UseAbilities();
+    }
+
+    // B: every selected ship whose ability is ready uses it.
+    private void UseAbilities()
+    {
+        PruneSelection();
+        int used = 0;
+        float soonest = float.MaxValue;
+        foreach (SpaceUnit unit in selectedUnits)
+        {
+            if (unit == null || !unit.TryGetComponent(out ShipAbility ability) || ability.kind == ShipAbility.Kind.None) continue;
+            if (ability.TryActivate()) used++;
+            else soonest = Mathf.Min(soonest, ability.CooldownLeft);
+        }
+
+        if (used > 0) Toast.Show($"{used} abilit{(used == 1 ? "y" : "ies")} activated");
+        else if (soonest < float.MaxValue) Toast.Show($"No abilities ready - next in {Mathf.CeilToInt(soonest)}s");
+    }
+
+    // Y: everyone selected moves to the next stance after the first selected ship's.
+    private void CycleStance()
+    {
+        PruneSelection();
+        ShipStance first = null;
+        foreach (SpaceUnit unit in selectedUnits)
+        {
+            if (unit != null && unit.TryGetComponent(out first)) break;
+        }
+        if (first == null) return;
+
+        ShipStance.Kind next = (ShipStance.Kind)(((int)first.Current + 1) % 3);
+        foreach (SpaceUnit unit in selectedUnits)
+        {
+            if (unit != null && unit.TryGetComponent(out ShipStance stance)) stance.Set(next);
+        }
+        Toast.Show($"Stance: {next}");
+    }
+
+    private float AverageTargetAltitude()
+    {
+        float sum = 0f;
+        int count = 0;
+        ForSelectedAltitude(a => { sum += a.TargetAltitude; count++; });
+        return count > 0 ? sum / count : 0f;
+    }
+
+    // L: reshape the selection vertically around its average height.
+    //   Flat   - everyone at the same height
+    //   Wall   - staggered up and down across the line, so ships behind can fire over/under ships in front
+    //   Layers - escorts on top, strike craft above the line, capitals in the middle, carriers underneath
+    public enum VerticalFormation { Flat, Wall, Layers }
+    private VerticalFormation verticalFormation = VerticalFormation.Layers;
+    private const float WallStep = 30f;
+    private const float LayerStep = 40f;
+
+    private void CycleVerticalFormation()
+    {
+        PruneSelection();
+        if (selectedUnits.Count == 0) return;
+
+        verticalFormation = (VerticalFormation)(((int)verticalFormation + 1) % 3);
+        float middle = AverageTargetAltitude();
+
+        List<SpaceUnit> ordered = new List<SpaceUnit>(selectedUnits);
+        Vector3 across = cam != null ? Vector3.ProjectOnPlane(cam.transform.right, Vector3.up).normalized : Vector3.right;
+        ordered.Sort((a, b) => Vector3.Dot(a.transform.position, across).CompareTo(Vector3.Dot(b.transform.position, across)));
+
+        for (int i = 0; i < ordered.Count; i++)
+        {
+            if (!ordered[i].TryGetComponent(out ShipAltitude altitude)) continue;
+
+            float offset = 0f;
+            switch (verticalFormation)
+            {
+                case VerticalFormation.Wall:
+                    offset = (i % 3 - 1) * WallStep;
+                    break;
+                case VerticalFormation.Layers:
+                    UnitHealthManager health = ordered[i].GetComponent<UnitHealthManager>();
+                    Ship ship = health != null ? health.sourceShip : null;
+                    ShipInfo.Category category = ship != null ? ShipInfo.CategoryOf(ship) : ShipInfo.Category.Capital;
+                    offset = category == ShipInfo.Category.Escort ? LayerStep
+                        : category == ShipInfo.Category.StrikeCraft ? LayerStep * 0.5f
+                        : category == ShipInfo.Category.Carrier ? -LayerStep
+                        : 0f;
+                    break;
+            }
+            altitude.SetTargetAltitude(middle + offset);
+        }
+
+        Toast.Show($"Vertical formation: {verticalFormation}");
+    }
+
+    private void ForSelectedAltitude(System.Action<ShipAltitude> action)
+    {
+        PruneSelection();
+        foreach (SpaceUnit unit in selectedUnits)
+        {
+            if (unit != null && unit.TryGetComponent(out ShipAltitude altitude)) action(altitude);
+        }
+    }
+
+    private bool heightPicking;
+    private RaycastHit heightPickHit;
+    private float heightPickStartY;
+    private float heightPickValue;
+    private LineRenderer heightPreview;
+
+    private static bool AltHeld => Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt);
+    public bool IsPickingHeight => heightPicking;
+
+    // Returns true while a height pick owns the mouse.
+    private bool HandleHeightPick(bool pointerOverUI)
+    {
+        if (!heightPicking)
+        {
+            if (!Input.GetMouseButtonDown(0) || !AltHeld || pointerOverUI || Mode != CommandMode.None || !HasSelection) return false;
+
+            Ray ray = cam.ScreenPointToRay(Input.mousePosition);
+            if (Physics.Raycast(ray, Mathf.Infinity, friendlyUnitLayer | enemyUnitLayer)) return false; // Clicking a ship, not open space.
+            if (!Physics.Raycast(ray, out heightPickHit, Mathf.Infinity, groundLayer)) return false;
+
+            heightPicking = true;
+            heightPickStartY = Input.mousePosition.y;
+            heightPickValue = 0f;
+            ShowHeightPreview(true);
+            return true;
+        }
+
+        if (Input.GetMouseButtonDown(1))
+        {
+            heightPicking = false;
+            ShowHeightPreview(false);
+            return true;
+        }
+
+        // Screen pixels to world units at the picked spot, so dragging feels the same at any zoom.
+        float distance = Vector3.Distance(cam.transform.position, heightPickHit.point);
+        float worldPerPixel = 2f * distance * Mathf.Tan(cam.fieldOfView * 0.5f * Mathf.Deg2Rad) / Screen.height;
+        heightPickValue = Mathf.Clamp((Input.mousePosition.y - heightPickStartY) * worldPerPixel, -ShipAltitude.MaxAltitude, ShipAltitude.MaxAltitude);
+        heightPickValue = Mathf.Round(heightPickValue / 5f) * 5f;
+
+        heightPreview.SetPosition(0, heightPickHit.point);
+        heightPreview.SetPosition(1, heightPickHit.point + Vector3.up * heightPickValue);
+
+        if (Input.GetMouseButtonUp(0))
+        {
+            heightPicking = false;
+            ShowHeightPreview(false);
+            float chosen = heightPickValue;
+            PlayerLocation(heightPickHit);
+
+            // The picked height is the group's middle; each ship keeps its place above/below the others.
+            float middle = AverageTargetAltitude();
+            ForSelectedAltitude(a => a.SetTargetAltitude(chosen + (a.TargetAltitude - middle)));
+        }
+        return true;
+    }
+
+    private void ShowHeightPreview(bool visible)
+    {
+        if (heightPreview == null)
+        {
+            GameObject go = new GameObject("HeightPickPreview");
+            heightPreview = go.AddComponent<LineRenderer>();
+            heightPreview.positionCount = 2;
+            heightPreview.widthMultiplier = 1.5f;
+            Shader shader = Shader.Find("Sprites/Default");
+            heightPreview.sharedMaterial = new Material(shader != null ? shader : Shader.Find("Universal Render Pipeline/Unlit"));
+            heightPreview.startColor = new Color(0.4f, 1f, 0.5f, 0.9f);
+            heightPreview.endColor = new Color(0.4f, 1f, 0.5f, 0.3f);
+        }
+        heightPreview.enabled = visible;
+    }
+
+    private void HandleControlGroups()
+    {
+        bool ctrl = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
+        bool shift = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+
+        for (int number = 0; number <= 9; number++)
+        {
+            if (!Input.GetKeyDown(KeyCode.Alpha0 + number)) continue;
+
+            if (ctrl)
+            {
+                PruneSelection();
+                controlGroups[number] = new List<SpaceUnit>(selectedUnits);
+                Toast.Show($"Group {number} set ({selectedUnits.Count} ships)");
+            }
+            else if (HasGroup(number))
+            {
+                if (!shift) DeselectAllUnits();
+                foreach (SpaceUnit unit in controlGroups[number])
+                {
+                    if (unit != null && !IsDead(unit) && !selectedUnits.Contains(unit)) SelectUnit(unit);
+                }
+                NotifySelection();
+            }
+            return;
+        }
+    }
+
+    // The class a unit belongs to for "select all of this kind": its ship design, else its hull type.
+    private static object ClassOf(SpaceUnit unit)
+    {
+        UnitHealthManager health = unit.GetComponent<UnitHealthManager>();
+        if (health != null && health.sourceShip != null) return health.sourceShip.prefab;
+        return unit.shipType;
+    }
+
+    public void SelectAllOfClass(SpaceUnit sample, bool additive)
+    {
+        if (sample == null || PlayerRetreating) return;
+        object wanted = ClassOf(sample);
+
+        if (!additive) DeselectAllUnits();
+        foreach (UnitHealthManager health in UnitHealthManager.Active)
+        {
+            if (health == null || health.IsDead || health.IsDefense) continue;
+            if ((friendlyUnitLayer.value & (1 << health.gameObject.layer)) == 0) continue;
+
+            SpaceUnit unit = health.GetComponent<SpaceUnit>();
+            if (unit == null || selectedUnits.Contains(unit) || !Equals(ClassOf(unit), wanted)) continue;
+            SelectUnit(unit);
+        }
+        NotifySelection();
+    }
+
+    // Selection bar: narrow the selection down to just these units.
+    public void SelectOnly(IEnumerable<SpaceUnit> units)
+    {
+        DeselectAllUnits();
+        foreach (SpaceUnit unit in units)
+        {
+            if (unit != null && !IsDead(unit) && !selectedUnits.Contains(unit)) SelectUnit(unit);
+        }
+        NotifySelection();
+    }
+
+    public void NotifySelection()
+    {
+        SelectionChanged?.Invoke();
     }
 
     private void HandleCommandClick()
@@ -238,6 +533,8 @@ public class PlayerSpaceManager : MonoBehaviour
         PruneSelection();
 
         HardpointManager targetManager = hit.collider.GetComponentInParent<HardpointManager>();
+        UnitHealthManager targetUnit = hit.collider.GetComponentInParent<UnitHealthManager>();
+        if (targetUnit != null && !BattleSensors.PlayerCanSee(targetUnit)) return; // Not on our sensors.
         Vector3 targetCenter = targetManager != null ? targetManager.transform.position : hit.point;
 
         List<SpaceUnit> attackers = new List<SpaceUnit>();
@@ -307,6 +604,16 @@ public class PlayerSpaceManager : MonoBehaviour
     {
         SpaceUnit unit = hit.collider.GetComponentInParent<SpaceUnit>();
         if (unit == null || IsDead(unit)) return;
+
+        bool doubleClick = unit == lastClickedUnit && Time.unscaledTime - lastClickTime <= DoubleClickTime;
+        lastClickedUnit = unit;
+        lastClickTime = Time.unscaledTime;
+        if (doubleClick)
+        {
+            lastClickedUnit = null;
+            SelectAllOfClass(unit, Input.GetKey(KeyCode.LeftShift));
+            return;
+        }
 
         if (Input.GetKey(KeyCode.LeftShift)) //Multi selection
         {
@@ -468,12 +775,14 @@ public class PlayerSpaceManager : MonoBehaviour
         unit.isSelected = false;
         unit.ToggleSelect(false);
         selectedUnits.Remove(unit);
+        NotifySelection();
     }
 
     public void SelectUnit(SpaceUnit unit)
     {
+        if (unit == null) return;
         unit.isSelected = true;
-        selectedUnits.Add(unit);
+        if (!selectedUnits.Contains(unit)) selectedUnits.Add(unit);
         unit.ToggleSelect(true);
     }
 

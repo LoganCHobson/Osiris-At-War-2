@@ -293,12 +293,12 @@ public static class OsirisPrefabBuilder
         foreach (GalacticFleet fleet in rootGo.GetComponentsInChildren<GalacticFleet>(true))
         {
             if (fleet.faction == null || !byFaction.TryGetValue(fleet.faction.name, out var map)) continue;
-            for (int i = 0; i < fleet.roster.Count; i++)
+            for (int i = 0; i < fleet.AuthoredRoster.Count; i++)
             {
-                Ship old = fleet.roster[i];
+                Ship old = fleet.AuthoredRoster[i];
                 if (old != null && map.TryGetValue(old.name, out Ship replacement) && replacement != null)
                 {
-                    fleet.roster[i] = replacement;
+                    fleet.AuthoredRoster[i] = replacement;
                     changed++;
                 }
             }

@@ -5,6 +5,8 @@ using UnityEngine.SceneManagement;
 // Plays the soundtrack across the whole game: picks the playlist for the current scene (main menu,
 // galactic map, battle), shuffles through it without immediate repeats, crossfades between tracks and
 // when the scene changes, and follows the Music volume setting. Created automatically on startup.
+// In battle it follows the fighting: the calm list while the fleets close in and during lulls, switching
+// to the combat list as soon as shots are fired and back after a quiet spell.
 public class MusicManager : MonoBehaviour
 {
     private const string LibraryPath = "Music/MusicLibrary";
@@ -22,6 +24,13 @@ public class MusicManager : MonoBehaviour
     private List<MusicLibrary.Track> playlist;
     private MusicLibrary.Track lastTrack;
     private float fadeTime;
+
+    private const float CombatHold = 6f;    // A shot within this long counts as fighting.
+    private const float LullTime = 25f;     // This long without a shot and it's a lull again.
+    private const float IntensityFade = 2f;
+    private bool inBattle;
+    private bool combat;
+    private float nextIntensityCheckAt;
 
     public static MusicLibrary.Track Current => instance != null ? instance.playing[instance.active] : null;
 
@@ -67,7 +76,10 @@ public class MusicManager : MonoBehaviour
 
     private void SwitchTo(string sceneName)
     {
+        inBattle = sceneName == "BattleScene";
+        combat = false;
         List<MusicLibrary.Track> next = library != null ? library.ForScene(sceneName) : null;
+        if (inBattle && library != null && HasTracks(library.battleCalm)) next = library.battleCalm; // Start calm.
         if (next == playlist) return; // Same playlist (e.g. reloading the scene) - keep the current track going.
 
         playlist = next;
@@ -86,6 +98,7 @@ public class MusicManager : MonoBehaviour
 
     private void Update()
     {
+        UpdateIntensity();
         float step = fadeTime > 0f ? Time.unscaledDeltaTime / fadeTime : 1f;
         for (int i = 0; i < sources.Length; i++)
         {
@@ -121,6 +134,23 @@ public class MusicManager : MonoBehaviour
         {
             PlayNext(crossfadeTime);
         }
+    }
+
+    private void UpdateIntensity()
+    {
+        if (!inBattle || library == null || Time.unscaledTime < nextIntensityCheckAt) return;
+        nextIntensityCheckAt = Time.unscaledTime + 0.5f;
+
+        float sinceShot = Time.time - UnitHealthManager.LastShotAnywhere;
+        bool wantCombat = combat ? sinceShot < LullTime : sinceShot < CombatHold;
+        if (wantCombat == combat) return;
+        combat = wantCombat;
+
+        List<MusicLibrary.Track> next = combat || !HasTracks(library.battleCalm) ? library.battle : library.battleCalm;
+        if (next == playlist || !HasTracks(next)) return;
+        playlist = next;
+        MusicLibrary.Track current = playing[active];
+        if (current == null || !ContainsClip(playlist, current.clip)) PlayNext(IntensityFade);
     }
 
     private void PlayNext(float fade)

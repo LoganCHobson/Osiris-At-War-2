@@ -27,9 +27,31 @@ public class HardpointHealth : MonoBehaviour, IPointerEnterHandler, IPointerExit
         healthManager = GetComponentInParent<UnitHealthManager>();
     }
 
+    private bool destroyed;
+    public bool Destroyed => destroyed;
+    private const float WreckHitShare = 0.35f; // Same as a laser on bare hull (Laser.hullDamageMultiplier).
+
+    private ShipAbility evasion;
+    private bool evasionLooked;
+
     public void DealDamage(float value)
     {
         if (GameManager.CombatOver) return;
+
+        if (!evasionLooked) { evasion = ShipAbility.Of(this); evasionLooked = true; }
+        if (evasion != null) value *= evasion.DamageTakenMultiplier;
+        if (!destroyed && TryGetComponent(out CraftEvasion jink) && jink.Dodges()) return; // Human interceptors.
+        if (!destroyed && TryGetComponent(out FighterShield shield)) { value = shield.Absorb(value); if (value <= 0f) return; }
+
+        // Already destroyed (its wreck is still on the hull and still gets hit): the shot goes into the ship
+        // like any other hull hit - reduced, onto a surviving hardpoint - instead of being lost.
+        if (destroyed)
+        {
+            if (healthManager != null && !healthManager.IsDead) healthManager.DealRandomDamage(value * WreckHitShare);
+            return;
+        }
+
+        DamageLedger.Hull(healthManager, Mathf.Min(value, Mathf.Max(0f, currentHealth)), currentHealth - value <= 0);
 
         if(currentHealth - value > 0)
         {
@@ -41,7 +63,7 @@ public class HardpointHealth : MonoBehaviour, IPointerEnterHandler, IPointerExit
         }
         else
         {
-            
+            destroyed = true;
             die.Invoke();
             healthManager.HardpointDeath(this);
         }

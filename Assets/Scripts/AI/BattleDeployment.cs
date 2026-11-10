@@ -12,8 +12,9 @@ public static class BattleDeployment
 {
     public struct Placement
     {
-        public Ship ship;
+        public ShipEntry ship;
         public Vector3 position;
+        public float altitude; // Height to start at (defense layouts can stack ships).
     }
 
     private const float Gap = 10f;
@@ -23,10 +24,64 @@ public static class BattleDeployment
     private enum Rank { Screen, Line, Rear }
 
     // anchor: where the front-centre of the formation should be; forward: the way the ships face.
-    public static List<Placement> Arrange(IList<Ship> ships, Ship lead, Vector3 anchor, Vector3 forward)
+    public static List<Placement> Arrange(IList<ShipEntry> ships, ShipEntry lead, Vector3 anchor, Vector3 forward)
+    {
+        return Arrange(ships, lead, anchor, forward, new List<(Vector3, float)>());
+    }
+
+    // Lays ships out on a defense formation's slots (see DefenseFormation): specific-class slots are filled
+    // first, then category slots, strongest ships first; whatever doesn't get a slot falls back to the
+    // standard block. No formation = the standard block.
+    public static List<Placement> ArrangeFormation(IList<ShipEntry> ships, DefenseFormation formation, ShipEntry lead, Vector3 anchor, Vector3 forward)
+    {
+        if (formation == null || formation.slots.Count == 0) return Arrange(ships, lead, anchor, forward);
+
+        forward.y = 0f;
+        forward = forward.sqrMagnitude > 0.01f ? forward.normalized : Vector3.forward;
+        Vector3 right = Vector3.Cross(Vector3.up, forward);
+        Rect? map = BattleTerrain.Instance != null ? BattleTerrain.Instance.Map : (Rect?)null;
+
+        List<ShipEntry> remaining = ships.Where(s => s != null).OrderByDescending(s => s == lead).ThenByDescending(s => s.combatPower).ToList();
+        List<Placement> placements = new List<Placement>();
+        List<(Vector3 position, float radius)> taken = new List<(Vector3, float)>();
+
+        for (int pass = 0; pass < 2; pass++)
+        {
+            foreach (DefenseFormation.Slot slot in formation.slots)
+            {
+                bool specific = !string.IsNullOrEmpty(slot.ship);
+                if (specific != (pass == 0)) continue;
+
+                ShipEntry ship = remaining.FirstOrDefault(s => formation.Accepts(slot, s));
+                if (ship == null) continue;
+                remaining.Remove(ship);
+
+                float radius = Radius(ship);
+                Vector3 wanted = anchor + right * slot.x + forward * slot.z;
+                if (map.HasValue)
+                {
+                    float margin = radius + MapMargin;
+                    wanted.x = Mathf.Clamp(wanted.x, map.Value.xMin + margin, map.Value.xMax - margin);
+                    wanted.z = Mathf.Clamp(wanted.z, map.Value.yMin + margin, map.Value.yMax - margin);
+                }
+
+                Vector3 position = FindClearSpot(wanted, radius, taken);
+                taken.Add((position, radius));
+                placements.Add(new Placement { ship = ship, position = position, altitude = slot.y });
+            }
+        }
+
+        if (remaining.Count > 0)
+        {
+            placements.AddRange(Arrange(remaining, remaining.Contains(lead) ? lead : null, anchor, forward, taken));
+        }
+        return placements;
+    }
+
+    private static List<Placement> Arrange(IList<ShipEntry> ships, ShipEntry lead, Vector3 anchor, Vector3 forward, List<(Vector3 position, float radius)> taken)
     {
         List<Placement> placements = new List<Placement>();
-        List<Ship> fleet = ships.Where(s => s != null).ToList();
+        List<ShipEntry> fleet = ships.Where(s => s != null).ToList();
         if (fleet.Count == 0) return placements;
 
         forward.y = 0f;
@@ -39,17 +94,17 @@ public static class BattleDeployment
         float maxWidth = Mathf.Clamp(mapWidth, 120f, FallbackWidth);
 
         // Lay the ranks out in formation space: x across, z forward (negative = further back).
-        List<(Ship ship, Vector2 local)> layout = new List<(Ship, Vector2)>();
+        List<(ShipEntry ship, Vector2 local)> layout = new List<(ShipEntry, Vector2)>();
         float depth = 0f;
         foreach (Rank rank in new[] { Rank.Screen, Rank.Line, Rank.Rear })
         {
-            List<Ship> members = fleet.Where(s => RankOf(s) == rank).OrderByDescending(s => s == lead).ThenByDescending(Radius).ToList();
+            List<ShipEntry> members = fleet.Where(s => RankOf(s) == rank).OrderByDescending(s => s == lead).ThenByDescending(Radius).ToList();
             while (members.Count > 0)
             {
-                List<Ship> row = TakeRow(members, maxWidth);
+                List<ShipEntry> row = TakeRow(members, maxWidth);
                 float rowRadius = row.Max(Radius);
                 depth -= rowRadius;
-                foreach ((Ship ship, float x) in PlaceRow(row)) layout.Add((ship, new Vector2(x, depth)));
+                foreach ((ShipEntry ship, float x) in PlaceRow(row)) layout.Add((ship, new Vector2(x, depth)));
                 depth -= rowRadius + Gap;
             }
         }
@@ -61,7 +116,7 @@ public static class BattleDeployment
             Vector3 shift = Vector3.zero;
             for (int pass = 0; pass < 2; pass++)
             {
-                foreach ((Ship ship, Vector2 local) in layout)
+                foreach ((ShipEntry ship, Vector2 local) in layout)
                 {
                     Vector3 p = Point(local) + shift;
                     float r = Radius(ship) + MapMargin;
@@ -74,8 +129,7 @@ public static class BattleDeployment
             anchor += shift;
         }
 
-        List<(Vector3 position, float radius)> taken = new List<(Vector3, float)>();
-        foreach ((Ship ship, Vector2 local) in layout)
+        foreach ((ShipEntry ship, Vector2 local) in layout)
         {
             float radius = Radius(ship);
             Vector3 position = FindClearSpot(Point(local), radius, taken);
@@ -86,14 +140,14 @@ public static class BattleDeployment
     }
 
     // The lead ship to give a fleet: the strongest ship that is allowed to lead.
-    public static Ship ChooseLead(IEnumerable<Ship> ships)
+    public static ShipEntry ChooseLead(IEnumerable<ShipEntry> ships)
     {
         return ships.Where(s => s != null && s.CanLead && s.fleetRole != FleetRole.Carrier).OrderByDescending(s => s.combatPower).FirstOrDefault()
             ?? ships.Where(s => s != null && s.CanLead).OrderByDescending(s => s.combatPower).FirstOrDefault()
             ?? ships.FirstOrDefault(s => s != null);
     }
 
-    private static Rank RankOf(Ship ship)
+    private static Rank RankOf(ShipEntry ship)
     {
         switch (ship.fleetRole)
         {
@@ -104,9 +158,9 @@ public static class BattleDeployment
     }
 
     // As many ships as fit across the battlefield, biggest first.
-    private static List<Ship> TakeRow(List<Ship> members, float maxWidth)
+    private static List<ShipEntry> TakeRow(List<ShipEntry> members, float maxWidth)
     {
-        List<Ship> row = new List<Ship>();
+        List<ShipEntry> row = new List<ShipEntry>();
         float width = 0f;
         for (int i = 0; i < members.Count; i++)
         {
@@ -120,7 +174,7 @@ public static class BattleDeployment
     }
 
     // First ship in the centre, the rest alternating out to the sides, each by its own width.
-    private static IEnumerable<(Ship, float)> PlaceRow(List<Ship> row)
+    private static IEnumerable<(ShipEntry, float)> PlaceRow(List<ShipEntry> row)
     {
         float leftEdge = 0f, rightEdge = 0f;
         for (int i = 0; i < row.Count; i++)
@@ -174,10 +228,10 @@ public static class BattleDeployment
         return true;
     }
 
-    private static float Radius(Ship ship)
+    private static float Radius(ShipEntry ship)
     {
-        NavMeshAgent agent = ship != null ? ship.GetComponent<NavMeshAgent>() : null;
-        float scale = ship != null ? ship.transform.localScale.x : 1f;
+        NavMeshAgent agent = ship != null && ship.type != null ? ship.type.GetComponent<NavMeshAgent>() : null;
+        float scale = ship != null && ship.type != null ? ship.type.transform.localScale.x : 1f;
         return agent != null ? agent.radius * scale : FleetFormation.DefaultRadius;
     }
 }

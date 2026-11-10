@@ -45,7 +45,7 @@ public class PauseMenu : MonoBehaviour
 
     private void Update()
     {
-        if (!Input.GetKeyDown(KeyCode.Escape) || SettingsPanel.IsOpen || SaveLoadPanel.IsOpen) return;
+        if (!Input.GetKeyDown(KeyCode.Escape) || SettingsPanel.IsOpen || SaveLoadPanel.IsOpen || UIBits.EscapeTaken) return;
 
         if (open)
         {
@@ -60,7 +60,7 @@ public class PauseMenu : MonoBehaviour
     // Something else already uses Esc right now - let it.
     private static bool EscapeIsBusy()
     {
-        if (CinematicCamera.Active || BattlePrompt.IsOpen) return true;
+        if (CinematicCamera.Active || BattlePrompt.IsOpen || GameOutcome.IsShowing) return true;
         if (FleetPanel.Instance != null && FleetPanel.Instance.IsOpen) return true;
         if (PlanetBuildPanel.Instance != null && PlanetBuildPanel.Instance.IsOpen) return true;
         if (RTSCameraController.instance != null && RTSCameraController.instance.followTransform != null) return true;

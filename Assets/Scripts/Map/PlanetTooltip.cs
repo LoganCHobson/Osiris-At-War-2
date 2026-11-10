@@ -274,7 +274,7 @@ public class PlanetTooltip : MonoBehaviour
             if (fleet == null || !fleet.IsPresentAt(planet) || fleet.faction == null) continue;
 
             fleetsByFaction.TryGetValue(fleet.faction, out (int ships, float power) totals);
-            fleetsByFaction[fleet.faction] = (totals.ships + fleet.roster.Count, totals.power + Strength.Of(fleet));
+            fleetsByFaction[fleet.faction] = (totals.ships + fleet.ships.Count, totals.power + Strength.Of(fleet));
         }
 
         if (fleetsByFaction.Count == 0)
@@ -296,10 +296,10 @@ public class PlanetTooltip : MonoBehaviour
         titleText.text = $"{MapText.Colored(fleet.faction, "Unaligned")} Fleet";
 
         builder.Clear();
-        builder.Append($"{MapText.Plural(fleet.roster.Count, "ship")}  |  strength {Strength.Of(fleet):0}\n");
+        builder.Append($"{MapText.Plural(fleet.ships.Count, "ship")}  |  strength {Strength.Of(fleet):0}\n");
 
         composition.Clear();
-        foreach (Ship ship in fleet.roster)
+        foreach (Ship ship in fleet.ships)
         {
             string shipName = ship != null ? ship.name : "Unknown";
             composition.TryGetValue(shipName, out int count);

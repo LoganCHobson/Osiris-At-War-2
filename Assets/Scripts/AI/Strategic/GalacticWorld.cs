@@ -30,7 +30,7 @@ public class GalacticWorld
         fleetsByName.Clear();
         foreach (GalacticFleet fleet in Object.FindObjectsByType<GalacticFleet>(FindObjectsSortMode.None))
         {
-            if (fleet.roster.Count == 0) continue;
+            if (fleet.ships.Count == 0) continue;
 
             fleets.Add(fleet);
             fleetsByName[fleet.gameObject.name] = fleet;

@@ -21,10 +21,46 @@ public class SquadronIcon : MonoBehaviour
     private UnitHealthManager health;
     private float shownHealth = -1f;
 
+    // Where the icon sits before any clumping (see SquadronIconLayout), and which side it's on.
+    public Vector3 HomePosition { get; private set; }
+    public bool Friendly => friendly;
+    public FleetRole Role { get; private set; } = FleetRole.Fighter;
+    public float PixelSize => pixelSize;
+
+    private void OnEnable()
+    {
+        SquadronIconLayout.Register(this);
+    }
+
+    private void OnDisable()
+    {
+        SquadronIconLayout.Unregister(this);
+    }
+
     private void Start()
     {
         health = GetComponentInParent<UnitHealthManager>();
+        ApplyGlyph();
         Refresh();
+    }
+
+    // Each kind of strike craft gets its own shape so they can be told apart (colour still shows the side).
+    private void ApplyGlyph()
+    {
+        Ship ship = health != null ? health.sourceShip : null;
+        if (ship == null) ship = GetComponentInParent<Ship>();
+        if (ship != null) Role = ship.fleetRole;
+
+        if (image == null) return;
+        image.sprite = SquadronGlyphs.For(Role);
+        image.type = Image.Type.Simple;
+        image.preserveAspect = true;
+    }
+
+    // Used by SquadronIconLayout to slot this icon into a grid with its neighbours.
+    public void PlaceAt(Vector3 worldPosition)
+    {
+        transform.position = worldPosition;
     }
 
     private void UpdateHealth()
@@ -59,9 +95,35 @@ public class SquadronIcon : MonoBehaviour
         }
     }
 
+    // Hidden until the squadron's craft are actually in sight (not on the frame it spawns, nor while it's still
+    // jumping in), so the icon never pops up on its own.
+    private CanvasGroup group;
+    private Squadron squadron;
+
+    private bool CraftVisible()
+    {
+        if (squadron == null) squadron = GetComponentInParent<Squadron>();
+        if (squadron == null) return true;
+        foreach (Fighter fighter in squadron.fighters)
+        {
+            if (fighter == null || !fighter.Alive) continue;
+            Renderer renderer = fighter.GetComponentInChildren<Renderer>();
+            if (renderer != null && renderer.enabled && renderer.gameObject.activeInHierarchy) return true;
+        }
+        return false;
+    }
+
+    private void Awake()
+    {
+        group = GetComponent<CanvasGroup>();
+        if (group == null) group = gameObject.AddComponent<CanvasGroup>();
+        group.alpha = 0f;
+    }
+
     private void LateUpdate()
     {
         UpdateHealth();
+        if (group != null) group.alpha = !CinematicCamera.Active && CraftVisible() ? 1f : 0f; // Never in the director's shots.
 
         if (cam == null)
         {
@@ -70,7 +132,8 @@ public class SquadronIcon : MonoBehaviour
         }
 
         Transform anchor = transform.parent != null ? transform.parent : transform;
-        transform.position = anchor.position + Vector3.up * heightOffset;
+        HomePosition = anchor.position + Vector3.up * heightOffset;
+        transform.position = HomePosition;
         transform.rotation = cam.transform.rotation;
 
         float distance = Vector3.Distance(cam.transform.position, transform.position);

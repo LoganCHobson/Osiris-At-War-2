@@ -164,8 +164,8 @@ public class GalacticMapManager : MonoBehaviour
         bool playerDefending = !playerAttacking && Strength.IsPlayer(context.defenderFaction);
         if (!playerAttacking && !playerDefending) return null;
 
-        List<Ship> attackerLosses = BattleResult.Missing(context.attackerStartRoster, context.attackerRoster);
-        List<Ship> defenderLosses = BattleResult.Missing(context.defenderStartRoster, context.defenderRoster);
+        List<Ship> attackerLosses = BattleResult.Missing(Types(context.attackerStartRoster), Types(context.attackerRoster));
+        List<Ship> defenderLosses = BattleResult.Missing(Types(context.defenderStartRoster), Types(context.defenderRoster));
         bool captured = attackerWon && planet != null && ownerBefore != context.attackerFaction;
 
         BattleResult result = new BattleResult
@@ -209,7 +209,9 @@ public class GalacticMapManager : MonoBehaviour
         return fleets;
     }
 
-    private GalacticFleet ApplyFleetResult(string fleetName, List<Ship> survivingRoster, Planet moveToPlanet)
+    private static List<Ship> Types(List<ShipEntry> ships) => ships.ConvertAll(ship => ship != null ? ship.type : null);
+
+    private GalacticFleet ApplyFleetResult(string fleetName, List<ShipEntry> survivingRoster, Planet moveToPlanet)
     {
         if (string.IsNullOrEmpty(fleetName)) return null;
 
@@ -225,7 +227,7 @@ public class GalacticMapManager : MonoBehaviour
             return null;
         }
 
-        fleet.roster = new List<Ship>(survivingRoster);
+        fleet.ships = new List<ShipEntry>(survivingRoster);
 
         if (moveToPlanet != null)
         {
@@ -273,7 +275,7 @@ public class GalacticMapManager : MonoBehaviour
             DeselectAll();
         }
 
-        if (Input.GetKeyDown(KeyCode.Escape))
+        if (Input.GetKeyDown(KeyCode.Escape) && !UIBits.EscapeTaken)
         {
             FleetPanel.Instance?.Hide();
             PlanetBuildPanel.Instance?.Hide();
@@ -583,14 +585,14 @@ public class GalacticMapManager : MonoBehaviour
     private void BuildMergePreview()
     {
         int merging = 0;
-        int ships = dropFleet.roster.Count;
+        int ships = dropFleet.ships.Count;
         float power = Strength.Of(dropFleet);
 
         foreach (GalacticFleet fleet in selectedFleets)
         {
             if (fleet == null || !fleet.CanReorganizeWith(dropFleet)) continue;
             merging++;
-            ships += fleet.roster.Count;
+            ships += fleet.ships.Count;
             power += Strength.Of(fleet);
         }
 

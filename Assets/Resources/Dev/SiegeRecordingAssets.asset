@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37c9bbd82f280ea4b9975aedd7347581, type: 3}
+  m_Name: SiegeRecordingAssets
+  m_EditorClassIdentifier: Assembly-CSharp::SiegeRecordingAssets
+  titans: {fileID: 11400000, guid: 6cc92e8569804452886ab521e84bb8a2, type: 2}
+  avanti: {fileID: 11400000, guid: 5e19f2026b1f44468191065423398376, type: 2}
+  ships:
+  - {fileID: 2790602224158037671, guid: ab16c94c71b2a0d4987493779bd2f394, type: 3}
+  - {fileID: 8222409963945776245, guid: 365ed2d8a327ee949a03650d78709968, type: 3}
+  - {fileID: 1074653739715707092, guid: 915daa59460939942be7070acc0dde6c, type: 3}
+  - {fileID: 3731555627318941944, guid: b62a886a3c08bf3469e2e42f79d9c9bd, type: 3}
+  - {fileID: 4621200134156383400, guid: 3b8c427f2d80f4844a2bdc2073d69673, type: 3}
+  - {fileID: 815546370248480190, guid: a9d1642d563f88a45858c48142775faa, type: 3}
+  - {fileID: 7512064677326827639, guid: 765e36141e917804e96d21afae077d09, type: 3}
+  - {fileID: 447188204251457857, guid: cfde1b32d06cdc545a99450197ed282f, type: 3}
+  - {fileID: 9057019517305764525, guid: 652e2a7fce363e14986a4506735efd46, type: 3}
+  - {fileID: 418500964704769627, guid: d8430ca257d3e864f819d53d159e6037, type: 3}
+  - {fileID: 2572138960612565819, guid: 4b0786f13a1b9364fa10cbc527dd0480, type: 3}
+  - {fileID: 1354208659484858068, guid: 08b1fe6dc40b2794599d2b31e8fc2f8a, type: 3}
+  - {fileID: 6508740387137168158, guid: 4290234659f2030449d9b3304f224b13, type: 3}
+  - {fileID: 6196290951039935178, guid: 744e24da998d73e439911d53ed002a68, type: 3}
+  - {fileID: 3538269086864701723, guid: b8f67d3bb95b21842bae2a4fbaf6d67f, type: 3}
+  - {fileID: 4741599774938882157, guid: 6e6c08869ce4a8448aca6a8b0c829a87, type: 3}

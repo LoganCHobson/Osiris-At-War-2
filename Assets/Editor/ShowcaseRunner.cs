@@ -10,6 +10,9 @@ public static class ShowcaseRunner
 
     public static void RunBattle() => Run<BattleCinematic>();
 
+    // Human assault on an Avanti shipyard + battle station, both sides on the real AI (add -nebulaPreview for stills).
+    public static void RunSiege() => Run<SiegeRecording>();
+
     // Starts from the main menu so the galactic map loads the way it does in a real game.
     public static void RunBuildMenuTour()
     {

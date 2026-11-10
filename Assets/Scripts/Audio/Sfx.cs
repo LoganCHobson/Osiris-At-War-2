@@ -6,7 +6,7 @@ using UnityEngine;
 // volume, pitch spread and voice limit, sounds out of earshot are skipped, and when a cue is at its limit a
 // nearer sound takes over its farthest voice, so a huge battle stays readable instead of turning to mush.
 // Clips live in Resources/Audio/SFX as <cue prefix>_<n>.ogg: Kenney and Freesound CC0 sounds plus a
-// synthesized CIWS. Fighters are deliberately silent; ship and hardpoint deaths are voiced by DestructionFx.
+// synthesized CIWS. Shield hits are Kenney's Sci-fi Sounds "forceField" impacts (CC0). Fighters are deliberately silent; ship and hardpoint deaths are voiced by DestructionFx.
 // Volume follows the Effects slider through the listener volume (see GameSettings).
 public class Sfx : MonoBehaviour
 {

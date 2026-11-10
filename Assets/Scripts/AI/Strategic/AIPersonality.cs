@@ -63,7 +63,6 @@ public class AIPersonality : ScriptableObject
     public bool canPickDropZones = true;
     public bool canSwitchCampaigns = true;
     public bool canGarrisonChokepoints = true;
-    public bool canSplitFleets = true;
     public bool canBuildBattleStations = true;
     public bool canRetreat = true;
 

@@ -44,7 +44,7 @@ public class SaveRoundTripTest : MonoBehaviour
 
         // Scramble things so a load that did nothing would be caught.
         foreach (Planet planet in Planet.All) planet.hasTaxOffice = !planet.hasTaxOffice;
-        if (traveller != null) traveller.roster.Clear();
+        if (traveller != null) traveller.ships.Clear();
 
         Check(SaveSystem.Load(Slot, out error), "load started (" + error + ")");
         yield return Wait(3f);
@@ -92,7 +92,7 @@ public class SaveRoundTripTest : MonoBehaviour
         }
         foreach (GalacticFleet fleet in GalacticFleet.All.OrderBy(f => f.name))
         {
-            text.AppendLine($"{fleet.name}: {SaveRegistry.Id(fleet.faction)} at {(fleet.currentPlanet != null ? fleet.currentPlanet.planetName : "-")} ships={string.Join(",", fleet.roster.Select(SaveRegistry.Id))} travelling={fleet.IsTraveling}");
+            text.AppendLine($"{fleet.name}: {SaveRegistry.Id(fleet.faction)} at {(fleet.currentPlanet != null ? fleet.currentPlanet.planetName : "-")} ships={string.Join(",", fleet.ships.Select(ship => SaveRegistry.Id(ship.type)))} travelling={fleet.IsTraveling}");
         }
         if (GalacticState.Instance != null)
         {

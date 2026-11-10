@@ -4,12 +4,12 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-// The battle's ship info blade: slides in from the right edge when a ship has been hovered for a few
-// seconds (see ShipHover), so you know what you're looking at. Shows the ship's name, side and role, live
+// The battle's ship info blade: slides in from the right edge when a ship has been hovered for a moment
+// (see ShipHover) or a reinforcement icon is hovered, so you know what you're looking at. Shows the ship's name, side and role, live
 // hull, shields, hardpoints left and what it's shooting at, and its stat sheet.
 public class ShipBlade : MonoBehaviour
 {
-    public const float HoverDelay = 3f;
+    public const float HoverDelay = 0.6f;
 
     private const float Width = 400f;
     private const float SlideTime = 0.18f;
@@ -29,6 +29,9 @@ public class ShipBlade : MonoBehaviour
     private RectTransform shieldFill;
     private TMP_Text shieldText;
     private TMP_Text body;
+    private RectTransform heroRow;
+    private Image heroPortrait;
+    private TMP_Text heroText;
 
     private Ship ship;
     private UnitHealthManager live;
@@ -90,11 +93,24 @@ public class ShipBlade : MonoBehaviour
     {
         if (ship == null) return;
 
-        title.text = ShipInfo.Name(ship);
+        ShipEntry entry = live != null ? live.entry : null;
+        HeroDefinition hero = entry != null ? entry.Hero : null;
+        bool named = entry != null && !string.IsNullOrEmpty(entry.shipName);
+        title.text = named ? entry.shipName : ShipInfo.Name(ship);
+
+        heroRow.gameObject.SetActive(hero != null);
+        if (hero != null)
+        {
+            heroPortrait.sprite = hero.Portrait;
+            heroPortrait.enabled = hero.Portrait != null;
+            string accent = "#" + ColorUtility.ToHtmlStringRGB(UIKit.Accent);
+            heroText.text = $"<color={accent}><b>{hero.title} {hero.name}</b></color>\n<size=14>{hero.BuffSummary().Replace("\n", "   ")}</size>\n<size=13><color=#{ColorUtility.ToHtmlStringRGBA(UIKit.MutedColor)}>Buffs every ship on this side while the flagship lives.</color></size>";
+        }
         Faction faction = FactionOf();
         string side = faction != null ? (string.IsNullOrEmpty(faction.factionName) ? faction.name : faction.factionName).ToUpperInvariant() : "";
         string sideColor = faction != null ? "#" + ColorUtility.ToHtmlStringRGB(Color.Lerp(faction.color, Color.white, 0.25f)) : "#FFFFFF";
-        subtitle.text = (side.Length > 0 ? $"<color={sideColor}>{side}</color>   " : "") + $"{ShipInfo.CategoryName(ShipInfo.CategoryOf(ship))}  ·  {ShipInfo.Role(ship)}";
+        string className = named ? $"{ShipInfo.Name(ship)}  ·  " : "";
+        subtitle.text = (side.Length > 0 ? $"<color={sideColor}>{side}</color>   " : "") + $"{className}{ShipInfo.CategoryName(ShipInfo.CategoryOf(ship))}  ·  {ShipInfo.Role(ship)}";
 
         bool inBattle = live != null;
         hullRow.gameObject.SetActive(inBattle);
@@ -129,8 +145,23 @@ public class ShipBlade : MonoBehaviour
             else if (live.TryGetComponent(out HardpointManager hardpoints))
             {
                 Stat("Hardpoints", $"{hardpoints.hardpoints.Count} / {startingHardpoints}");
+                if (live.TryGetComponent(out ShieldGenerator shield) && shield.Generator != null)
+                    Stat("Shield generator", shield.GeneratorDestroyed ? "Destroyed - shield down for good" : "Online");
                 UnitHealthManager target = CurrentTarget(live);
                 if (target != null) Stat("Engaging", UnitName(target));
+            }
+            if (live.TryGetComponent(out ShipAltitude altitude))
+            {
+                string height = Mathf.Abs(altitude.Altitude) < 1f ? "On the plane" : altitude.Altitude.ToString("+0;-0");
+                if (Mathf.Abs(altitude.TargetAltitude - altitude.Altitude) > 1f) height += $"  ->  {altitude.TargetAltitude:+0;-0;0}";
+                Stat("Altitude", height);
+                if (!altitude.Airborne) Stat("Angling", altitude.AutoAttitude ? "Automatic" : "Manual  (Home: auto)");
+            }
+            if (live.TryGetComponent(out ShipStance stance)) Stat("Stance", $"{stance.Current}  (Y)");
+            if (live.TryGetComponent(out ShipAbility ability) && ability.kind != ShipAbility.Kind.None)
+            {
+                string state = ability.Active ? "<color=#8EE59A>ACTIVE</color>" : ability.Ready ? "Ready  (B)" : $"{Mathf.CeilToInt(ability.CooldownLeft)}s";
+                Stat("Ability", $"{ability.Name}  ·  {state}");
             }
             text.AppendLine("<size=8> </size>");
         }
@@ -205,6 +236,17 @@ public class ShipBlade : MonoBehaviour
         title.fontStyle = FontStyles.Bold;
         subtitle = Label(panel, 15f, UIKit.MutedColor);
         subtitle.textWrappingMode = TextWrappingModes.Normal;
+
+        heroRow = UIKit.Rect("Hero", panel, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+        heroRow.gameObject.AddComponent<LayoutElement>().preferredHeight = 112f;
+        RectTransform portraitRect = UIKit.Rect("Portrait", heroRow, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), Vector2.zero, new Vector2(108f, 108f));
+        heroPortrait = UIKit.Image(portraitRect, Color.white);
+        heroPortrait.preserveAspect = true;
+        heroText = UIKit.Text(heroRow, "", 17f, UIKit.TextColor, TextAlignmentOptions.MidlineLeft);
+        heroText.rectTransform.offsetMin = new Vector2(122f, 0f);
+        heroText.textWrappingMode = TextWrappingModes.Normal;
+        heroText.richText = true;
+        heroRow.gameObject.SetActive(false);
 
         hullRow = Bar(panel, "HULL", HullColor, out hullFill, out hullText);
         shieldRow = Bar(panel, "SHIELDS", ShieldColor, out shieldFill, out shieldText);

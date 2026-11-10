@@ -14,8 +14,8 @@ public class MissileArsenal : ScriptableObject
         public string name = "Missile";
 
         [Header("Launcher")]
-        public int destroyerSalvo = 4;
-        public int corvetteSalvo = 2;
+        public int destroyerSalvo = 6;
+        public int corvetteSalvo = 3;
         [Tooltip("Seconds between salvos.")]
         public float reload = 15f;
         [Tooltip("Seconds between missiles in one salvo.")]
@@ -49,11 +49,144 @@ public class MissileArsenal : ScriptableObject
         public ParticleSystem explosion;
         public float explosionScale = 1f;
 
+        public Warhead Copy(string newName)
+        {
+            Warhead copy = (Warhead)MemberwiseClone();
+            copy.name = newName;
+            return copy;
+        }
+
         public int SalvoFor(ShipType type) =>
             type == ShipType.Destroyer ? destroyerSalvo : type == ShipType.Corvette ? corvetteSalvo : 0;
     }
 
     public Warhead conventional = new Warhead();
+
+    // Strike craft ordnance, derived from the conventional missile so it shares its explosion and look.
+    // Mini-missiles: fighters' and interceptors' - small, fast, very agile, a light punch.
+    // Bombs: bombers' - slow, barely guided, dull, and heavy; released in a run's final approach.
+    private Warhead miniMissile, bomb, avantiMiniMissile, avantiBomb;
+
+    // Human craft: orange mini-missiles, red bombs. Avanti craft: blue mini-missiles, purple bombs.
+    // Each strike-craft weapon explodes in its own colour: Human mini-missiles orange (the conventional
+    // missile's own blast), Human bombs red, Avanti mini-missiles blue, Avanti bombs purple.
+    public Warhead MiniMissileFor(bool avanti) => avanti
+        ? avantiMiniMissile ??= Recolour(MakeMini(), "Avanti ", new Color(0.3f, 0.6f, 1f), plasma, new Color(0.35f, 0.6f, 1f))
+        : miniMissile ??= MakeMini();
+    public Warhead BombFor(bool avanti) => avanti
+        ? avantiBomb ??= Recolour(MakeBomb(), "Avanti ", new Color(0.7f, 0.25f, 1f), plasma, new Color(0.75f, 0.3f, 1f))
+        : bomb ??= Recolour(MakeBomb(), "", new Color(1f, 0.32f, 0.12f), conventional, new Color(1f, 0.22f, 0.12f));
+
+    private static Warhead Recolour(Warhead w, string prefix, Color glow, Warhead blastSource, Color blast)
+    {
+        w.name = prefix + w.name; // Explosions are pooled by warhead name: keep each colour apart.
+        w.color = glow;
+        if (blastSource != null && blastSource.explosion != null) w.explosion = TintedExplosion(blastSource.explosion, blast);
+        return w;
+    }
+
+    // A copy of an explosion effect recoloured to `tint` (kept hidden; EffectPool spawns from it). Brightness
+    // and fade are kept - only the hue changes.
+    private static ParticleSystem TintedExplosion(ParticleSystem template, Color tint)
+    {
+        ParticleSystem copy = Instantiate(template);
+        copy.gameObject.SetActive(false);
+        copy.name = template.name + "_" + ColorUtility.ToHtmlStringRGB(tint);
+        DontDestroyOnLoad(copy.gameObject);
+        foreach (ParticleSystem system in copy.GetComponentsInChildren<ParticleSystem>(true))
+        {
+            ParticleSystem.MainModule main = system.main;
+            main.startColor = Retint(main.startColor, tint);
+            ParticleSystem.ColorOverLifetimeModule over = system.colorOverLifetime;
+            if (over.enabled) over.color = Retint(over.color, tint);
+
+            // The effect pack bakes its colour into the materials too (the fire explosion's HDR orange base
+            // colour, the energy explosion's blue emission), and that wins over the particle colours. Recolour
+            // a copy of each material the same way.
+            ParticleSystemRenderer renderer = system.GetComponent<ParticleSystemRenderer>();
+            if (renderer == null) continue;
+            Material[] materials = renderer.sharedMaterials;
+            for (int i = 0; i < materials.Length; i++)
+            {
+                if (materials[i] == null) continue;
+                Material m = new Material(materials[i]) { name = materials[i].name + "_" + ColorUtility.ToHtmlStringRGB(tint) };
+                foreach (string property in new[] { "_BaseColor", "_Color", "_EmissionColor", "_TintColor" })
+                    if (m.HasProperty(property)) m.SetColor(property, Retint(m.GetColor(property), tint));
+                materials[i] = m;
+            }
+            renderer.sharedMaterials = materials;
+            if (renderer.trailMaterial != null)
+            {
+                Material trail = new Material(renderer.trailMaterial);
+                foreach (string property in new[] { "_BaseColor", "_Color", "_EmissionColor", "_TintColor" })
+                    if (trail.HasProperty(property)) trail.SetColor(property, Retint(trail.GetColor(property), tint));
+                renderer.trailMaterial = trail;
+            }
+        }
+        foreach (Light light in copy.GetComponentsInChildren<Light>(true)) light.color = Retint(light.color, tint);
+        return copy;
+    }
+
+    private static ParticleSystem.MinMaxGradient Retint(ParticleSystem.MinMaxGradient source, Color tint)
+    {
+        switch (source.mode)
+        {
+            case ParticleSystemGradientMode.Color: return Retint(source.color, tint);
+            case ParticleSystemGradientMode.TwoColors: return new ParticleSystem.MinMaxGradient(Retint(source.colorMin, tint), Retint(source.colorMax, tint));
+            case ParticleSystemGradientMode.Gradient: return new ParticleSystem.MinMaxGradient(Retint(source.gradient, tint));
+            case ParticleSystemGradientMode.TwoGradients: return new ParticleSystem.MinMaxGradient(Retint(source.gradientMin, tint), Retint(source.gradientMax, tint));
+            default: return source;
+        }
+    }
+
+    // Keep the colour's brightness (and alpha), take the tint's hue.
+    private static Color Retint(Color c, Color tint)
+    {
+        float brightness = Mathf.Max(c.r, Mathf.Max(c.g, c.b));
+        return new Color(tint.r * brightness, tint.g * brightness, tint.b * brightness, c.a);
+    }
+
+    private static Gradient Retint(Gradient g, Color tint)
+    {
+        if (g == null) return null;
+        GradientColorKey[] keys = g.colorKeys;
+        for (int i = 0; i < keys.Length; i++) keys[i].color = Retint(keys[i].color, tint);
+        Gradient result = new Gradient { mode = g.mode };
+        result.SetKeys(keys, g.alphaKeys);
+        return result;
+    }
+
+    private Warhead MakeMini()
+    {
+        Warhead w = conventional.Copy("Mini-missile");
+        w.speed = conventional.speed * 1.5f;
+        w.turnRate = conventional.turnRate * 2.2f;
+        w.damage = conventional.damage * 0.3f;
+        w.interceptHealth = conventional.interceptHealth * 0.5f;
+        w.headSize = conventional.headSize * 0.45f;
+        w.trailWidth = conventional.trailWidth * 0.35f;
+        w.trailTime = conventional.trailTime * 0.6f;
+        w.explosionScale = conventional.explosionScale * 0.45f;
+        w.hitRadius = conventional.hitRadius * 1.3f;
+        return w;
+    }
+
+    private Warhead MakeBomb()
+    {
+        Warhead w = conventional.Copy("Bomb");
+        w.speed = conventional.speed * 0.55f;
+        w.turnRate = 14f;
+        w.damage = conventional.damage * 1.6f;
+        w.interceptHealth = conventional.interceptHealth * 1.5f;
+        w.color = new Color(1f, 0.32f, 0.12f);
+        w.headSize = conventional.headSize * 0.8f;
+        w.trailWidth = conventional.trailWidth * 0.25f;
+        w.trailTime = conventional.trailTime * 0.35f;
+        w.intensity = conventional.intensity * 0.45f;
+        w.pulse = 0.6f;
+        w.explosionScale = conventional.explosionScale * 1.5f;
+        return w;
+    }
 
     public Warhead plasma = new Warhead
     {

@@ -156,14 +156,23 @@ public class Missile : MonoBehaviour
 
         ShotDown++;
         if (ciws) ShotDownByCIWS++;
+        DamageLedger.MissileDown(LedgerWeapon);
         Explode(transform.position, 0.22f);
         Sfx.Play(Sfx.Cue.ExplosionSmall, transform.position, 0.45f, 1.35f);
         Recycle();
         return true;
     }
 
+    // Who fired it and what it is, for DamageLedger (dev balance runs).
+    [System.NonSerialized] public UnitHealthManager source;
+    public DamageLedger.Weapon LedgerWeapon => warhead == null ? DamageLedger.Weapon.Missile
+        : warhead.name.Contains("Bomb") ? DamageLedger.Weapon.Bomb
+        : warhead.name.Contains("Mini") ? DamageLedger.Weapon.MiniMissile
+        : !warhead.passesThroughShields ? DamageLedger.Weapon.Torpedo : DamageLedger.Weapon.Missile;
+
     private void Arm(MissileArsenal.Warhead armed, Vector3 position, Vector3 direction, UnitHealthManager ship, int owner, LayerMask hostile, float life)
     {
+        source = null;
         warhead = armed;
         ownerLayer = owner;
         hostileMask = hostile;
@@ -240,7 +249,10 @@ public class Missile : MonoBehaviour
         Vector3 next = transform.position + velocity * dt;
         transform.SetPositionAndRotation(next, Quaternion.LookRotation(heading));
 
-        if (CheckHit(lastPos, next)) return;
+        DamageLedger.Begin(source, LedgerWeapon);
+        bool struck = CheckHit(lastPos, next);
+        DamageLedger.End();
+        if (struck) return;
         lastPos = next;
 
         // Proximity fuse, for hardpoints with nothing solid around them to fly into.
@@ -336,6 +348,7 @@ public class Missile : MonoBehaviour
         if (hardpoint == null && ship == targetShip && aimedHardpointAlive) hardpoint = targetHardpoint;
 
         Struck++;
+        HullScarring.Impact(hitCollider, point, Velocity, damage);
         if (hardpoint != null) hardpoint.DealDamage(damage);
         else if (ship != null && !ship.IsDead) ship.DealRandomDamage(damage);
 

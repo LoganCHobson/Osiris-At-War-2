@@ -39,6 +39,9 @@ public partial class FactionBrain
         public float requiredPower;
         public float stagedPower;
         public bool suspended;
+        // Last time this campaign actually did something (launched an attack or took a planet). A campaign
+        // that sits at its staging world for ages while both sides pile ships onto the border is a stalemate.
+        public float lastProgressAt;
 
         public float Success => (enemyPowerDestroyed + planetsTaken * PlanetCaptureWorth + 100f) / (powerLost + 100f);
     }
@@ -59,6 +62,20 @@ public partial class FactionBrain
     public readonly Dictionary<Planet, float> threat = new Dictionary<Planet, float>();
     public readonly Dictionary<Planet, int> hostileDepth = new Dictionary<Planet, int>();
     public readonly Dictionary<FleetRole, float> enemyComposition = new Dictionary<FleetRole, float>();
+
+    // Planets taken from us (name -> when, and by whom). Drives counter-attacks to win them back and tells
+    // the brain its home front is being raided even when the raider never sits on a border world.
+    public readonly Dictionary<string, float> lostPlanetAt = new Dictionary<string, float>();
+    public readonly Dictionary<string, Faction> lostPlanetTo = new Dictionary<string, Faction>();
+    // Factions we recently stood down a stalemated campaign against - don't immediately restart it.
+    public readonly Dictionary<Faction, float> campaignCooldownUntil = new Dictionary<Faction, float>();
+
+    public const float LossMemory = 600f;
+    public const float RaidWindow = 150f;
+
+    // The faction that most recently took a planet from us, while that's still fresh.
+    public Faction Raider { get; private set; }
+    public int RecentLosses { get; private set; }
 
     public float nextThinkAt;
     public float TotalPower { get; private set; }
@@ -195,6 +212,46 @@ public partial class FactionBrain
 
         ComputeHostileDepth();
         ComputeThreat();
+        ReviewLosses();
+    }
+
+    private void ReviewLosses()
+    {
+        Raider = null;
+        RecentLosses = 0;
+        float newest = float.MinValue;
+
+        List<string> forget = null;
+        foreach (KeyValuePair<string, float> entry in lostPlanetAt)
+        {
+            Planet planet = world.FindPlanet(entry.Key);
+            float age = now - entry.Value;
+            if (planet == null || planet.owner == faction || age > LossMemory)
+            {
+                (forget ??= new List<string>()).Add(entry.Key);
+                continue;
+            }
+
+            if (age > RaidWindow) continue;
+            RecentLosses++;
+            if (entry.Value > newest && lostPlanetTo.TryGetValue(entry.Key, out Faction taker))
+            {
+                newest = entry.Value;
+                Raider = taker;
+            }
+        }
+
+        if (forget == null) return;
+        foreach (string key in forget)
+        {
+            lostPlanetAt.Remove(key);
+            lostPlanetTo.Remove(key);
+        }
+    }
+
+    public bool WasRecentlyLost(Planet planet)
+    {
+        return planet != null && lostPlanetAt.TryGetValue(planet.planetName, out float at) && now - at <= LossMemory;
     }
 
     private void ScoutPlanet(Planet planet)
@@ -207,7 +264,7 @@ public partial class FactionBrain
         for (int slot = 0; slot < Planet.FleetSlotCount; slot++)
         {
             GalacticFleet fleet = planet.GetFleetInSlot(slot);
-            if (fleet == null || fleet.faction == faction || fleet.IsTraveling || fleet.roster.Count == 0) continue;
+            if (fleet == null || fleet.faction == faction || fleet.IsTraveling || fleet.ships.Count == 0) continue;
 
             float fleetPower = Strength.Of(fleet);
             power += fleetPower;
@@ -248,7 +305,7 @@ public partial class FactionBrain
 
     private void RecordComposition(GalacticFleet fleet)
     {
-        foreach (Ship ship in fleet.roster)
+        foreach (Ship ship in fleet.ships)
         {
             if (ship == null) continue;
 
@@ -392,7 +449,15 @@ public partial class FactionBrain
         if (previousOwner == faction && newOwner != null && newOwner != faction)
         {
             AddGrievance(newOwner, worth);
+            lostPlanetAt[planet.planetName] = now;
+            lostPlanetTo[planet.planetName] = newOwner;
             Log($"Lost {planet.planetName} to {Name(newOwner)}");
+        }
+
+        if (newOwner == faction)
+        {
+            lostPlanetAt.Remove(planet.planetName);
+            lostPlanetTo.Remove(planet.planetName);
         }
 
         if (newOwner == faction && previousOwner != null)
@@ -402,6 +467,7 @@ public partial class FactionBrain
                 if (campaign.target == previousOwner)
                 {
                     campaign.planetsTaken++;
+                    campaign.lastProgressAt = now;
                 }
             }
             Log($"Took {planet.planetName} from {Name(previousOwner)}");

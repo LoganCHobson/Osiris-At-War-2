@@ -22,6 +22,8 @@ public class CIWSTracers : MonoBehaviour
         public float damage;
         public Missile missile;
         public HardpointHealth fighter;
+        public UnitHealthManager source;
+        public DamageLedger.Weapon weapon;
         public float fighterRadius;
     }
 
@@ -43,10 +45,11 @@ public class CIWSTracers : MonoBehaviour
         instance = null;
     }
 
-    public static void Fire(Vector3 position, Vector3 velocity, float life, float damage, Missile missile, HardpointHealth fighter)
+    public static void Fire(Vector3 position, Vector3 velocity, float life, float damage, Missile missile, HardpointHealth fighter,
+        UnitHealthManager source = null, DamageLedger.Weapon weapon = DamageLedger.Weapon.Gatling)
     {
         if (instance == null && !Create()) return;
-        instance.Add(position, velocity, life, damage, missile, fighter);
+        instance.Add(position, velocity, life, damage, missile, fighter, source, weapon);
     }
 
     private static bool Create()
@@ -104,7 +107,7 @@ public class CIWSTracers : MonoBehaviour
         meshRenderer.SetPropertyBlock(block);
     }
 
-    private void Add(Vector3 position, Vector3 velocity, float life, float damage, Missile missile, HardpointHealth fighter)
+    private void Add(Vector3 position, Vector3 velocity, float life, float damage, Missile missile, HardpointHealth fighter, UnitHealthManager source, DamageLedger.Weapon weapon)
     {
         if (count >= MaxRounds) return;
         rounds[count++] = new Round
@@ -116,6 +119,8 @@ public class CIWSTracers : MonoBehaviour
             missile = missile,
             fighter = fighter,
             fighterRadius = 1.4f,
+            source = source,
+            weapon = weapon,
         };
     }
 
@@ -149,7 +154,9 @@ public class CIWSTracers : MonoBehaviour
                 return false;
             }
             if (!Passes(from, to, round.missile.transform.position, round.missile.HitRadius)) return false;
+            DamageLedger.Begin(round.source, round.weapon);
             round.missile.TakeHit(round.damage, true);
+            DamageLedger.End();
             return true;
         }
 
@@ -161,7 +168,9 @@ public class CIWSTracers : MonoBehaviour
                 return false;
             }
             if (!Passes(from, to, round.fighter.transform.position, round.fighterRadius)) return false;
+            DamageLedger.Begin(round.source, round.weapon);
             round.fighter.DealDamage(round.damage);
+            DamageLedger.End();
             return true;
         }
         return false;

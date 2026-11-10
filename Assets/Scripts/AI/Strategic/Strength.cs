@@ -21,9 +21,21 @@ public static class Strength
         return total;
     }
 
+    // Individual ships (a hero's flagship counts for a little more than its class).
+    public static float Of(List<ShipEntry> roster)
+    {
+        float total = 0f;
+        if (roster == null) return total;
+        foreach (ShipEntry ship in roster)
+        {
+            if (ship != null && ship.type != null) total += ship.combatPower;
+        }
+        return total;
+    }
+
     public static float Of(GalacticFleet fleet)
     {
-        return fleet != null ? Of(fleet.roster) : 0f;
+        return fleet != null ? Of(fleet.ships) : 0f;
     }
 
     public static float Defenses(Planet planet)

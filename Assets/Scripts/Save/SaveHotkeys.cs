@@ -38,11 +38,11 @@ public class SaveHotkeys : MonoBehaviour
     {
         bool menuOpen = GameSpeed.MenuPaused || SaveLoadPanel.IsOpen || SettingsPanel.IsOpen;
 
-        if (!menuOpen && Input.GetKeyDown(quicksaveKey))
+        if (!menuOpen && Keybinds.Down(KeyAction.Quicksave))
         {
             Toast.Show(SaveSystem.Quicksave(out string error) ? "Quicksaved" : error);
         }
-        else if (!menuOpen && Input.GetKeyDown(quickloadKey))
+        else if (!menuOpen && Keybinds.Down(KeyAction.Quickload))
         {
             if (!SaveSystem.HasQuicksave) Toast.Show("No quicksave yet");
             else if (!SaveSystem.Load(SaveSystem.QuicksaveSlot, out string error)) Toast.Show(error);

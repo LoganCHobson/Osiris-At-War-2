@@ -105,13 +105,20 @@ public class BattleTerrain : MonoBehaviour
         layout.clearMapChance = clearChance;
     }
 
+    // Dev recordings: guarantee asteroids on the next battle map (one-shot).
+    public static bool ForceAsteroids;
+
     private void Generate(Vector3 attackerStart, Vector3 defenderStart, int seed)
     {
         Map = FindMapBounds();
+        float savedClearChance = layout.clearMapChance;
+        if (ForceAsteroids) layout.clearMapChance = 0f;
         Vector2 attacker = new Vector2(attackerStart.x, attackerStart.z);
         Vector2 defender = new Vector2(defenderStart.x, defenderStart.z);
 
         List<BattleTerrainLayout.FieldSpec> specs = BattleTerrainLayout.Generate(seed, Map, attacker, defender, layout);
+        layout.clearMapChance = savedClearChance;
+        ForceAsteroids = false;
 
         Material rockMaterial = Resources.Load<Material>(RockMaterialPath);
         int rockLayer = AsteroidLayer >= 0 ? AsteroidLayer : 0;
@@ -128,6 +135,7 @@ public class BattleTerrain : MonoBehaviour
         }
 
         RebuildNavMesh();
+        BattleHazards.Generate(transform, seed, Map, attacker, defender, fields);
     }
 
     private static Rect FindMapBounds()
@@ -347,7 +355,12 @@ public class BattleTerrain : MonoBehaviour
             if (inField && priority && moving)
             {
                 float damage = unit.maxHealth * priorityDamagePerSecond * SizeFactor(spaceUnit.shipType) * TickInterval;
-                if (damage > 0f) unit.DealRandomDamage(damage);
+                if (damage > 0f)
+                {
+                    DamageLedger.Begin(null, DamageLedger.Weapon.Asteroids);
+                    unit.DealRandomDamage(damage);
+                    DamageLedger.End();
+                }
             }
         }
     }
@@ -360,7 +373,10 @@ public class BattleTerrain : MonoBehaviour
             if (fighter.Velocity.sqrMagnitude < 1f || !InDense(fighter.transform.position)) continue;
 
             HardpointHealth health = fighter.GetComponent<HardpointHealth>();
-            if (health != null) health.DealDamage(health.maxHealth * fighterDensePerSecond * TickInterval);
+            if (health == null) continue;
+            DamageLedger.Begin(null, DamageLedger.Weapon.Asteroids);
+            health.DealDamage(health.maxHealth * fighterDensePerSecond * TickInterval);
+            DamageLedger.End();
         }
     }
 }

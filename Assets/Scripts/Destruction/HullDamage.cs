@@ -192,8 +192,8 @@ public class HullDamage : MonoBehaviour
 
         if (damageEffects.Count < wanted)
         {
-            Vector3 point = PickDamagePoint(out _);
-            SpawnDamageEffect(point);
+            Vector3 point = PickDamagePoint(out Vector3 normal);
+            SpawnDamageEffect(point, normal);
             Explode(profile.mediumExplosion, point, profile.mediumExplosionScale);
             DestructionFx.Blast(profile.smallBlastClips, point, profile, Mathf.Lerp(1.1f, 0.8f, SizeT));
         }
@@ -283,6 +283,12 @@ public class HullDamage : MonoBehaviour
         }
     }
 
+    // A wrecked part handles its own charring (HardpointWreck): stop scorching it from here.
+    public void ExcludeFromScorch(Renderer renderer)
+    {
+        scorchable.Remove(renderer);
+    }
+
     public void KillLights()
     {
         lightsForcedOff = true;
@@ -316,10 +322,13 @@ public class HullDamage : MonoBehaviour
         return point;
     }
 
-    public GameObject SpawnDamageEffect(Vector3 point)
+    // A fire burning out of the hull at this point: it sits on the surface and pours out along the normal,
+    // so fires on the belly or flanks don't burn up through the ship.
+    public GameObject SpawnDamageEffect(Vector3 point, Vector3 normal = default)
     {
         ParticleSystem fire = profile.hullFires != null && profile.hullFires.Length > 0 ? profile.hullFires[Random.Range(0, profile.hullFires.Length)] : null;
-        GameObject effect = DestructionFx.Attach(fire, effectsRoot, point, profile.fireScale * SizeScale * Random.Range(0.75f, 1.25f));
+        if (normal.sqrMagnitude < 0.01f) normal = (point - transform.TransformPoint(LocalBounds.center)).normalized;
+        GameObject effect = DestructionFx.Attach(fire, effectsRoot, point + normal * Size * 0.004f, profile.fireScale * SizeScale * Random.Range(0.75f, 1.25f), normal);
 
         if (effect != null) damageEffects.Add(effect);
         return effect;

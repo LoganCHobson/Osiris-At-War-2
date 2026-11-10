@@ -7,6 +7,8 @@ public class HardpointManager : MonoBehaviour
 
     // The last target this ship was ordered to attack (see AssignTarget); CombatFacing turns to it.
     public Transform OrderedTarget { get; private set; }
+    // True when the order was the whole ship (clicked its hull), not one hardpoint.
+    public bool OrderedWholeShip { get; private set; }
 
     private UnitHealthManager unitHealthManager;
 
@@ -31,7 +33,7 @@ public class HardpointManager : MonoBehaviour
     {
         foreach (Transform child in parent)
         {
-            if (child.TryGetComponent(out HardpointHealth health))
+            if (child.TryGetComponent(out HardpointHealth health) && !hardpoints.Contains(health))
             {
                 hardpoints.Add(health);
             }
@@ -56,6 +58,7 @@ public class HardpointManager : MonoBehaviour
     {
         if (target == null) return;
         OrderedTarget = target;
+        OrderedWholeShip = wholeShip;
 
         if (TryGetComponent(out Squadron squadron))
         {

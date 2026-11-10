@@ -70,7 +70,7 @@ public class BattlePrompt : MonoBehaviour
         while (queue.Count > 0)
         {
             PendingBattle next = queue.Dequeue();
-            if (next.attacker == null || next.planet == null || next.attacker.roster.Count == 0) continue;
+            if (next.attacker == null || next.planet == null || next.attacker.ships.Count == 0) continue;
 
             if (!next.attacker.HasBattleAt(next.planet))
             {
@@ -107,18 +107,50 @@ public class BattlePrompt : MonoBehaviour
         float attackerPower = Strength.Of(attacker);
         float defenderPower = OpposingPower(attacker, planet);
 
+        string odds = AutoresolveOdds(attacker, planet, playerAttacking);
+
         if (playerAttacking)
         {
             GalacticFleet defender = attacker.FindOpposingFleet(planet);
             Faction enemy = defender != null ? defender.faction : planet.owner;
             titleText.text = $"Your fleet engages {Colored(enemy)} at {planet.planetName}";
-            detailText.text = $"Your strength: {attackerPower:0}     Enemy strength: {defenderPower:0}";
+            detailText.text = $"Your strength: {attackerPower:0}     Enemy strength: {defenderPower:0}{odds}";
         }
         else
         {
             titleText.text = $"{Colored(attacker.faction)} is attacking {planet.planetName}!";
-            detailText.text = $"Your strength: {defenderPower:0}     Enemy strength: {attackerPower:0}";
+            detailText.text = $"Your strength: {defenderPower:0}     Enemy strength: {attackerPower:0}{odds}";
         }
+    }
+
+    // "If you autoresolve: 82% to win, you'd likely lose 3 Corvettes, 1 Cruiser."
+    private static string AutoresolveOdds(GalacticFleet attacker, Planet planet, bool playerAttacking)
+    {
+        List<ShipEntry> attackerShips = new List<ShipEntry>(attacker.ships);
+        List<ShipEntry> defenderShips = new List<ShipEntry>();
+        foreach (GalacticFleet fleet in FleetsAt(planet))
+        {
+            if (fleet != attacker && fleet.faction != attacker.faction) defenderShips.AddRange(fleet.ships);
+        }
+        float defenses = planet.owner != attacker.faction ? Strength.Defenses(planet) : 0f;
+
+        AutoResolver.Forecast forecast = AutoResolver.Predict(attackerShips, defenderShips, defenses);
+        float winChance = playerAttacking ? forecast.attackerWinChance : 1f - forecast.attackerWinChance;
+        Dictionary<string, float> ours = playerAttacking ? forecast.attackerLosses : forecast.defenderLosses;
+
+        List<string> parts = new List<string>();
+        foreach (KeyValuePair<string, float> loss in ours)
+        {
+            if (loss.Value < 0.5f) continue;
+            int count = Mathf.RoundToInt(loss.Value);
+            parts.Add($"{count} {loss.Key}{(count == 1 ? "" : "s")}");
+        }
+        parts.Sort((a, b) => int.Parse(b.Split(' ')[0]).CompareTo(int.Parse(a.Split(' ')[0])));
+        if (parts.Count > 4) parts = parts.GetRange(0, 4);
+
+        string chanceColor = winChance >= 0.7f ? "#8EE59A" : winChance >= 0.4f ? "#FFD27A" : "#FF7766";
+        string losses = parts.Count == 0 ? "with next to no losses" : "losing about " + string.Join(", ", parts);
+        return $"\n<size=85%>Autoresolve: <color={chanceColor}>{winChance * 100f:0}% to win</color>, {losses}</size>";
     }
 
     public void BattleNow()
@@ -222,7 +254,7 @@ public class BattlePrompt : MonoBehaviour
         {
             if (fleet != null && Strength.IsPlayer(fleet.faction) == player)
             {
-                ships.AddRange(fleet.roster);
+                foreach (ShipEntry ship in fleet.ships) if (ship != null) ships.Add(ship.type);
             }
         }
         return ships;

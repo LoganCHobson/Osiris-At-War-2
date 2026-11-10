@@ -81,7 +81,7 @@ public partial class FactionBrain
         {
             foreach (GalacticFleet fleet in myFleets)
             {
-                foreach (Ship ship in fleet.roster)
+                foreach (Ship ship in fleet.ships)
                 {
                     if (ship != null && !candidates.Contains(ship)) candidates.Add(ship);
                 }
@@ -210,7 +210,7 @@ public partial class FactionBrain
 
         foreach (GalacticFleet fleet in myFleets)
         {
-            foreach (Ship ship in fleet.roster)
+            foreach (Ship ship in fleet.ships)
             {
                 AddPower(composition, ship, ref total);
             }

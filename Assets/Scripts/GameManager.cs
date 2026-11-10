@@ -33,6 +33,9 @@ public class GameManager : MonoBehaviour
 
     [Header("Battle Rules")]
     public int populationCap = 30;
+
+    // The cap for one side right now.
+    public int PopulationCapFor(bool attackerSide) => populationCap;
     public float battleEndDelay = 3f;
 
     public bool PlayerIsAttacker { get; private set; } = true;
@@ -60,7 +63,7 @@ public class GameManager : MonoBehaviour
 
         if (!hasBattleContext)
         {
-            DeployPlayerSide(fleet != null ? fleet.ships : new List<Ship>(), true);
+            DeployPlayerSide(fleet != null ? fleet.ships.ConvertAll(ship => ShipEntry.New(ship)) : new List<ShipEntry>(), true);
             return;
         }
 
@@ -187,7 +190,7 @@ public class GameManager : MonoBehaviour
             }
             else
             {
-                context.ReportLoss(attackerSide, unit.sourceShip, unit.battleToken);
+                context.ReportLoss(attackerSide, unit.entry, unit.battleToken);
             }
         }
     }
@@ -202,7 +205,7 @@ public class GameManager : MonoBehaviour
         SceneManager.LoadScene("GalacticMap");
     }
 
-    private void DeployPlayerSide(List<Ship> roster, bool attackerSide)
+    private void DeployPlayerSide(List<ShipEntry> roster, bool attackerSide)
     {
         if (attackerSide)
         {
@@ -224,11 +227,11 @@ public class GameManager : MonoBehaviour
         Vector3 basePosition = defenderShipSpawnPoint != null ? defenderShipSpawnPoint.position : Vector3.zero;
         Quaternion lineRotation = defenderShipSpawnPoint != null ? defenderShipSpawnPoint.rotation : Quaternion.identity;
 
-        List<Ship> deploying = new List<Ship>();
+        List<ShipEntry> deploying = new List<ShipEntry>();
         int population = 0;
-        foreach (Ship ship in roster)
+        foreach (ShipEntry ship in roster)
         {
-            if (ship == null) continue;
+            if (ship == null || ship.type == null) continue;
 
             if (population + ship.populationCost <= populationCap)
             {
@@ -242,17 +245,31 @@ public class GameManager : MonoBehaviour
         }
 
         // The fleet's lead (first in its roster) at the centre of the battle line, screen ahead, carriers behind.
-        Ship fleetLead = deploying.Count > 0 ? deploying[0] : null;
-        foreach (BattleDeployment.Placement placement in BattleDeployment.Arrange(deploying, fleetLead, basePosition, lineRotation * Vector3.forward))
+        // Laid out on the planet's chosen defense formation if it has one (see DefensePlanner).
+        ShipEntry fleetLead = deploying.Count > 0 ? deploying[0] : null;
+        BattleContext context = BattleContext.Instance;
+        DefenseFormation formation = context != null ? DefensePlans.For(context.defenderFaction, context.destinationPlanetName) : null;
+        foreach (BattleDeployment.Placement placement in BattleDeployment.ArrangeFormation(deploying, formation, fleetLead, basePosition, lineRotation * Vector3.forward))
         {
-            SpawnShip(placement.ship, placement.position, lineRotation, false);
+            GameObject spawned = SpawnShip(placement.ship, placement.position, lineRotation, false);
+            if (spawned != null && spawned.TryGetComponent(out ShipAltitude altitude)) altitude.SnapAltitude(placement.altitude);
         }
     }
 
-    private void DeployAISide(Faction faction, List<Ship> roster, bool attackerSide)
+    private void DeployAISide(Faction faction, List<ShipEntry> roster, bool attackerSide)
     {
         AIBattleCommander commander = gameObject.AddComponent<AIBattleCommander>();
         commander.Initialize(faction, attackerSide, roster, attackerSide ? attackerShipSpawnPoint : defenderShipSpawnPoint, populationCap);
+    }
+
+    // An individual ship from a fleet: it carries its name/hero into battle and is claimed from the roster.
+    public GameObject SpawnShip(ShipEntry ship, Vector3 position, Quaternion rotation, bool attackerSide)
+    {
+        if (ship == null || ship.prefab == null) return null;
+
+        GameObject spawned = Instantiate(ship.prefab, position, rotation);
+        TagShip(spawned, ship, attackerSide);
+        return spawned;
     }
 
     public GameObject SpawnShip(Ship ship, Vector3 position, Quaternion rotation, bool attackerSide, bool fromRoster = true)
@@ -267,7 +284,7 @@ public class GameManager : MonoBehaviour
     public bool CanDeployPlayerShip(Ship ship)
     {
         int cost = ship != null ? ship.populationCost : 0;
-        return PopulationInPlay(PlayerIsAttacker) + cost <= populationCap;
+        return PopulationInPlay(PlayerIsAttacker) + cost <= PopulationCapFor(PlayerIsAttacker);
     }
 
     public static int PopulationInPlay(bool attackerSide)
@@ -323,11 +340,30 @@ public class GameManager : MonoBehaviour
 
         ApplyAllegiance(spawned, false);
         BattleTerrain.Instance?.AddDefenseZone(health, false); // Attackers can't drop reinforcements near it.
+        if (isShipyardBonus) SpawnShipyardGuard(spawned.transform.position, rotation, radius);
     }
 
-    [Header("Firing arcs")]
-    [Tooltip("Avanti guns fire within this many degrees either side of the bow.")]
-    public float avantiFiringArc = 40f;
+    // A capital shipyard lends the battle its guard squadron - one battleship, two destroyers and a corvette of
+    // the defender's own classes, free: they don't count against the population cap, and they belong to the
+    // yard, not the fleet, so win or lose (or retreat) they don't join the roster afterwards.
+    private static readonly ShipType[] ShipyardGuard = { ShipType.Battleship, ShipType.Destroyer, ShipType.Destroyer, ShipType.Corvette };
+
+    private void SpawnShipyardGuard(Vector3 yard, Quaternion facing, float yardRadius)
+    {
+        Faction faction = BattleContext.Instance != null ? BattleContext.Instance.defenderFaction : null;
+        if (faction == null || faction.roster == null) return;
+        Vector3 forward = facing * Vector3.forward, right = facing * Vector3.right;
+        for (int i = 0; i < ShipyardGuard.Length; i++)
+        {
+            Ship ship = faction.roster.Find(s => s != null && s.prefab != null && s.prefab.TryGetComponent(out SpaceUnit u) && u.shipType == ShipyardGuard[i]);
+            if (ship == null) continue;
+            float side = (i - (ShipyardGuard.Length - 1) / 2f) * 32f;
+            Vector3 position = yard + forward * (yardRadius + 35f + (i == 0 ? 15f : 0f)) + right * side;
+            if (UnityEngine.AI.NavMesh.SamplePosition(position, out UnityEngine.AI.NavMeshHit hit, 40f, UnityEngine.AI.NavMesh.AllAreas)) position = hit.position;
+            SpawnShip(ship, position, facing, false, fromRoster: false); // Free unit: no population, no roster.
+        }
+    }
+
 
     public void ApplyAllegiance(GameObject spawned, bool attackerSide)
     {
@@ -356,9 +392,12 @@ public class GameManager : MonoBehaviour
         }
 
         MissileLauncher.Fit(spawned, 1 << hostileLayer); // Destroyers and corvettes.
+        HardpointWreck.Fit(spawned); // Destroyed turrets are wrecked in place, not just switched off.
+        HullScarring.Fit(spawned);   // Sustained fire scores, scorches, cracks and finally breaches the hull.
+        FleetDoctrine.Apply(spawned, IsAvanti(spawned, faction), spawned.TryGetComponent(out UnitHealthManager unitHealth) && unitHealth.isShipyardBonus);
 
-        // Avanti: shields, forward-firing guns (point the bow at the target), point-defence beams.
-        // Humans: turrets that fire all round (ships still turn broadside), CIWS gatlings.
+        // Avanti: shields, point-defence beams, and they turn bow-on to their target to bring every gun to bear.
+        // Humans: CIWS gatlings, and they turn broadside on, which brings the most guns to bear.
         bool avantiTech = spawned.GetComponent<ShieldGenerator>() != null;
         bool warship = spawned.TryGetComponent(out SpaceUnit spaceUnit) && spaceUnit.shipType != ShipType.Station && spawned.GetComponent<Squadron>() == null;
         foreach (TurretController turret in spawned.GetComponentsInChildren<TurretController>(true))
@@ -368,12 +407,16 @@ public class GameManager : MonoBehaviour
                 if (avantiTech) turret.MakeBeam();
                 else turret.MakeGatling();
             }
-            else if (warship && avantiTech)
+            else
             {
-                turret.SetArc(TurretController.Arc.Forward, avantiFiringArc);
+                turret.ApplyBatteryCadence(avantiTech); // Heavy guns fire slowly (same damage per second).
             }
         }
         if (warship) CombatFacing.Fit(spawned, avantiTech, 1 << hostileLayer);
+        ShipAltitude.Fit(spawned, playerSide); // Height, pitch/roll and 3D spacing (warships and squadrons).
+        if (warship) ShipAbility.Fit(spawned);  // One active ability per class.
+        if (warship && playerSide) HardpointApproach.Fit(spawned); // Repositions to expose a targeted hidden hardpoint.
+        if (warship && playerSide) ShipStance.Fit(spawned);        // Hold / aggressive / skirmish between orders.
 
         if (faction != null && faction.shipMaterial != null)
         {
@@ -385,6 +428,11 @@ public class GameManager : MonoBehaviour
             StripPlayerOnly(spawned);
         }
     }
+
+    private static bool IsAvanti(GameObject spawned, Faction faction) =>
+        spawned.GetComponent<ShieldGenerator>() != null
+        || (faction != null && faction.factionName != null && faction.factionName.IndexOf("Avanti", System.StringComparison.OrdinalIgnoreCase) >= 0)
+        || spawned.name.IndexOf("Avanti", System.StringComparison.OrdinalIgnoreCase) >= 0;
 
     private void Repaint(GameObject spawned, Material material)
     {
@@ -445,23 +493,56 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    private void AddReinforcement(Ship ship)
+    private void AddReinforcement(ShipEntry ship)
     {
         if (ship == null || ship.icon == null) return;
+
+        // One icon per ship class, with a count.
+        foreach (Transform child in UnitsListUI.transform)
+        {
+            IconShipRef existing = child.GetComponent<IconShipRef>();
+            if (existing != null && existing.Accepts(ship))
+            {
+                existing.Add(ship);
+                return;
+            }
+        }
 
         GameObject temp = Instantiate(ship.icon, UnitsListUI.transform);
 
         IconShipRef iconRef = temp.GetComponent<IconShipRef>();
         if (iconRef == null)
         {
-            Debug.LogWarning($"Ship icon prefab for '{ship.name}' has no IconShipRef component - skipping reinforcement entry.");
+            Debug.LogWarning($"Ship icon prefab for '{ship.type.name}' has no IconShipRef component - skipping reinforcement entry.");
             Destroy(temp);
             return;
         }
 
-        iconRef.ship = ship;
+        iconRef.ship = ship.type;
+        iconRef.Add(ship);
     }
 
+    public static void TagShip(GameObject spawned, ShipEntry ship, bool isAttackerSide)
+    {
+        UnitHealthManager health = spawned.GetComponent<UnitHealthManager>();
+        if (health != null)
+        {
+            health.Configure(ship.type, isAttackerSide);
+            health.entry = ship;
+
+            BattleContext context = BattleContext.Instance;
+            if (context != null && context.hasPendingBattle)
+            {
+                health.battleToken = context.Claim(isAttackerSide, ship);
+            }
+        }
+
+        if (Instance != null) Instance.ApplyAllegiance(spawned, isAttackerSide);
+        BattleTerrain.Instance?.RestrictShip(spawned);
+        HeroForces.Register(spawned, ship, isAttackerSide);
+    }
+
+    // A unit that isn't one of the fleet's ships (launched strike craft, test spawns).
     public static void TagShip(GameObject spawned, Ship ship, bool isAttackerSide, bool fromRoster = true)
     {
         UnitHealthManager health = spawned.GetComponent<UnitHealthManager>();
@@ -473,10 +554,6 @@ public class GameManager : MonoBehaviour
             if (!fromRoster)
             {
                 health.battleToken = UnitHealthManager.FreeUnitToken;
-            }
-            else if (context != null && context.hasPendingBattle)
-            {
-                health.battleToken = context.Claim(isAttackerSide, ship);
             }
         }
 

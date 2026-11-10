@@ -37,7 +37,7 @@ public class PlanetIntel
                 fleets.Add(sighting);
             }
 
-            sighting.ships += fleet.roster.Count;
+            sighting.ships += fleet.ships.Count;
             sighting.power += Strength.Of(fleet);
         }
     }

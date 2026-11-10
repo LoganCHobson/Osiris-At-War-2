@@ -177,7 +177,7 @@ public class RetreatManager : MonoBehaviour
         }
 
         float wait = window + FTLJump.JumpOutDuration + holdAfterJump;
-        for (float t = 0f; t < wait; t += Time.unscaledDeltaTime) yield return null;
+        for (float t = 0f; t < wait; t += PresentationClock.Delta) yield return null;
 
         JumpingOut = false;
         GameManager.Instance?.ConcludeBattle(attackerSide, true);

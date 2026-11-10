@@ -21,6 +21,8 @@ public class MusicLibrary : ScriptableObject
     public List<Track> menu = new List<Track>();
     public List<Track> galacticMap = new List<Track>();
     public List<Track> battle = new List<Track>();
+    [Tooltip("Battle music before the fleets engage and during lulls. Combat switches to the battle list.")]
+    public List<Track> battleCalm = new List<Track>();
 
     public List<Track> ForScene(string sceneName)
     {
@@ -37,7 +39,7 @@ public class MusicLibrary : ScriptableObject
     public IEnumerable<Track> AllTracks()
     {
         HashSet<AudioClip> seen = new HashSet<AudioClip>();
-        foreach (List<Track> list in new[] { menu, galacticMap, battle })
+        foreach (List<Track> list in new[] { menu, galacticMap, battle, battleCalm })
         {
             foreach (Track track in list)
             {

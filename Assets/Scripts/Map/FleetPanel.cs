@@ -60,7 +60,7 @@ public class FleetPanel : MonoBehaviour
         {
             GalacticFleet fleet = currentPlanet.GetFleetInSlot(slot);
             if (fleet != null && !fleet.IsRevealed) fleet = null;
-            anyFleet |= fleet != null && fleet.roster.Count > 0;
+            anyFleet |= fleet != null && fleet.ships.Count > 0;
 
             if (slot > 0) Divider();
             spawnedRows.Add(FleetRowUI.Create(lanes, fleet, currentPlanet, slot, this, mine));
@@ -93,7 +93,7 @@ public class FleetPanel : MonoBehaviour
             return null;
         }
 
-        fleet.roster.Clear(); // The template prefab may carry stale/unresolved roster entries - a freshly split fleet always starts empty.
+        fleet.ships.Clear(); // The template prefab may carry stale/unresolved roster entries - a freshly split fleet always starts empty.
         fleet.currentPlanet = planet;
         planet.ForceClaimSlot(fleet, slot);
         return fleet;

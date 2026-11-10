@@ -22,7 +22,7 @@ public class GalacticState : MonoBehaviour
         public string fleetName;
         public Faction faction;
         public string planetName;
-        public List<Ship> roster = new List<Ship>();
+        public List<ShipEntry> roster = new List<ShipEntry>();
         public GalacticFleet.TravelState travel;
     }
 
@@ -70,7 +70,7 @@ public class GalacticState : MonoBehaviour
                 hasTaxOffice = planet.hasTaxOffice,
                 hasCapitalShipyard = planet.hasCapitalShipyard,
                 hasBattleStation = planet.hasBattleStation,
-                shipBuildQueue = planet.shipBuildQueue.ConvertAll(o => new ShipBuildOrder { ship = o.ship, remainingTime = o.remainingTime })
+                shipBuildQueue = planet.shipBuildQueue.ConvertAll(o => new ShipBuildOrder { ship = o.ship, remainingTime = o.remainingTime, deliverTo = o.deliverTo })
             });
         }
 
@@ -84,7 +84,7 @@ public class GalacticState : MonoBehaviour
                 fleetName = fleet.gameObject.name,
                 faction = fleet.faction,
                 planetName = fleet.currentPlanet.planetName,
-                roster = new List<Ship>(fleet.roster),
+                roster = new List<ShipEntry>(fleet.ships),
                 travel = fleet.CaptureTravel()
             });
         }
@@ -110,7 +110,7 @@ public class GalacticState : MonoBehaviour
                 planet.hasTaxOffice = snapshot.hasTaxOffice;
                 planet.hasCapitalShipyard = snapshot.hasCapitalShipyard;
                 planet.hasBattleStation = snapshot.hasBattleStation;
-                planet.shipBuildQueue = snapshot.shipBuildQueue.ConvertAll(o => new ShipBuildOrder { ship = o.ship, remainingTime = o.remainingTime });
+                planet.shipBuildQueue = snapshot.shipBuildQueue.ConvertAll(o => new ShipBuildOrder { ship = o.ship, remainingTime = o.remainingTime, deliverTo = o.deliverTo });
             }
         }
 
@@ -136,7 +136,7 @@ public class GalacticState : MonoBehaviour
                 fleetsByName[snapshot.fleetName] = fleet;
             }
 
-            fleet.roster = new List<Ship>(snapshot.roster);
+            fleet.ships = new List<ShipEntry>(snapshot.roster);
             fleet.faction = snapshot.faction;
             fleet.PlaceAt(planet);
             moving.Add((fleet, snapshot.travel));

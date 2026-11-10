@@ -161,6 +161,11 @@ public static class SaveSystem
         if (GalacticState.Instance != null) Object.Destroy(GalacticState.Instance.gameObject);
         if (BattleContext.Instance != null) Object.Destroy(BattleContext.Instance.gameObject);
         if (AIDirector.Instance != null) Object.Destroy(AIDirector.Instance.gameObject);
+        DefensePlans.assignments.Clear();
+        StandingOrders.orders.Clear();
+        HeroRoster.Clear();
+        HeroForces.Clear();
+        ShipNames.ResetForNewCampaign();
     }
 
     public static void ReturnToMainMenu()
@@ -183,6 +188,9 @@ public static class SaveSystem
         }
 
         Difficulty.Current = (DifficultyLevel)data.difficulty;
+        DefensePlans.Restore(data.defensePlans);
+        StandingOrders.Restore(data.standingOrders);
+        HeroRoster.Restore(data.heroesJoined, data.heroesFallen);
 
         state.planetSnapshots.Clear();
         foreach (PlanetSave planet in data.planets)
@@ -195,7 +203,7 @@ public static class SaveSystem
                 hasCapitalShipyard = planet.hasCapitalShipyard,
                 hasBattleStation = planet.hasBattleStation,
                 shipBuildQueue = planet.buildQueue
-                    .Select(order => new ShipBuildOrder { ship = SaveRegistry.FindShip(order.ship), remainingTime = order.remainingTime })
+                    .Select(order => new ShipBuildOrder { ship = SaveRegistry.FindShip(order.ship), remainingTime = order.remainingTime, deliverTo = order.deliverTo })
                     .Where(order => order.ship != null)
                     .ToList()
             });
@@ -204,7 +212,20 @@ public static class SaveSystem
         state.fleetSnapshots.Clear();
         foreach (FleetSave fleet in data.fleets)
         {
-            List<Ship> roster = fleet.roster.Select(SaveRegistry.FindShip).Where(ship => ship != null).ToList();
+            Faction owner = SaveRegistry.FindFaction(fleet.faction);
+            List<ShipEntry> roster = new List<ShipEntry>();
+            for (int i = 0; i < fleet.roster.Count; i++)
+            {
+                Ship type = SaveRegistry.FindShip(fleet.roster[i]);
+                if (type == null) continue;
+
+                string savedName = fleet.names != null && i < fleet.names.Count ? fleet.names[i] : null;
+                string hero = fleet.heroes != null && i < fleet.heroes.Count ? fleet.heroes[i] : null;
+                ShipEntry entry = string.IsNullOrEmpty(savedName) ? ShipEntry.New(type, owner) : new ShipEntry { type = type, shipName = savedName };
+                entry.hero = string.IsNullOrEmpty(hero) ? null : hero;
+                ShipNames.Reserve(entry.shipName);
+                roster.Add(entry);
+            }
             if (roster.Count == 0) continue;
 
             state.fleetSnapshots.Add(new GalacticState.FleetSnapshot
@@ -280,6 +301,10 @@ public static class SaveSystem
             mapSignature = MapSignature(),
             playerFaction = SaveRegistry.Id(player),
             difficulty = (int)Difficulty.Current,
+            defensePlans = DefensePlans.Capture(),
+            standingOrders = StandingOrders.Capture(),
+            heroesJoined = HeroRoster.Capture().joined,
+            heroesFallen = HeroRoster.Capture().fallen,
             galacticTime = AIDirector.Instance != null ? AIDirector.Instance.GalacticTime : 0f,
             taxTimer = EconomyManager.Instance != null ? EconomyManager.Instance.TaxTimer : 0f,
             playerCredits = state.GetCurrency(player)
@@ -297,7 +322,7 @@ public static class SaveSystem
                 hasBattleStation = planet.hasBattleStation,
                 buildQueue = planet.shipBuildQueue
                     .Where(order => order.ship != null)
-                    .Select(order => new BuildSave { ship = SaveRegistry.Id(order.ship), remainingTime = order.remainingTime })
+                    .Select(order => new BuildSave { ship = SaveRegistry.Id(order.ship), remainingTime = order.remainingTime, deliverTo = order.deliverTo })
                     .ToList()
             });
             if (planet.owner == player && player != null) data.playerPlanets++;
@@ -306,13 +331,16 @@ public static class SaveSystem
         foreach (GalacticState.FleetSnapshot fleet in state.fleetSnapshots)
         {
             SaveRegistry.Remember(fleet.faction);
-            foreach (Ship ship in fleet.roster) SaveRegistry.Remember(ship);
+            foreach (ShipEntry ship in fleet.roster) SaveRegistry.Remember(ship.type);
+            List<ShipEntry> kept = fleet.roster.Where(ship => ship != null && ship.type != null).ToList();
             data.fleets.Add(new FleetSave
             {
                 name = fleet.fleetName,
                 faction = SaveRegistry.Id(fleet.faction),
                 planet = fleet.planetName,
-                roster = fleet.roster.Where(ship => ship != null).Select(SaveRegistry.Id).ToList(),
+                roster = kept.Select(ship => SaveRegistry.Id(ship.type)).ToList(),
+                names = kept.Select(ship => ship.shipName ?? "").ToList(),
+                heroes = kept.Select(ship => ship.hero ?? "").ToList(),
                 travel = fleet.travel
             });
             if (fleet.faction == player && player != null) data.playerShips += fleet.roster.Count;
@@ -380,7 +408,8 @@ public static class SaveSystem
                 score = campaign.score,
                 requiredPower = campaign.requiredPower,
                 stagedPower = campaign.stagedPower,
-                suspended = campaign.suspended
+                suspended = campaign.suspended,
+                lastProgressAt = campaign.lastProgressAt
             });
         }
         foreach (KeyValuePair<string, FactionBrain.FleetOrder> order in brain.orders)
@@ -424,7 +453,8 @@ public static class SaveSystem
                 score = campaign.score,
                 requiredPower = campaign.requiredPower,
                 stagedPower = campaign.stagedPower,
-                suspended = campaign.suspended
+                suspended = campaign.suspended,
+                lastProgressAt = campaign.lastProgressAt
             });
         }
 

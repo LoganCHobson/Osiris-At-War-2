@@ -13,7 +13,13 @@ public partial class FactionBrain
         public float assigned;
         public float lastNeededAt;
         public bool critical;
+        // Strike tasks gather at planetName (an owned staging world) and then hit targetName.
+        public string targetName;
+        // Worth pulling ships from anywhere in the empire, however far away, and splitting fleets to do it.
+        public bool urgent;
     }
+
+    public const string StrikePrefix = "Strike:";
 
     public class Assignment
     {
@@ -79,10 +85,23 @@ public partial class FactionBrain
             float age = now - campaign.startedAt;
             bool matured = age >= personality.minCampaignDuration;
             campaign.score = score * 1.25f * (matured ? Mathf.Clamp(campaign.Success, 0.25f, 2f) : 1f);
+            if (campaign.lastProgressAt < campaign.startedAt) campaign.lastProgressAt = campaign.startedAt;
 
             if (matured && campaign.powerLost >= ShipPower * 2f && campaign.Success < 1f / personality.campaignGiveUpRatio)
             {
                 EndCampaign(i, $"Giving up on {Name(campaign.target)} (lost {campaign.powerLost:0}, took {campaign.planetsTaken})");
+                continue;
+            }
+
+            // Stalemate: we've been massing at the border for ages without ever being strong enough to go,
+            // because the other side keeps matching us. Stand down so the fleet can do something useful.
+            float idleFor = now - campaign.lastProgressAt;
+            bool needsMostOfArmy = campaign.requiredPower > TotalPower * 0.6f;
+            if (campaign.stagedPower < campaign.requiredPower
+                && ((idleFor > StalemateTime && needsMostOfArmy) || idleFor > StalemateTime * 2f))
+            {
+                campaignCooldownUntil[campaign.target] = now + StalemateTime;
+                EndCampaign(i, $"Stalemate with {Name(campaign.target)} - standing down (needs {campaign.requiredPower:0}, has {campaign.stagedPower:0})");
             }
         }
 
@@ -116,11 +135,24 @@ public partial class FactionBrain
             StartCampaign(candidate);
         }
 
+        // Someone is taking our planets behind the lines: offensives against anyone else wait until that's
+        // dealt with (an offensive against the raider itself carries on - it's the same war).
         foreach (Campaign campaign in campaigns)
         {
-            campaign.suspended = CampaignsSuspended;
+            bool raided = RecentLosses > 0 && campaign.target != Raider;
+            bool suspend = CampaignsSuspended || raided;
+            if (raided && !campaign.suspended) Log($"Raided by {Name(Raider)} - pausing offensive vs {Name(campaign.target)}");
+
+            campaign.suspended = suspend;
             RefreshCampaignObjective(campaign);
         }
+    }
+
+    private float StalemateTime => Mathf.Max(240f, personality.minCampaignDuration * 4f);
+
+    private bool OnCooldown(Faction target)
+    {
+        return campaignCooldownUntil.TryGetValue(target, out float until) && now < until;
     }
 
     private void ScoreTargets()
@@ -173,7 +205,7 @@ public partial class FactionBrain
 
         foreach (KeyValuePair<Faction, float> entry in targetScores)
         {
-            if (IsCampaignTarget(entry.Key)) continue;
+            if (IsCampaignTarget(entry.Key) || OnCooldown(entry.Key)) continue;
 
             if (entry.Value > bestScore)
             {
@@ -195,7 +227,7 @@ public partial class FactionBrain
 
     private void StartCampaign(Faction target)
     {
-        Campaign campaign = new Campaign { target = target, startedAt = now };
+        Campaign campaign = new Campaign { target = target, startedAt = now, lastProgressAt = now };
         campaigns.Add(campaign);
         RefreshCampaignObjective(campaign);
         Log($"Campaign started against {Name(target)}");
@@ -290,6 +322,7 @@ public partial class FactionBrain
 
         HandleEmergencies();
         LaunchAttacks();
+        LaunchStrikes();
         SendIdleToRally();
         MergeIdleFleets();
         PublishOrders();
@@ -307,7 +340,10 @@ public partial class FactionBrain
             Planet staging = world.FindPlanet(campaign.stagingPlanet);
             if (staging == null || !ownedSet.Contains(staging)) continue;
 
+            // Holding the staging world against whatever the enemy has parked next door is capped like any
+            // other defence - otherwise an arms race at one border soaks up the entire navy.
             float defenseNeed = ThreatAt(staging) * personality.defensePowerMargin - Strength.Defenses(staging);
+            defenseNeed = Mathf.Min(defenseNeed, TotalPower * personality.maxDefenseShare);
             NeedTask(OrderKind.Stage, staging, Mathf.Max(campaign.requiredPower, defenseNeed), 60f * personality.aggression, false);
         }
 
@@ -331,10 +367,17 @@ public partial class FactionBrain
             }
 
             need = Mathf.Max(need, ShipPower * detachment);
-            NeedTask(OrderKind.Defend, planet, need, 100f * value * personality.defensiveness, critical);
+
+            // A threat behind the front line (a raider loose in our territory) is worth more than one at a
+            // border we already watch, and is worth crossing the empire to answer.
+            bool interior = InteriorShare(planet) >= 0.5f;
+            float raidBonus = interior || RecentLosses > 0 ? 1.5f : 1f;
+            NeedTask(OrderKind.Defend, planet, need, 100f * value * personality.defensiveness * raidBonus, critical);
+            taskBook[Key(OrderKind.Defend, planet)].urgent = critical || interior || RecentLosses > 0;
         }
 
         NeedExpansionTasks();
+        NeedStrikeTasks();
 
         if (personality.canGarrisonChokepoints)
         {
@@ -416,20 +459,100 @@ public partial class FactionBrain
         }
     }
 
+    // Enemy planets we should simply take, outside of any campaign:
+    //  - pockets: an enemy world mostly surrounded by ours (a leftover enclave deep in our territory) that
+    //    only helps its owner while it stands;
+    //  - reclaims: a world that was ours until recently, typically left lightly held by a raider moving on.
+    // Each gathers enough force at an owned neighbour and then strikes, like a mini-campaign.
+    private void NeedStrikeTasks()
+    {
+        List<(Planet target, Planet staging, float required, float priority, bool reclaim)> candidates = new List<(Planet, Planet, float, float, bool)>();
+
+        foreach (Planet planet in world.planets)
+        {
+            if (planet == null || planet.owner == null || planet.owner == faction || planet.owner.isNeutral) continue;
+            if (neededThisThink.Contains(Key(OrderKind.Expand, planet))) continue;
+            if (IsCampaignObjective(planet)) continue;
+
+            float interior = InteriorShare(planet);
+            bool pocket = interior >= 0.6f;
+            bool reclaim = WasRecentlyLost(planet);
+            if (!pocket && !reclaim) continue;
+
+            float defense = EstimatedFleetPower(planet) + Strength.Defenses(planet);
+            float required = Mathf.Max(ShipPower * 1.5f, defense * personality.attackPowerMargin);
+            if (required > TotalPower * 0.6f) continue;
+
+            Planet staging = null;
+            if (taskBook.TryGetValue(StrikePrefix + planet.planetName, out MilitaryTask existing))
+            {
+                Planet previous = world.FindPlanet(existing.planetName);
+                if (previous != null && ownedSet.Contains(previous) && previous.IsConnectedTo(planet)) staging = previous;
+            }
+            if (staging == null) staging = ChooseStaging(planet);
+            if (staging == null) continue;
+
+            float cheapness = Mathf.Clamp(ShipPower * 6f / required, 0.3f, 3f);
+            float weight = (pocket ? 55f * personality.aggression : 0f)
+                + (reclaim ? 90f * (1f + personality.vengefulness * 0.5f) : 0f);
+            candidates.Add((planet, staging, required, world.PlanetValue(planet) * weight * cheapness, reclaim));
+        }
+
+        candidates.Sort((a, b) => b.priority.CompareTo(a.priority));
+        int allowed = Mathf.Max(1, personality.maxConcurrentExpansions + 1);
+        for (int i = 0; i < candidates.Count && i < allowed; i++)
+        {
+            var c = candidates[i];
+            MilitaryTask task = NeedTask(StrikePrefix + c.target.planetName, OrderKind.Stage, c.staging.planetName, c.required, c.priority, false);
+            task.targetName = c.target.planetName;
+            task.urgent = c.reclaim;
+        }
+    }
+
+    // Share of a planet's neighbours that we own (1 = completely surrounded by us).
+    private float InteriorShare(Planet planet)
+    {
+        int total = 0;
+        int ours = 0;
+        foreach (Planet neighbor in planet.connections)
+        {
+            if (neighbor == null) continue;
+            total++;
+            if (ownedSet.Contains(neighbor)) ours++;
+        }
+        return total > 0 ? (float)ours / total : 0f;
+    }
+
+    private bool IsCampaignObjective(Planet planet)
+    {
+        foreach (Campaign campaign in campaigns)
+        {
+            if (!campaign.suspended && campaign.objectivePlanet == planet.planetName) return true;
+        }
+        return false;
+    }
+
     private void NeedTask(OrderKind kind, Planet planet, float required, float priority, bool critical)
     {
-        string key = Key(kind, planet);
+        NeedTask(Key(kind, planet), kind, planet.planetName, required, priority, critical);
+    }
+
+    private MilitaryTask NeedTask(string key, OrderKind kind, string planetName, float required, float priority, bool critical)
+    {
         if (!taskBook.TryGetValue(key, out MilitaryTask task))
         {
-            task = new MilitaryTask { key = key, kind = kind, planetName = planet.planetName };
+            task = new MilitaryTask { key = key, kind = kind, planetName = planetName };
             taskBook[key] = task;
         }
 
+        task.planetName = planetName;
         task.required = required;
         task.priority = priority;
         task.critical = critical;
+        task.urgent = false;
         task.lastNeededAt = now;
         neededThisThink.Add(key);
+        return task;
     }
 
     private static string Key(OrderKind kind, Planet planet)
@@ -444,7 +567,7 @@ public partial class FactionBrain
 
         foreach (GalacticFleet fleet in myFleets)
         {
-            if (fleet.roster.Count == 0) continue;
+            if (fleet.ships.Count == 0) continue;
 
             string fleetName = fleet.gameObject.name;
             liveFleetNames.Add(fleetName);
@@ -502,7 +625,7 @@ public partial class FactionBrain
             foreach (GalacticFleet fleet in myFleets)
             {
                 if (task.assigned - task.required <= 0f) break;
-                if (fleet.roster.Count == 0 || fleet.IsTraveling || fleet.IsHolding) continue;
+                if (fleet.ships.Count == 0 || fleet.IsTraveling || fleet.IsHolding) continue;
                 if (!assignments.TryGetValue(fleet.gameObject.name, out Assignment assignment) || assignment.taskKey != task.key) continue;
                 if (now - assignment.since < personality.commitmentTime) continue;
 
@@ -553,7 +676,7 @@ public partial class FactionBrain
             if (hops == int.MaxValue || hops >= bestHops) continue;
             if (hops > personality.responseRadiusHops && !task.critical && task.kind != OrderKind.Stage) continue;
 
-            bool bigEnough = fleet.roster.Count >= detachment || Strength.Of(fleet) >= need || hops <= 1;
+            bool bigEnough = fleet.ships.Count >= detachment || Strength.Of(fleet) >= need || hops <= 1;
             if (!bigEnough) continue;
             if (!IsRouteSafe(fleet.currentPlanet, planet)) continue;
 
@@ -569,11 +692,11 @@ public partial class FactionBrain
         GalacticFleet sent = fleet;
         int detachment = task.kind == OrderKind.Expand ? 1 : Mathf.Max(1, personality.minDetachmentShips);
 
-        if (personality.canSplitFleets && Strength.Of(fleet) > need * 1.5f)
+        if (Strength.Of(fleet) > need * 1.5f)
         {
-            float perShip = Strength.Of(fleet) / fleet.roster.Count;
+            float perShip = Strength.Of(fleet) / fleet.ships.Count;
             int count = Mathf.Max(detachment, Mathf.CeilToInt(need * 1.1f / perShip));
-            if (fleet.roster.Count - count >= Mathf.Max(1, personality.minDetachmentShips))
+            if (fleet.ships.Count - count >= Mathf.Max(1, personality.minDetachmentShips))
             {
                 GalacticFleet split = SplitOff(fleet, count);
                 if (split != null) sent = split;
@@ -595,31 +718,110 @@ public partial class FactionBrain
         task.assigned += Strength.Of(sent);
     }
 
+    // Under-filled defences and urgent strikes (taking back lost worlds) pull ships off lower-priority jobs.
+    // Nearby donors first; urgent tasks then reach across the whole empire. A big donor fleet sends a
+    // detachment sized to the need rather than abandoning its own post wholesale.
     private void HandleEmergencies()
     {
         foreach (MilitaryTask task in activeTasks)
         {
-            if (task.kind != OrderKind.Defend || task.assigned >= task.required * 0.8f) continue;
+            bool isDefense = task.kind == OrderKind.Defend;
+            bool isUrgentStrike = task.targetName != null && task.urgent;
+            if (!isDefense && !isUrgentStrike) continue;
+            if (task.assigned >= task.required * 0.8f) continue;
 
             Planet planet = world.FindPlanet(task.planetName);
             if (planet == null) continue;
 
+            PullDonors(task, planet, personality.responseRadiusHops);
+            if (task.assigned < task.required * 0.8f && (task.critical || task.urgent))
+            {
+                PullDonors(task, planet, int.MaxValue);
+            }
+        }
+    }
+
+    private void PullDonors(MilitaryTask task, Planet planet, int radius)
+    {
+        int detachment = Mathf.Max(1, personality.minDetachmentShips);
+        List<GalacticFleet> donors = new List<GalacticFleet>(myFleets);
+        donors.Sort((a, b) => world.Hops(a.currentPlanet, planet).CompareTo(world.Hops(b.currentPlanet, planet)));
+
+        foreach (GalacticFleet fleet in donors)
+        {
+            if (task.assigned >= task.required) break;
+            if (fleet == null || fleet.ships.Count == 0 || fleet.IsTraveling || fleet.IsHolding) continue;
+            if (!assignments.TryGetValue(fleet.gameObject.name, out Assignment assignment)) continue;
+            if (!taskBook.TryGetValue(assignment.taskKey, out MilitaryTask current) || current == task) continue;
+            if (current.priority * personality.emergencyPriorityRatio > task.priority) continue;
+            if (current.kind == OrderKind.Defend && current.critical && current.assigned <= current.required) continue;
+
+            int hops = world.Hops(fleet.currentPlanet, planet);
+            if (hops == int.MaxValue || hops > radius) continue;
+            if (!IsRouteSafe(fleet.currentPlanet, planet)) continue;
+
+            GalacticFleet sent = fleet;
+            float need = task.required - task.assigned;
+            float power = Strength.Of(fleet);
+            if (power > need * 1.5f && fleet.ships.Count > detachment)
+            {
+                float perShip = power / fleet.ships.Count;
+                int count = Mathf.Clamp(Mathf.CeilToInt(need * 1.1f / perShip), 1, fleet.ships.Count - 1);
+                GalacticFleet split = SplitOff(fleet, count);
+                if (split != null) sent = split;
+            }
+
+            if (sent.currentPlanet != planet && !sent.TrySetDestination(planet))
+            {
+                if (sent != fleet) Merge(sent, fleet);
+                continue;
+            }
+
+            float sentPower = Strength.Of(sent);
+            current.assigned -= sentPower;
+            Assign(sent, task.key, task.kind, planet);
+            task.assigned += sentPower;
+            string why = task.targetName != null ? $"retake {task.targetName}" : $"defend {planet.planetName}";
+            Log($"Emergency: sent {sent.ships.Count} ships from {current.kind} {current.planetName} to {why}");
+        }
+    }
+
+    // Strike tasks fire once enough has gathered at the staging world.
+    private void LaunchStrikes()
+    {
+        foreach (MilitaryTask task in activeTasks)
+        {
+            if (task.targetName == null) continue;
+
+            Planet staging = world.FindPlanet(task.planetName);
+            Planet target = world.FindPlanet(task.targetName);
+            if (staging == null || target == null || target.owner == faction) continue;
+
+            List<GalacticFleet> gathered = new List<GalacticFleet>();
+            float power = 0f;
             foreach (GalacticFleet fleet in myFleets)
             {
-                if (task.assigned >= task.required) break;
-                if (fleet.roster.Count == 0 || fleet.IsTraveling || fleet.IsHolding) continue;
-                if (!assignments.TryGetValue(fleet.gameObject.name, out Assignment assignment)) continue;
-                if (!taskBook.TryGetValue(assignment.taskKey, out MilitaryTask current) || current == task) continue;
-                if (current.priority * personality.emergencyPriorityRatio > task.priority) continue;
+                if (fleet.ships.Count == 0 || fleet.IsTraveling || fleet.IsHolding || fleet.currentPlanet != staging) continue;
+                if (!assignments.TryGetValue(fleet.gameObject.name, out Assignment assignment) || assignment.taskKey != task.key) continue;
 
-                int hops = world.Hops(fleet.currentPlanet, planet);
-                if (hops > personality.responseRadiusHops && !task.critical) continue;
-                if (!IsRouteSafe(fleet.currentPlanet, planet) || !fleet.TrySetDestination(planet)) continue;
+                gathered.Add(fleet);
+                power += Strength.Of(fleet);
+            }
 
-                current.assigned -= Strength.Of(fleet);
-                Assign(fleet, task.key, task.kind, planet);
-                task.assigned += Strength.Of(fleet);
-                Log($"Emergency: pulled {fleet.gameObject.name} from {current.kind} {current.planetName} to defend {planet.planetName}");
+            if (gathered.Count == 0 || power < task.required) continue;
+
+            gathered.Sort((a, b) => Strength.Of(b).CompareTo(Strength.Of(a)));
+            GalacticFleet strike = gathered[0];
+            for (int i = 1; i < gathered.Count; i++)
+            {
+                Merge(gathered[i], strike);
+            }
+
+            if (strike.TrySetDestination(target))
+            {
+                idle.Remove(strike);
+                Assign(strike, $"{OrderKind.Attack}:{target.planetName}", OrderKind.Attack, target);
+                Log($"Strike on {target.planetName} ({(WasRecentlyLost(target) ? "retake" : "clearing pocket")}) with {Strength.Of(strike):0}");
             }
         }
     }
@@ -661,18 +863,18 @@ public partial class FactionBrain
         if (split == null) return null;
 
         split.faction = faction;
-        for (int i = 0; i < count && source.roster.Count > 1; i++)
+        for (int i = 0; i < count && source.ships.Count > 1; i++)
         {
-            source.TransferShipTo(source.roster[source.roster.Count - 1], split);
+            source.TransferShipTo(source.ships[source.ships.Count - 1], split);
         }
         return split;
     }
 
     private void Merge(GalacticFleet from, GalacticFleet into)
     {
-        for (int i = from.roster.Count - 1; i >= 0; i--)
+        for (int i = from.ships.Count - 1; i >= 0; i--)
         {
-            from.TransferShipTo(from.roster[i], into);
+            from.TransferShipTo(from.ships[i], into);
         }
         assignments.Remove(from.gameObject.name);
     }
@@ -692,7 +894,7 @@ public partial class FactionBrain
             List<GalacticFleet> staged = new List<GalacticFleet>();
             foreach (GalacticFleet fleet in myFleets)
             {
-                if (fleet.roster.Count == 0 || fleet.IsTraveling || fleet.IsHolding || fleet.currentPlanet != staging) continue;
+                if (fleet.ships.Count == 0 || fleet.IsTraveling || fleet.IsHolding || fleet.currentPlanet != staging) continue;
 
                 bool stagedHere = assignments.TryGetValue(fleet.gameObject.name, out Assignment assignment)
                     && (assignment.taskKey == stageKey || assignment.taskKey == RallyKey);
@@ -713,6 +915,7 @@ public partial class FactionBrain
 
             if (strike.TrySetDestination(objective))
             {
+                campaign.lastProgressAt = now;
                 idle.Remove(strike);
                 Assign(strike, $"{OrderKind.Attack}:{objective.planetName}", OrderKind.Attack, objective);
                 Log($"Attacking {objective.planetName} with {Strength.Of(strike):0} vs est. {EstimatedFleetPower(objective) + Strength.Defenses(objective):0}");
@@ -727,7 +930,7 @@ public partial class FactionBrain
 
         foreach (GalacticFleet fleet in idle)
         {
-            if (fleet.roster.Count == 0) continue;
+            if (fleet.ships.Count == 0) continue;
 
             if (fleet.currentPlanet != rally)
             {
@@ -800,7 +1003,7 @@ public partial class FactionBrain
                 if (!assignments.TryGetValue(from.gameObject.name, out Assignment b)) continue;
                 if (a.taskKey != b.taskKey || a.planetName != b.planetName) continue;
 
-                if (from.roster.Count > into.roster.Count)
+                if (from.ships.Count > into.ships.Count)
                 {
                     Merge(into, from);
                     break;
@@ -813,7 +1016,7 @@ public partial class FactionBrain
 
     private static bool CanMerge(GalacticFleet fleet)
     {
-        return fleet != null && fleet.roster.Count > 0 && !fleet.IsTraveling && !fleet.IsHolding && fleet.currentPlanet != null;
+        return fleet != null && fleet.ships.Count > 0 && !fleet.IsTraveling && !fleet.IsHolding && fleet.currentPlanet != null;
     }
 
     private void PublishOrders()

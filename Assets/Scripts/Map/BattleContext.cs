@@ -8,7 +8,7 @@ public class BattleContext : MonoBehaviour
     [System.Serializable]
     public class ShipToken
     {
-        public Ship ship;
+        public ShipEntry ship;
         public int fleet;
         public bool claimed;
         public bool lost;
@@ -19,13 +19,13 @@ public class BattleContext : MonoBehaviour
     public Faction attackerFaction;
     public List<string> attackerFleetNames = new List<string>();
     public List<ShipToken> attackerTokens = new List<ShipToken>();
-    public List<Ship> attackerRoster = new List<Ship>();
+    public List<ShipEntry> attackerRoster = new List<ShipEntry>();
 
     public bool hasDefender;
     public Faction defenderFaction;
     public List<string> defenderFleetNames = new List<string>();
     public List<ShipToken> defenderTokens = new List<ShipToken>();
-    public List<Ship> defenderRoster = new List<Ship>();
+    public List<ShipEntry> defenderRoster = new List<ShipEntry>();
 
     public string destinationPlanetName;
     public PlanetAppearance destinationAppearance;
@@ -38,8 +38,8 @@ public class BattleContext : MonoBehaviour
     public float attackerStartPower;
     public float defenderStartPower;
 
-    public List<Ship> attackerStartRoster = new List<Ship>();
-    public List<Ship> defenderStartRoster = new List<Ship>();
+    public List<ShipEntry> attackerStartRoster = new List<ShipEntry>();
+    public List<ShipEntry> defenderStartRoster = new List<ShipEntry>();
 
     public bool attackerLost;
     public bool defenderLost;
@@ -98,8 +98,8 @@ public class BattleContext : MonoBehaviour
         attackerStartPower = Strength.Of(attackerRoster);
         defenderStartPower = Strength.Of(defenderRoster);
 
-        attackerStartRoster = new List<Ship>(attackerRoster);
-        defenderStartRoster = new List<Ship>(defenderRoster);
+        attackerStartRoster = new List<ShipEntry>(attackerRoster);
+        defenderStartRoster = new List<ShipEntry>(defenderRoster);
     }
 
     private static List<GalacticFleet> FleetsAt(Planet planet)
@@ -124,18 +124,18 @@ public class BattleContext : MonoBehaviour
 
         int index = names.Count;
         names.Add(fleet.gameObject.name);
-        foreach (Ship ship in fleet.roster)
+        foreach (ShipEntry ship in fleet.ships)
         {
-            if (ship != null)
+            if (ship != null && ship.type != null)
             {
                 tokens.Add(new ShipToken { ship = ship, fleet = index });
             }
         }
     }
 
-    private static List<Ship> RosterOf(List<ShipToken> tokens)
+    private static List<ShipEntry> RosterOf(List<ShipToken> tokens)
     {
-        List<Ship> roster = new List<Ship>();
+        List<ShipEntry> roster = new List<ShipEntry>();
         foreach (ShipToken token in tokens)
         {
             if (!token.lost) roster.Add(token.ship);
@@ -143,12 +143,12 @@ public class BattleContext : MonoBehaviour
         return roster;
     }
 
-    public int Claim(bool attackerSide, Ship ship)
+    public int Claim(bool attackerSide, ShipEntry ship)
     {
         List<ShipToken> tokens = attackerSide ? attackerTokens : defenderTokens;
         for (int i = 0; i < tokens.Count; i++)
         {
-            if (!tokens[i].claimed && !tokens[i].lost && tokens[i].ship == ship)
+            if (!tokens[i].claimed && !tokens[i].lost && ReferenceEquals(tokens[i].ship, ship))
             {
                 tokens[i].claimed = true;
                 return i;
@@ -157,9 +157,9 @@ public class BattleContext : MonoBehaviour
         return -1;
     }
 
-    public List<Ship> SurvivorsOf(bool attackerSide, int fleet)
+    public List<ShipEntry> SurvivorsOf(bool attackerSide, int fleet)
     {
-        List<Ship> survivors = new List<Ship>();
+        List<ShipEntry> survivors = new List<ShipEntry>();
         foreach (ShipToken token in attackerSide ? attackerTokens : defenderTokens)
         {
             if (token.fleet == fleet && !token.lost) survivors.Add(token.ship);
@@ -172,14 +172,14 @@ public class BattleContext : MonoBehaviour
         IsLocked = true;
     }
 
-    public void ReportLoss(bool attackerSide, Ship ship, int token = -1)
+    public void ReportLoss(bool attackerSide, ShipEntry ship, int token = -1)
     {
         if (ship == null || IsLocked) return;
 
         List<ShipToken> tokens = attackerSide ? attackerTokens : defenderTokens;
-        if (token < 0 || token >= tokens.Count || tokens[token].lost || tokens[token].ship != ship)
+        if (token < 0 || token >= tokens.Count || tokens[token].lost || !ReferenceEquals(tokens[token].ship, ship))
         {
-            token = tokens.FindIndex(t => !t.lost && t.ship == ship);
+            token = tokens.FindIndex(t => !t.lost && ReferenceEquals(t.ship, ship));
         }
         if (token < 0) return;
 

@@ -23,7 +23,7 @@ public static class Manpower
         foreach (GalacticFleet fleet in GalacticFleet.All)
         {
             if (fleet == null || fleet.faction != faction) continue;
-            foreach (Ship ship in fleet.roster)
+            foreach (Ship ship in fleet.ships)
             {
                 if (ship != null) used += ship.populationCost;
             }

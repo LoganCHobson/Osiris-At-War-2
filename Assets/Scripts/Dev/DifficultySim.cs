@@ -103,7 +103,7 @@ public class DifficultySim : MonoBehaviour
         commander.difficultyOverride = DifficultyProfile.For(level);
 
         Transform spawn = attackerSide ? GameManager.Instance.attackerShipSpawnPoint : GameManager.Instance.defenderShipSpawnPoint;
-        commander.Initialize(faction, attackerSide, Fleet(faction), spawn, GameManager.Instance.populationCap);
+        commander.Initialize(faction, attackerSide, Fleet(faction).ConvertAll(ship => ShipEntry.New(ship, faction)), spawn, GameManager.Instance.populationCap);
         commanders.Add(commander);
         return commander;
     }
