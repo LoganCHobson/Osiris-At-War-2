@@ -139,8 +139,8 @@ class Collector:
 
             # Recent battles in detail, from their payloads. Streamed in small batches: a self-play payload
             # carries every decision's features, and 2000 of them at once (230 MB of JSON) ran the exporter out of memory.
-            rows = conn.execution_options(stream_results=True, yield_per=PAYLOAD_BATCH).execute(
-                select(b.install_id, b.payload).order_by(b.id.desc()).limit(RECENT))
+            rows = conn.execute(select(b.install_id, b.payload).order_by(b.id.desc()).limit(RECENT)
+                                .execution_options(stream_results=True, yield_per=PAYLOAD_BATCH))
             yield from self._recent(rows)
 
     def _recent(self, rows):

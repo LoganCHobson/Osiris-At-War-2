@@ -129,10 +129,13 @@ def training_pool(conn, cfg: RoundConfig):
     since = storage.now() - dt.timedelta(days=cfg.window_days)
     # Streamed, and each record turned into arrays as it arrives: holding every payload and parsed
     # record at once ran the trainer out of its 3Gi at 3,500 battles.
-    rows = conn.execution_options(stream_results=True, yield_per=POOL_BATCH).execute(
+    # Options on the statement, not the connection: Connection.execution_options() would make every
+    # later statement on it (retention's DELETE) a server-side cursor too, which Postgres rejects.
+    rows = conn.execute(
         select(b.payload, b.install_id, b.network)
         .where(and_(b.status == "accepted", b.received_at >= since))
-        .order_by(b.id.desc()).limit(cfg.max_pool))
+        .order_by(b.id.desc()).limit(cfg.max_pool)
+        .execution_options(stream_results=True, yield_per=POOL_BATCH))
     battles, installs_, networks = [], [], []
     floor = version_key(cfg.min_client_version) if cfg.min_client_version else None
     stale = 0
