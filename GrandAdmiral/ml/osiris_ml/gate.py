@@ -18,7 +18,7 @@ import numpy as np
 
 from . import distill, spec
 from .dataset import Dataset
-from .train import advantages, head_terms
+from .train import advantages, head_kls, head_terms
 
 
 @dataclass
@@ -94,17 +94,7 @@ def _per_battle_improvement(old, new, ds: Dataset):
 def mean_kl(old, new, ds: Dataset):
     out_old, _ = old.forward(ds.x)
     out_new, _ = new.forward(ds.x)
-    result = {}
-    for name in spec.HEADS:
-        rows, _, _, p = head_terms(out_old, ds, name)
-        if len(rows) == 0:
-            result[name] = 0.0
-            continue
-        _, _, _, q = head_terms(out_new, ds, name)
-        with np.errstate(divide="ignore", invalid="ignore"):
-            terms = np.where(p > 0, p * (np.log(np.maximum(p, 1e-12)) - np.log(np.maximum(q, 1e-12))), 0.0)
-        result[name] = float(np.average(terms.sum(axis=1), weights=ds.weights[rows]))
-    return result
+    return head_kls(out_old, out_new, ds)
 
 
 def evaluate(old, new, holdout: Dataset, installs: int, cfg: GateConfig = GateConfig(), arena=None,

@@ -34,6 +34,15 @@ class TrainConfig:
     value_coef: float = 0.0     # the critic is fit by ridge regression instead
     gae_lambda: float = 0.9
     seed: int = 0
+    # Early stop: the epochs above are a ceiling, not a target. Every kl_check_every steps the trainer
+    # measures how far each head has moved from the released model (the gate's own KL, on a fixed sample
+    # of up to kl_sample_rows decisions), and once any head passes max_kl it goes back to the last
+    # point inside and stops. 0.04 sits under the gate's max_kl (0.05), which is measured on other data.
+    # Without it, steps grow with the pool (240 a round on the toy, ~18,000 on the live pool) and so
+    # does the step, until every candidate fails the gate for moving too far.
+    max_kl: float = 0.04
+    kl_check_every: int = 20
+    kl_sample_rows: int = 20000
 
 
 def categorical_terms(logits, mask, actions, temperature, epsilon):
@@ -218,7 +227,17 @@ def train(previous, ds: Dataset, cfg: TrainConfig = TrainConfig()):
     optimiser = Adam(model.params(), cfg.learning_rate)
     rng = np.random.default_rng(cfg.seed)
     n = len(ds.x)
+    check = _kl_sample(ds, cfg) if cfg.max_kl else None
+    check_old = previous.forward(check.x)[0] if check is not None else None
+    inside = [p.copy() for p in model.params()]  # the last weights known to be within max_kl
+    steps = 0
     started = time.monotonic()
+
+    def within():
+        kl = head_kls(check_old, model.forward(check.x)[0], check)
+        return max(kl.values(), default=0.0) <= cfg.max_kl, kl
+
+    stopped = None
     for epoch in range(cfg.epochs):
         if epoch % 10 == 0:
             log.info("training: epoch %d/%d over %d decisions (%.0fs)", epoch, cfg.epochs, n, time.monotonic() - started)
@@ -229,4 +248,52 @@ def train(previous, ds: Dataset, cfg: TrainConfig = TrainConfig()):
             grads[2][spec.OUT_VALUE] = 0.0  # The critic is refit exactly below.
             grads[3][spec.OUT_VALUE] = 0.0
             optimiser.step(model.params(), grads)
+            steps += 1
+            if check is not None and steps % cfg.kl_check_every == 0:
+                ok, kl = within()
+                if not ok:
+                    stopped = (epoch, steps, kl)
+                    break
+                inside = [p.copy() for p in model.params()]
+        if stopped:
+            break
+    if check is not None and not stopped and steps % cfg.kl_check_every:
+        ok, kl = within()
+        if not ok:
+            stopped = (cfg.epochs - 1, steps, kl)
+    if stopped:
+        epoch, steps, kl = stopped
+        for p, kept in zip(model.params(), inside):
+            p[...] = kept
+        worst = max(kl, key=kl.get)
+        log.info("training: stopped at epoch %d (step %d): %s moved %.4f > %.4f, kept the last weights inside",
+                 epoch, steps, worst, kl[worst], cfg.max_kl)
     return fit_critic(model, ds)
+
+
+def _kl_sample(ds: Dataset, cfg: TrainConfig):
+    """Whole battles, up to kl_sample_rows decisions, drawn once (with their own RNG, so training's
+    shuffling is the same with or without the early stop)."""
+    if len(ds.x) <= cfg.kl_sample_rows:
+        return ds
+    rng = np.random.default_rng(cfg.seed + 1)
+    battles, sizes = np.unique(ds.battle, return_counts=True)
+    order = rng.permutation(len(battles))
+    keep = order[:max(1, int(np.searchsorted(np.cumsum(sizes[order]), cfg.kl_sample_rows)))]
+    return ds.subset(battles[keep])
+
+
+def head_kls(out_old, out_new, ds: Dataset):
+    """Mean KL(old || new) per head over `ds`, from the networks' outputs on it. The gate's step-size
+    check uses the same function, so the trainer stops on exactly what the gate measures."""
+    result = {}
+    for name in spec.HEADS:
+        rows, _, _, p = head_terms(out_old, ds, name)
+        if len(rows) == 0:
+            result[name] = 0.0
+            continue
+        _, _, _, q = head_terms(out_new, ds, name)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            terms = np.where(p > 0, p * (np.log(np.maximum(p, 1e-12)) - np.log(np.maximum(q, 1e-12))), 0.0)
+        result[name] = float(np.average(terms.sum(axis=1), weights=ds.weights[rows]))
+    return result

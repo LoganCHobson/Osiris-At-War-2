@@ -158,3 +158,14 @@ def test_training_is_deterministic(baseline):
     a = train.train(baseline, ds, cfg)
     b = train.train(baseline, ds, cfg)
     assert a.to_bytes() == b.to_bytes()
+
+
+def test_training_stops_before_moving_too_far(baseline):
+    """A long, hot run would carry a head past the step-size limit; the early stop keeps it inside."""
+    rng = np.random.default_rng(8)
+    ds = dataset.build([parse(toyenv.play(_explore(baseline), rng)) for _ in range(800)])
+    hot = dict(epochs=60, learning_rate=0.05, anchor=0.0, kl_check_every=5)
+    free = train.train(baseline, ds, train.TrainConfig(max_kl=0.0, **hot))  # 0 turns the stop off
+    kept = train.train(baseline, ds, train.TrainConfig(max_kl=0.01, **hot))
+    assert max(gate.mean_kl(baseline, free, ds).values()) > 0.01  # the run really would overshoot
+    assert max(gate.mean_kl(baseline, kept, ds).values()) <= 0.01
