@@ -1653,6 +1653,214 @@ data:
          }
         }
        ]
+      },
+      {
+       "type": "row",
+       "title": "Cluster hardware",
+       "id": 36,
+       "collapsed": false,
+       "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 65
+       }
+      },
+      {
+       "type": "timeseries",
+       "title": "CPU package temperature",
+       "id": 37,
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "description": "Each node's CPU package. Yellow from 75 C, red from 85 C (most mini PCs throttle near 95-100 C).",
+       "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 66
+       },
+       "fieldConfig": {
+        "defaults": {
+         "unit": "celsius",
+         "custom": {
+          "drawStyle": "line",
+          "fillOpacity": 8,
+          "lineWidth": 2,
+          "stacking": {
+           "mode": "none",
+           "group": "A"
+          },
+          "showPoints": "never",
+          "thresholdsStyle": {
+           "mode": "line"
+          }
+         },
+         "thresholds": {
+          "mode": "absolute",
+          "steps": [
+           {
+            "color": "green",
+            "value": null
+           },
+           {
+            "color": "yellow",
+            "value": 75
+           },
+           {
+            "color": "red",
+            "value": 85
+           }
+          ]
+         }
+        },
+        "overrides": []
+       },
+       "options": {
+        "legend": {
+         "displayMode": "list",
+         "placement": "bottom"
+        },
+        "tooltip": {
+         "mode": "multi"
+        }
+       },
+       "targets": [
+        {
+         "refId": "A",
+         "expr": "node_thermal_zone_temp{type=\"x86_pkg_temp\"} * on(instance) group_left(nodename) node_uname_info",
+         "legendFormat": "{{nodename}}",
+         "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+         }
+        }
+       ]
+      },
+      {
+       "type": "timeseries",
+       "title": "NVMe drive temperature",
+       "id": 38,
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "description": "Hottest sensor on each node's NVMe drive. Most drives throttle around 70-80 C.",
+       "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 12,
+        "y": 66
+       },
+       "fieldConfig": {
+        "defaults": {
+         "unit": "celsius",
+         "custom": {
+          "drawStyle": "line",
+          "fillOpacity": 8,
+          "lineWidth": 2,
+          "stacking": {
+           "mode": "none",
+           "group": "A"
+          },
+          "showPoints": "never",
+          "thresholdsStyle": {
+           "mode": "line"
+          }
+         },
+         "thresholds": {
+          "mode": "absolute",
+          "steps": [
+           {
+            "color": "green",
+            "value": null
+           },
+           {
+            "color": "yellow",
+            "value": 75
+           },
+           {
+            "color": "red",
+            "value": 85
+           }
+          ]
+         }
+        },
+        "overrides": []
+       },
+       "options": {
+        "legend": {
+         "displayMode": "list",
+         "placement": "bottom"
+        },
+        "tooltip": {
+         "mode": "multi"
+        }
+       },
+       "targets": [
+        {
+         "refId": "A",
+         "expr": "max by (instance) (node_hwmon_temp_celsius{chip=~\"nvme.*\"}) * on(instance) group_left(nodename) node_uname_info",
+         "legendFormat": "{{nodename}}",
+         "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+         }
+        }
+       ]
+      },
+      {
+       "type": "timeseries",
+       "title": "CPU busy",
+       "id": 39,
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "description": "",
+       "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 18,
+        "y": 66
+       },
+       "fieldConfig": {
+        "defaults": {
+         "unit": "percentunit",
+         "custom": {
+          "drawStyle": "line",
+          "fillOpacity": 8,
+          "lineWidth": 2,
+          "stacking": {
+           "mode": "none",
+           "group": "A"
+          },
+          "showPoints": "never"
+         }
+        },
+        "overrides": []
+       },
+       "options": {
+        "legend": {
+         "displayMode": "list",
+         "placement": "bottom"
+        },
+        "tooltip": {
+         "mode": "multi"
+        }
+       },
+       "targets": [
+        {
+         "refId": "A",
+         "expr": "(1 - avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m]))) * on(instance) group_left(nodename) node_uname_info",
+         "legendFormat": "{{nodename}}",
+         "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+         }
+        }
+       ]
       }
      ]
     }

@@ -77,6 +77,7 @@ public class PlayerSpaceManager : MonoBehaviour
     {
         ShipHeathHighlighter();
         CursorSelector();
+        UpdatePausePreview();
 
         if (PlayerRetreating)
         {
@@ -687,6 +688,52 @@ public class PlayerSpaceManager : MonoBehaviour
 
         selectionAnim.gameObject.transform.localPosition = hit.point;
         selectionAnim.Play("GroundMarker");
+    }
+
+    // ---- paused: where the selected ships will go, and at what height ----
+
+    private OrderPreview orderPreview;
+    public Color placedOrderColor = new Color(0.35f, 0.85f, 1f, 0.95f);
+    public Color hoverOrderColor = new Color(0.45f, 1f, 0.55f, 0.8f);
+
+    private void UpdatePausePreview()
+    {
+        if (orderPreview == null) orderPreview = new GameObject("OrderPreview").AddComponent<OrderPreview>();
+        orderPreview.BeginFrame();
+
+        if (Time.timeScale == 0f && selectedUnits.Count > 0 && !PlayerRetreating)
+        {
+            PruneSelection();
+
+            // Orders already given (ships don't move while paused, so show where they're going).
+            foreach (SpaceUnit unit in selectedUnits)
+            {
+                if (unit == null || unit.moveState == null) continue;
+                float altitude = unit.TryGetComponent(out ShipAltitude a) ? a.TargetAltitude : 0f;
+                foreach (Vector3 destination in unit.moveState.destinations)
+                {
+                    orderPreview.Add(destination, altitude, placedOrderColor);
+                }
+            }
+
+            // Where a click would send them: the same formation a move order lays out.
+            List<SpaceUnit> movers = selectedUnits.FindAll(unit => unit != null && unit.IsMobile);
+            if (movers.Count > 0 && Mode == CommandMode.None && !UIKit.PointerOverScreenUI()
+                && Physics.Raycast(cam.ScreenPointToRay(Input.mousePosition), out RaycastHit hit, Mathf.Infinity, groundLayer))
+            {
+                bool queue = Input.GetKey(KeyCode.LeftShift);
+                List<Vector3> origins = new List<Vector3>();
+                foreach (SpaceUnit unit in movers) origins.Add(queue ? unit.moveState.LastQueuedPosition : unit.transform.position);
+                FleetFormation.Slot[] slots = FleetFormation.Move(movers, origins, hit.point);
+                for (int i = 0; i < movers.Count; i++)
+                {
+                    float altitude = movers[i].TryGetComponent(out ShipAltitude a) ? a.TargetAltitude : 0f;
+                    orderPreview.Add(slots[i].position, altitude, hoverOrderColor);
+                }
+            }
+        }
+
+        orderPreview.EndFrame();
     }
 
     private void ShipHeathHighlighter()

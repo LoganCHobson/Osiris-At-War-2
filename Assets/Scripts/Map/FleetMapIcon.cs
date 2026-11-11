@@ -35,6 +35,9 @@ public class FleetMapIcon : MonoBehaviour
     private SpriteRenderer fill;
     private SpriteRenderer selection;
     private TextMeshPro countText;
+    // Tag over a fleet that's gathering new ships for a build order, so it isn't moved by mistake.
+    private TextMeshPro deliveryText;
+    public Color deliveryColor = new Color(1f, 0.7f, 0.25f);
     private SpriteRenderer[] markers = new SpriteRenderer[0];
     private Transform markerRoot;
     private PowerMarkerStyle builtStyle;
@@ -112,6 +115,20 @@ public class FleetMapIcon : MonoBehaviour
         countText.textWrappingMode = TextWrappingModes.NoWrap;
         countText.rectTransform.sizeDelta = new Vector2(1.4f, 0.8f);
         countText.sortingOrder = 104; // Above the badge fill (sprites sort at 100+).
+
+        GameObject deliveryObject = new GameObject("BuildOrder");
+        deliveryObject.layer = gameObject.layer;
+        deliveryObject.transform.SetParent(root, false);
+        deliveryObject.transform.localPosition = new Vector3(0f, 0.85f, -0.02f);
+        deliveryText = deliveryObject.AddComponent<TextMeshPro>();
+        deliveryText.alignment = TextAlignmentOptions.Center;
+        deliveryText.fontSize = 3.2f;
+        deliveryText.fontStyle = FontStyles.Bold;
+        deliveryText.color = deliveryColor;
+        deliveryText.textWrappingMode = TextWrappingModes.NoWrap;
+        deliveryText.rectTransform.sizeDelta = new Vector2(4f, 0.6f);
+        deliveryText.sortingOrder = 104;
+        deliveryText.enabled = false;
 
         // A generous click target - the old ship model's collider was tiny at map zoom.
         SphereCollider clickTarget = root.gameObject.AddComponent<SphereCollider>();
@@ -230,6 +247,10 @@ public class FleetMapIcon : MonoBehaviour
         {
             markers[i].enabled = fleet.IsRevealed && (i < tier || showUnlit);
         }
+
+        bool delivering = !string.IsNullOrEmpty(fleet.pendingDelivery) && fleet.faction != null && fleet.faction.isPlayerFaction && fleet.IsRevealed;
+        deliveryText.enabled = delivering;
+        if (delivering) deliveryText.text = $"BUILD ORDER  > {fleet.pendingDelivery}";
 
         if (count == shownCount && tier == shownTier && factionColor == shownFaction) return;
 

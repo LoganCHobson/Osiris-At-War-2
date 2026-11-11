@@ -132,6 +132,21 @@ stat("Blocked installs", 'sum(ga_installs{blocked="true"})', 4, 57, alert_above=
 series("Player battles received", [('ga_battles_received{source="player", window="24h"}', "last 24h")], 8, 57, w=8)
 series("Player outcomes (recent)", [('ga_recent_outcomes{source="player"}', "{{outcome}}")], 16, 57, w=8, stack=True)
 
+# ---- the cluster's hardware, while the farm runs ----
+NODE = 'on(instance) group_left(nodename) node_uname_info'
+row("Cluster hardware", 65)
+temps = series("CPU package temperature", [(f'node_thermal_zone_temp{{type="x86_pkg_temp"}} * {NODE}', "{{nodename}}")],
+               0, 66, w=12, unit="celsius",
+               description="Each node's CPU package. Yellow from 75 C, red from 85 C (most mini PCs throttle near 95-100 C).")
+series("NVMe drive temperature", [(f'max by (instance) (node_hwmon_temp_celsius{{chip=~"nvme.*"}}) * {NODE}', "{{nodename}}")],
+       12, 66, w=6, unit="celsius", description="Hottest sensor on each node's NVMe drive. Most drives throttle around 70-80 C.")
+series("CPU busy", [(f'(1 - avg by (instance) (rate(node_cpu_seconds_total{{mode="idle"}}[5m]))) * {NODE}', "{{nodename}}")],
+       18, 66, w=6, unit="percentunit")
+for p in panels[-3:-1]:
+    p["fieldConfig"]["defaults"]["thresholds"] = {"mode": "absolute", "steps": [
+        {"color": "green", "value": None}, {"color": "yellow", "value": 75}, {"color": "red", "value": 85}]}
+    p["fieldConfig"]["defaults"]["custom"]["thresholdsStyle"] = {"mode": "line"}
+
 dashboard = {
     "uid": "grand-admiral", "title": "Grand Admiral", "tags": ["osiris", "grand-admiral"],
     "timezone": "browser", "schemaVersion": 39, "version": 1, "refresh": "1m",

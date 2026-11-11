@@ -20,6 +20,10 @@ public class GalacticMapManager : MonoBehaviour
     [Tooltip("How close (in map units) the cursor must be to a parking spot to drop a fleet onto it.")]
     public float slotSnapRadius = 1.4f;
     public Color mergeOrderColor = new Color(1f, 0.78f, 0.25f);
+    // The move preview's marching arrows: green for a clear route, red if a battle is expected on the way or
+    // at the destination (where we can see it).
+    public Color clearRouteColor = new Color(0.35f, 1f, 0.45f);
+    public Color battleRouteColor = new Color(1f, 0.3f, 0.25f);
     public float slotMarkerRadius = 0.7f;
 
     [Header("Hyperspace lanes")]
@@ -37,6 +41,9 @@ public class GalacticMapManager : MonoBehaviour
     private Planet previewPlanet;
     private List<Planet> previewRoute = new List<Planet>();
     private bool previewValid;
+    private bool previewBattle;
+    private RouteArrows routeArrows;
+    private readonly List<Vector3> arrowPath = new List<Vector3>();
     private string previewInfo;
 
     private enum DropKind { None, Route, Merge, Park }
@@ -72,7 +79,11 @@ public class GalacticMapManager : MonoBehaviour
         if (orderLinePreview != null)
         {
             orderLinePreview.positionCount = 0;
+            // The scene's preview line has no material, which Unity draws magenta.
+            if (orderLinePreview.sharedMaterial == null) orderLinePreview.material = new Material(Shader.Find("Sprites/Default"));
         }
+        routeArrows = new GameObject("RouteArrows").AddComponent<RouteArrows>();
+        routeArrows.transform.SetParent(transform, false);
 
         if (AIDirector.Instance == null)
         {
@@ -124,11 +135,13 @@ public class GalacticMapManager : MonoBehaviour
         List<GalacticFleet> losingFleets = attackerWon ? defenderFleets : attackerFleets;
         Planet retreatedTo = null;
         bool anyRetreated = false;
+        List<Ship> retreatedShips = new List<Ship>();
         foreach (GalacticFleet fleet in losingFleets)
         {
             anyRetreated |= fleet.CanRetreat; // Neutral losers are wiped out instead.
             Planet haven = fleet.RetreatFrom(destinationPlanet);
             if (retreatedTo == null) retreatedTo = haven;
+            if (haven != null) foreach (ShipEntry ship in fleet.ships) if (ship != null && ship.type != null) retreatedShips.Add(ship.type);
         }
 
         BattleResult result = BuildBattleResult(context, destinationPlanet, attackerWon, ownerBefore);
@@ -137,6 +150,7 @@ public class GalacticMapManager : MonoBehaviour
             bool playerLost = Strength.IsPlayer(attackerWon ? context.defenderFaction : context.attackerFaction);
             result.playerRetreated = playerLost;
             result.enemyRetreated = !playerLost;
+            result.retreatedShips = retreatedShips;
             result.retreatedTo = retreatedTo != null ? retreatedTo.planetName : null;
         }
         BattleReportPanel.Show(result);
@@ -385,9 +399,22 @@ public class GalacticMapManager : MonoBehaviour
             orderLinePreview.SetPosition(1, to + lift);
         }
 
-        Color lineColor = !previewValid ? invalidOrderColor : dropKind == DropKind.Merge ? mergeOrderColor : validOrderColor;
-        orderLinePreview.startColor = lineColor;
-        orderLinePreview.endColor = lineColor;
+        Color lineColor = !previewValid ? invalidOrderColor : dropKind == DropKind.Merge ? mergeOrderColor
+            : previewBattle ? battleRouteColor : clearRouteColor;
+        Color faded = new Color(lineColor.r, lineColor.g, lineColor.b, lineColor.a * 0.45f);
+        orderLinePreview.startColor = faded;
+        orderLinePreview.endColor = faded;
+
+        if (previewValid && routeArrows != null)
+        {
+            arrowPath.Clear();
+            for (int i = 0; i < orderLinePreview.positionCount; i++) arrowPath.Add(orderLinePreview.GetPosition(i) + Vector3.up * 0.02f);
+            routeArrows.Show(arrowPath, lineColor);
+        }
+        else
+        {
+            routeArrows?.Hide();
+        }
 
         UpdateSlotMarker(lineColor);
         PlanetTooltip.Instance?.SetRouteInfo(previewInfo);
@@ -485,6 +512,7 @@ public class GalacticMapManager : MonoBehaviour
     {
         previewRoute.Clear();
         previewValid = false;
+        previewBattle = false;
         previewInfo = null;
 
         if (dropKind == DropKind.Merge)
@@ -560,7 +588,9 @@ public class GalacticMapManager : MonoBehaviour
                 Planet stop = previewRoute[i];
                 bool enemySeen = FogOfWar.CanSee(stop) && routeOwner.FindOpposingFleet(stop) != null;
                 if ((stop.owner != null && stop.owner != routeOwner.faction) || enemySeen) hostileStops++;
+                if (FogOfWar.CanSee(stop) && routeOwner.HasBattleAt(stop)) previewBattle = true;
             }
+            if (FogOfWar.CanSee(previewPlanet) && routeOwner.HasBattleAt(previewPlanet)) previewBattle = true;
             if (hostileStops > 0) lines.Add(MapText.Tint($"Passes {MapText.Plural(hostileStops, "hostile system")} - may be intercepted", MapText.Warning));
 
             if (!FogOfWar.CanSee(previewPlanet))
@@ -621,6 +651,8 @@ public class GalacticMapManager : MonoBehaviour
         {
             orderLinePreview.positionCount = 0;
         }
+        routeArrows?.Hide();
+        previewBattle = false;
 
         if (slotMarker != null)
         {
@@ -649,21 +681,32 @@ public class GalacticMapManager : MonoBehaviour
         switch (kind)
         {
             case DropKind.Merge:
+                // Merging into a convoy that's gathering for a build order takes it over: the delivery is off.
+                if (targetFleet != null) targetFleet.pendingDelivery = null;
                 MergeSelectedInto(targetFleet);
                 break;
 
             case DropKind.Park:
-                dragFleet?.MoveToSlot(targetSlot);
+                if (dragFleet != null && dragFleet.MoveToSlot(targetSlot)) TakeOverDelivery(dragFleet);
                 break;
 
             case DropKind.Route:
                 foreach (GalacticFleet fleet in selectedFleets)
                 {
                     if (fleet == null) continue;
-                    fleet.TrySetDestination(targetPlanet, fleet == dragFleet ? targetSlot : -1);
+                    if (fleet.TrySetDestination(targetPlanet, fleet == dragFleet ? targetSlot : -1)) TakeOverDelivery(fleet);
                 }
                 break;
         }
+    }
+
+    // A fleet the player moves by hand is the player's again: it won't be sent on to its build order's
+    // destination. (Ships still being built for that order gather in a new convoy at the yard.)
+    private static void TakeOverDelivery(GalacticFleet fleet)
+    {
+        if (string.IsNullOrEmpty(fleet.pendingDelivery)) return;
+        Toast.Show($"{fleet.ships.Count} new ship{(fleet.ships.Count == 1 ? "" : "s")} taken off the build order for {fleet.pendingDelivery}");
+        fleet.pendingDelivery = null;
     }
 
     private void MergeSelectedInto(GalacticFleet target)

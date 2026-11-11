@@ -14,6 +14,8 @@ public class BattleResult
 
     public List<Ship> playerLosses = new List<Ship>();
     public List<Ship> enemyLosses = new List<Ship>();
+    // The ships that pulled out of the battle (the losing side's survivors), shown under the losses.
+    public List<Ship> retreatedShips = new List<Ship>();
     public List<string> playerStructuresLost = new List<string>();
     public List<string> enemyStructuresLost = new List<string>();
 

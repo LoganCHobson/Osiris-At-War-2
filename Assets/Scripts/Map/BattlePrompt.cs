@@ -128,13 +128,17 @@ public class BattlePrompt : MonoBehaviour
     {
         List<ShipEntry> attackerShips = new List<ShipEntry>(attacker.ships);
         List<ShipEntry> defenderShips = new List<ShipEntry>();
+        bool defendersCanRetreat = true;
         foreach (GalacticFleet fleet in FleetsAt(planet))
         {
-            if (fleet != attacker && fleet.faction != attacker.faction) defenderShips.AddRange(fleet.ships);
+            if (fleet == attacker || fleet.faction == attacker.faction) continue;
+            defenderShips.AddRange(fleet.ships);
+            defendersCanRetreat &= fleet.CanRetreat;
         }
         float defenses = planet.owner != attacker.faction ? Strength.Defenses(planet) : 0f;
 
-        AutoResolver.Forecast forecast = AutoResolver.Predict(attackerShips, defenderShips, defenses);
+        AutoResolver.Forecast forecast = AutoResolver.Predict(attackerShips, defenderShips, defenses,
+            attackerCanRetreat: attacker.CanRetreat, defenderCanRetreat: defendersCanRetreat);
         float winChance = playerAttacking ? forecast.attackerWinChance : 1f - forecast.attackerWinChance;
         Dictionary<string, float> ours = playerAttacking ? forecast.attackerLosses : forecast.defenderLosses;
 
@@ -207,6 +211,18 @@ public class BattlePrompt : MonoBehaviour
             enemyLosses = BattleResult.Missing(enemyBefore, ShipsOf(involved, false))
         };
 
+        // Auto-resolve lets the beaten side pull out (AutoResolver retreats): report where it went.
+        foreach (GalacticFleet fleet in involved)
+        {
+            if (fleet == null || fleet.ships.Count == 0 || !fleet.IsTraveling) continue;
+            bool ours = Strength.IsPlayer(fleet.faction);
+            if (ours == playerWon) continue; // Only the losing side retreats.
+            if (ours) result.playerRetreated = true;
+            else result.enemyRetreated = true;
+            result.retreatedTo = fleet.Destination != null ? fleet.Destination.planetName : null;
+            foreach (ShipEntry ship in fleet.ships) if (ship != null && ship.type != null) result.retreatedShips.Add(ship.type);
+        }
+
         if (hadShipyard && !planet.hasCapitalShipyard)
         {
             result.AddStructureLoss(ownerIsPlayer, BattleResult.ShipyardName);
@@ -233,19 +249,7 @@ public class BattlePrompt : MonoBehaviour
         return power;
     }
 
-    private static List<GalacticFleet> FleetsAt(Planet planet)
-    {
-        List<GalacticFleet> fleets = new List<GalacticFleet>();
-        for (int slot = 0; slot < Planet.FleetSlotCount; slot++)
-        {
-            GalacticFleet fleet = planet.GetFleetInSlot(slot);
-            if (fleet != null && fleet.IsPresentAt(planet) && !fleets.Contains(fleet))
-            {
-                fleets.Add(fleet);
-            }
-        }
-        return fleets;
-    }
+    private static List<GalacticFleet> FleetsAt(Planet planet) => planet.FleetsPresent();
 
     private static List<Ship> ShipsOf(List<GalacticFleet> fleets, bool player)
     {

@@ -104,18 +104,7 @@ public class BattleContext : MonoBehaviour
 
     private static List<GalacticFleet> FleetsAt(Planet planet)
     {
-        List<GalacticFleet> fleets = new List<GalacticFleet>();
-        if (planet == null) return fleets;
-
-        for (int slot = 0; slot < Planet.FleetSlotCount; slot++)
-        {
-            GalacticFleet fleet = planet.GetFleetInSlot(slot);
-            if (fleet != null && fleet.IsPresentAt(planet) && !fleets.Contains(fleet))
-            {
-                fleets.Add(fleet);
-            }
-        }
-        return fleets;
+        return planet != null ? planet.FleetsPresent() : new List<GalacticFleet>();
     }
 
     private static void AddFleet(GalacticFleet fleet, List<string> names, List<ShipToken> tokens)

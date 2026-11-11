@@ -205,16 +205,24 @@ public static class ProductionOrders
         convoy.pendingDelivery = null;
         if (destination == null) return;
 
-        if (convoy.TrySetDestination(destination))
+        // New ships are no escort: route around any system where they'd have to fight (what the player can
+        // see, for the player's convoys). With no safe way through they wait at the yard instead.
+        bool player = convoy.faction != null && convoy.faction.isPlayerFaction;
+        System.Func<Planet, bool> dangerous = p => convoy.HasBattleAt(p) && (!player || FogOfWar.CanSee(p));
+        if (convoy.TrySetDestination(destination, -1, dangerous))
         {
-            if (convoy.faction != null && convoy.faction.isPlayerFaction)
+            if (player)
             {
                 Toast.Show($"{convoy.ships.Count} new ship{(convoy.ships.Count == 1 ? "" : "s")} leaving {convoy.currentPlanet.planetName} for {destination.planetName}");
             }
         }
-        else if (convoy.faction != null && convoy.faction.isPlayerFaction)
+        else if (player)
         {
-            Toast.Show($"No route from {convoy.currentPlanet.planetName} to {destination.planetName} - new ships are waiting at the shipyard");
+            List<Planet> blocked = convoy.PlanRoute(destination);
+            Planet blocker = blocked.Count >= 2 ? blocked.Find(p => p != convoy.currentPlanet && p != destination && dangerous(p)) : null;
+            Toast.Show(blocker != null
+                ? $"Enemy at {blocker.planetName} blocks the way to {destination.planetName} - new ships are waiting at {convoy.currentPlanet.planetName}"
+                : $"No route from {convoy.currentPlanet.planetName} to {destination.planetName} - new ships are waiting at the shipyard");
         }
     }
 

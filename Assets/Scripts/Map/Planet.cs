@@ -173,6 +173,42 @@ public class Planet : MonoBehaviour
         return -1;
     }
 
+    // For a fleet that has actually arrived: a free slot, or else one only reserved by a fleet still on its
+    // way here (that fleet loses the reservation and claims again when it arrives). A fleet that's here
+    // should never be left without a slot while one is merely spoken for - slotless fleets are invisible to
+    // everything that looks for fleets by slot (battles, tooltips, the AI).
+    public int ClaimSlotOnArrival(GalacticFleet fleet)
+    {
+        int slot = ClaimSlot(fleet);
+        if (slot >= 0) return slot;
+
+        for (int i = 0; i < fleetSlots.Length; i++)
+        {
+            GalacticFleet holder = fleetSlots[i];
+            if (holder == null || holder == fleet || holder.IsPresentAt(this)) continue;
+            holder.LoseReservation(this);
+            fleetSlots[i] = fleet;
+            return i;
+        }
+        return -1;
+    }
+
+    // Every fleet actually here: the parked ones in slot order, then any that arrived when every slot was taken.
+    public List<GalacticFleet> FleetsPresent()
+    {
+        List<GalacticFleet> present = new List<GalacticFleet>();
+        for (int i = 0; i < fleetSlots.Length; i++)
+        {
+            GalacticFleet fleet = fleetSlots[i];
+            if (fleet != null && fleet.IsPresentAt(this) && !present.Contains(fleet)) present.Add(fleet);
+        }
+        foreach (GalacticFleet fleet in GalacticFleet.All)
+        {
+            if (fleet != null && fleet.ships.Count > 0 && fleet.IsPresentAt(this) && !present.Contains(fleet)) present.Add(fleet);
+        }
+        return present;
+    }
+
     public void ReleaseSlot(GalacticFleet fleet)
     {
         for (int i = 0; i < fleetSlots.Length; i++)

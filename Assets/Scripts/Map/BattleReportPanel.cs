@@ -22,6 +22,11 @@ public class BattleReportPanel : MonoBehaviour
     public BattleReportRow rowPrefab;
 
     private readonly List<GameObject> spawnedRows = new List<GameObject>();
+
+    // A third section under the two loss columns: the ships that pulled out of the battle. Built at runtime
+    // from the enemy column (same header, rows and styling) and slotted in below the columns row.
+    private Transform retreatColumn;
+    private TMP_Text retreatHeaderText;
     private Action onClosed;
 
     public static void Show(BattleResult result, Action closed = null)
@@ -44,7 +49,25 @@ public class BattleReportPanel : MonoBehaviour
     private void Awake()
     {
         Instance = this;
+        BuildRetreatColumn();
         panel.SetActive(false);
+    }
+
+    private void BuildRetreatColumn()
+    {
+        Transform columnsRow = enemyLossesContainer != null ? enemyLossesContainer.parent : null;
+        if (columnsRow == null || columnsRow.parent == null) return;
+
+        GameObject clone = Instantiate(enemyLossesContainer.gameObject, columnsRow.parent);
+        clone.name = "RetreatColumn";
+        clone.transform.SetSiblingIndex(columnsRow.GetSiblingIndex() + 1);
+        retreatColumn = clone.transform;
+        retreatHeaderText = clone.GetComponentInChildren<TMP_Text>(true);
+        foreach (Transform child in retreatColumn)
+        {
+            if (child.name.Contains("NoLosses")) child.gameObject.SetActive(false); // Only shown when ships did retreat.
+        }
+        clone.SetActive(false);
     }
 
     private void Start()
@@ -83,6 +106,16 @@ public class BattleReportPanel : MonoBehaviour
         bool enemyLostAny = FillColumn(enemyLossesContainer, result.enemyLosses, result.enemyStructuresLost);
         playerNoLossesText.SetActive(!playerLostAny);
         enemyNoLossesText.SetActive(!enemyLostAny);
+
+        bool anyRetreated = retreatColumn != null && result.retreatedShips.Count > 0;
+        if (retreatColumn != null) retreatColumn.gameObject.SetActive(anyRetreated);
+        if (anyRetreated)
+        {
+            string who = result.playerRetreated ? "Your Ships" : $"{MapText.Colored(result.enemy, "Enemy")} Ships";
+            string where = string.IsNullOrEmpty(result.retreatedTo) ? "" : $" to {result.retreatedTo}";
+            if (retreatHeaderText != null) retreatHeaderText.text = $"{who} Retreated{where}";
+            FillColumn(retreatColumn, result.retreatedShips, new List<string>());
+        }
 
         panel.SetActive(true);
         GameSpeed.SetSuspended(true);

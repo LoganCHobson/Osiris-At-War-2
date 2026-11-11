@@ -237,7 +237,7 @@ public class GalacticFleet : MonoBehaviour
         }
     }
 
-    public bool TrySetDestination(Planet planet, int preferredSlot = -1)
+    public bool TrySetDestination(Planet planet, int preferredSlot = -1, System.Func<Planet, bool> avoid = null)
     {
         if (IsTraveling || IsHolding || currentPlanet == null || planet == null)
         {
@@ -253,10 +253,10 @@ public class GalacticFleet : MonoBehaviour
             return true;
         }
 
-        List<Planet> path = PlanRoute(planet);
+        List<Planet> path = PlanRoute(planet, avoid);
         if (path.Count < 2)
         {
-            return false; // No hyperspace route exists to that planet.
+            return false; // No hyperspace route exists to that planet (that keeps clear of what we must avoid).
         }
 
         currentPlanet.ReleaseSlot(this);
@@ -295,10 +295,10 @@ public class GalacticFleet : MonoBehaviour
         return true;
     }
 
-    public List<Planet> PlanRoute(Planet planet)
+    public List<Planet> PlanRoute(Planet planet, System.Func<Planet, bool> avoid = null)
     {
         if (currentPlanet == null || planet == null) return new List<Planet>();
-        return GalacticPathfinder.FindPath(currentPlanet, planet, preferFriendlyRoute ? faction : null);
+        return GalacticPathfinder.FindPath(currentPlanet, planet, preferFriendlyRoute ? faction : null, avoid);
     }
 
     public float EstimateTravelTime(List<Planet> path)
@@ -425,7 +425,9 @@ public class GalacticFleet : MonoBehaviour
 
         if (!isFinalHop)
         {
-            planet.ClaimSlot(this); // Brief stopover parking while passing through.
+            // Brief stopover parking while passing through - on the slot, not the planet itself.
+            int stopoverSlot = planet.ClaimSlotOnArrival(this);
+            if (stopoverSlot >= 0) transform.position = planet.GetSlotPosition(stopoverSlot);
         }
 
         if (TryStartBattle(planet))
@@ -439,16 +441,17 @@ public class GalacticFleet : MonoBehaviour
         {
             if (finalSlot < 0)
             {
-                finalSlot = planet.ClaimSlot(this); // A slot may have freed up during the trip - try again before giving up.
+                // A slot may have freed up during the trip, or be only reserved by a fleet still on its way.
+                finalSlot = planet.ClaimSlotOnArrival(this);
                 if (finalSlot >= 0)
                 {
                     transform.position = planet.GetSlotPosition(finalSlot);
                 }
             }
 
-            if (finalSlot < 0 && MergeIntoFirstSlot(planet))
+            if (finalSlot < 0 && MergeIntoParkedFleet(planet))
             {
-                return; // Absorbed into the fleet already parked there - this fleet object is gone.
+                return; // Absorbed into one of our fleets already parked there - this fleet object is gone.
             }
 
             IsTraveling = false;
@@ -463,18 +466,31 @@ public class GalacticFleet : MonoBehaviour
         }
     }
 
-    private bool MergeIntoFirstSlot(Planet planet)
+    // No slot left at all: join one of our own fleets parked here (any slot), rather than sit slotless.
+    private bool MergeIntoParkedFleet(Planet planet)
     {
-        GalacticFleet targetFleet = planet.GetFleetInSlot(0);
-        if (targetFleet == null || targetFleet == this || targetFleet.faction != faction || targetFleet.IsTraveling || targetFleet.currentPlanet != planet)
+        for (int slot = 0; slot < Planet.FleetSlotCount; slot++)
         {
-            return false;
-        }
+            GalacticFleet targetFleet = planet.GetFleetInSlot(slot);
+            if (targetFleet == null || targetFleet == this || targetFleet.faction != faction || targetFleet.IsTraveling || targetFleet.currentPlanet != planet)
+            {
+                continue;
+            }
 
-        targetFleet.ships.AddRange(ships);
-        ships.Clear();
-        Destroy(gameObject);
-        return true;
+            targetFleet.ships.AddRange(ships);
+            targetFleet.EnsureValidLead();
+            ships.Clear();
+            Destroy(gameObject);
+            return true;
+        }
+        return false;
+    }
+
+    // Planet.ClaimSlotOnArrival gave our reserved slot at planet to a fleet that got there first; we'll
+    // claim again (or merge) when we arrive.
+    public void LoseReservation(Planet planet)
+    {
+        if (IsTraveling && route.Count > 0 && route[route.Count - 1] == planet) finalSlot = -1;
     }
 
     private void DepartCurrentWaypoint()
@@ -608,6 +624,15 @@ public class GalacticFleet : MonoBehaviour
             if (occupant != null && occupant.faction != faction && occupant.IsPresentAt(planet))
             {
                 return occupant;
+            }
+        }
+
+        // A fleet that's here without a slot (every slot taken when it arrived) still has to be fought.
+        foreach (GalacticFleet fleet in All)
+        {
+            if (fleet != null && fleet != this && fleet.faction != faction && fleet.ships.Count > 0 && fleet.IsPresentAt(planet))
+            {
+                return fleet;
             }
         }
         return null;
