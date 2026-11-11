@@ -23,7 +23,7 @@ kind: Deployment
 metadata:
   name: grand-admiral-selfplay
 spec:
-  replicas: 4
+  replicas: 6
   selector:
     matchLabels: { app: grand-admiral-selfplay }
   strategy: { type: Recreate }
@@ -32,6 +32,18 @@ spec:
       labels: { app: grand-admiral-selfplay }
     spec:
       priorityClassName: grand-admiral-selfplay
+      affinity:
+        nodeAffinity:   # Workers only: a busy sim on the control plane would slow the whole cluster down.
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - { key: node-role.kubernetes.io/control-plane, operator: DoesNotExist }
+        podAntiAffinity: # Spread across the workers rather than stacking on one.
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 50
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector: { matchLabels: { app: grand-admiral-selfplay } }
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 30
       securityContext:
@@ -76,8 +88,10 @@ spec:
             readOnlyRootFilesystem: true
             capabilities: { drop: [ALL] }
           resources:
-            requests: { cpu: "1", memory: 1536Mi }
-            limits: { cpu: "2", memory: 3Gi }
+            # A small CPU request on purpose: the farm fits wherever there's room and soaks up idle cores,
+            # and when other workloads want CPU the kernel shares it by request, so the farm gets little.
+            requests: { cpu: 250m, memory: 1Gi }
+            limits: { cpu: "2", memory: 2Gi }
           volumeMounts:
             - { name: player, mountPath: /player, readOnly: true }
             - { name: home, mountPath: /home/selfplay }

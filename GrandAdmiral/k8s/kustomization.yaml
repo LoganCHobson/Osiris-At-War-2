@@ -20,6 +20,6 @@ generatorOptions:
   disableNameSuffixHash: true
 images:
   - name: ghcr.io/loganchobson/grand-admiral-api
-    newTag: latest
+    newTag: 63c1178882c4   # the deployed build; CI bumps it on deploy, set it by hand when deploying by hand
   - name: ghcr.io/loganchobson/grand-admiral-trainer
-    newTag: latest
+    newTag: 63c1178882c4   # the deployed build; CI bumps it on deploy, set it by hand when deploying by hand
