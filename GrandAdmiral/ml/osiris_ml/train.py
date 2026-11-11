@@ -43,6 +43,7 @@ class TrainConfig:
     max_kl: float = 0.04
     kl_check_every: int = 20
     kl_sample_rows: int = 20000
+    kl_bisect: int = 10             # on overshoot, bisection steps toward the limit (1/1024 resolution)
 
 
 def categorical_terms(logits, mask, actions, temperature, epsilon):
@@ -263,11 +264,24 @@ def train(previous, ds: Dataset, cfg: TrainConfig = TrainConfig()):
             stopped = (cfg.epochs - 1, steps, kl)
     if stopped:
         epoch, steps, kl = stopped
-        for p, kept in zip(model.params(), inside):
-            p[...] = kept
         worst = max(kl, key=kl.get)
-        log.info("training: stopped at epoch %d (step %d): %s moved %.4f > %.4f, kept the last weights inside",
-                 epoch, steps, worst, kl[worst], cfg.max_kl)
+        # Go as far toward the overshooting weights as the limit allows: bisect along the line from the
+        # last weights inside. (Falling all the way back threw away a whole check interval; on the live
+        # pool the commit head passed the limit within the first 20 steps, leaving no change at all.)
+        over = [p.copy() for p in model.params()]
+        lo, hi = 0.0, 1.0
+        for _ in range(cfg.kl_bisect):
+            mid = (lo + hi) / 2
+            for p, a, b in zip(model.params(), inside, over):
+                p[...] = a + mid * (b - a)
+            ok, _ = within()
+            lo, hi = (mid, hi) if ok else (lo, mid)
+        for p, a, b in zip(model.params(), inside, over):
+            p[...] = a + lo * (b - a)
+        _, now = within()
+        log.info("training: stopped at epoch %d (step %d): %s reached %.4f > %.4f; kept %.0f%% of the last "
+                 "interval (largest head now %.4f)", epoch, steps, worst, kl[worst], cfg.max_kl, 100 * lo,
+                 max(now.values(), default=0.0))
     return fit_critic(model, ds)
 
 

@@ -168,4 +168,5 @@ def test_training_stops_before_moving_too_far(baseline):
     free = train.train(baseline, ds, train.TrainConfig(max_kl=0.0, **hot))  # 0 turns the stop off
     kept = train.train(baseline, ds, train.TrainConfig(max_kl=0.01, **hot))
     assert max(gate.mean_kl(baseline, free, ds).values()) > 0.01  # the run really would overshoot
-    assert max(gate.mean_kl(baseline, kept, ds).values()) <= 0.01
+    moved = max(gate.mean_kl(baseline, kept, ds).values())
+    assert 0.005 < moved <= 0.01  # inside the limit, and up near it: an overshoot still makes progress
