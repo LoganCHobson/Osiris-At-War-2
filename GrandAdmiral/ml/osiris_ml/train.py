@@ -69,21 +69,40 @@ def head_terms(out, ds: Dataset, name):
     rows = h["rows"]
     if len(rows) == 0:
         return rows, np.zeros(0), np.zeros((0, spec.N_OUT)), np.zeros((0, 2))
-    t, eps = ds.temperature[rows], ds.epsilon[rows]
-    grad_out = np.zeros((len(rows), spec.N_OUT))
+    pa, grad_out, mixed = _terms(out[rows], h, slice(None), ds.temperature[rows], ds.epsilon[rows], name)
+    return rows, pa, grad_out, mixed
+
+
+def _terms(out_rows, h, entries, t, eps, name):
+    """head_terms for the head entries `entries`, given the network outputs on their rows."""
+    grad_out = np.zeros((len(out_rows), spec.N_OUT))
     if name in spec.CATEGORICAL:
         outputs = spec.CATEGORICAL[name][0]
-        pa, g, mixed = categorical_terms(out[rows, outputs], h["mask"], h["a"], t, eps)
+        pa, g, mixed = categorical_terms(out_rows[:, outputs], h["mask"][entries], h["a"][entries], t, eps)
         grad_out[:, outputs] = g
     elif name == "retreat":
-        pa, g, mixed = binary_terms(out[rows, spec.OUT_RETREAT], h["a"], t, eps)
+        pa, g, mixed = binary_terms(out_rows[:, spec.OUT_RETREAT], h["a"][entries], t, eps)
         grad_out[:, spec.OUT_RETREAT] = g
     else:
-        w = out[rows, spec.OUT_TARGET]
-        scores = np.einsum("knc,kc->kn", h["contacts"], w)
-        pa, g_scores, mixed = categorical_terms(scores, h["mask"], h["a"], t, eps)
-        grad_out[:, spec.OUT_TARGET] = np.einsum("kn,knc->kc", g_scores, h["contacts"])
-    return rows, pa, grad_out, mixed
+        contacts = h["contacts"][entries]
+        w = out_rows[:, spec.OUT_TARGET]
+        scores = np.einsum("knc,kc->kn", contacts, w)
+        pa, g_scores, mixed = categorical_terms(scores, h["mask"][entries], h["a"][entries], t, eps)
+        grad_out[:, spec.OUT_TARGET] = np.einsum("kn,knc->kc", g_scores, contacts)
+    return pa, grad_out, mixed
+
+
+def _entry_maps(ds: Dataset):
+    """Per head, the head entry each dataset row has (-1 for none). Built once per dataset."""
+    maps = getattr(ds, "_entry_maps", None)
+    if maps is None:
+        maps = {}
+        for name, h in ds.heads.items():
+            m = np.full(len(ds.x), -1, dtype=np.int64)
+            m[h["rows"]] = np.arange(len(h["rows"]))
+            maps[name] = m
+        ds._entry_maps = maps
+    return maps
 
 
 def fit_critic(model, ds: Dataset, ridge=1e-2):
@@ -143,21 +162,26 @@ class Adam:
 
 
 def loss_and_grads(model, anchor_params, ds: Dataset, adv, rows_subset, cfg: TrainConfig):
-    out, cache = model.forward(ds.x)
+    # Only the batch's rows go through the network. (It used to run the whole dataset forward and back
+    # for every batch and mask the rest out: quadratic, so a round over the live pool ran for hours.)
+    batch = np.unique(np.asarray(rows_subset, dtype=np.int64))
+    out, cache = model.forward(ds.x[batch])
     d_out = np.zeros_like(out)
-    in_batch = np.zeros(len(ds.x), dtype=bool)
-    in_batch[rows_subset] = True
+    maps = _entry_maps(ds)
     total = 0.0
 
     for name in spec.HEADS:
-        rows, pa, grad_out, _ = head_terms(out, ds, name)
-        if len(rows) == 0:
+        h = ds.heads[name]
+        if len(h["rows"]) == 0:
             continue
-        keep = in_batch[rows]
-        if not keep.any():
+        found = maps[name][batch]
+        local = np.flatnonzero(found >= 0)  # positions in the batch; ascending row order, as before
+        if len(local) == 0:
             continue
-        rows, pa, grad_out = rows[keep], pa[keep], grad_out[keep]
-        mu = ds.heads[name]["mu"][keep]
+        entries = found[local]
+        rows = batch[local]
+        pa, grad_out, _ = _terms(out[local], h, entries, ds.temperature[rows], ds.epsilon[rows], name)
+        mu = h["mu"][entries]
         a = adv[rows]
         w = ds.weights[rows]
         ratio = pa / mu
@@ -169,14 +193,13 @@ def loss_and_grads(model, anchor_params, ds: Dataset, adv, rows_subset, cfg: Tra
             continue
         total -= (w * objective).sum() / weight_sum
         coef = -(w * active * a / mu) / weight_sum
-        np.add.at(d_out, rows, coef[:, None] * grad_out)
+        np.add.at(d_out, local, coef[:, None] * grad_out)
 
-    value_rows = np.flatnonzero(in_batch)
-    w = ds.weights[value_rows]
+    w = ds.weights[batch]
     if w.sum() > 0:
-        err = out[value_rows, spec.OUT_VALUE] - ds.returns[value_rows]
+        err = out[:, spec.OUT_VALUE] - ds.returns[batch]
         total += cfg.value_coef * 0.5 * (w * err * err).sum() / w.sum()
-        d_out[value_rows, spec.OUT_VALUE] += cfg.value_coef * w * err / w.sum()
+        d_out[:, spec.OUT_VALUE] += cfg.value_coef * w * err / w.sum()
 
     grads = model.backward(cache, d_out)
     for g, p, p0 in zip(grads, model.params(), anchor_params):
