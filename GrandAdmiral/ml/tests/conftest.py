@@ -1,6 +1,12 @@
 import functools
+import os
 
-import numpy as np
+# One BLAS thread: multi-threaded sums come out in a different order each run, and the learning tests
+# train for several rounds, so that noise grew into different releases on GitHub's runners.
+for _var in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
+    os.environ.setdefault(_var, "1")
+
+import numpy as np  # noqa: E402
 import pytest
 
 from osiris_ml import bundle, distill, toyenv

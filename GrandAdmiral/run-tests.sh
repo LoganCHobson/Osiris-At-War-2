@@ -3,6 +3,7 @@
 #   GrandAdmiral/run-tests.sh   (set GA_PG_ADMIN_URL to include the Postgres integration test)
 set -euo pipefail
 cd "$(dirname "$0")"
+export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1  # repeatable numerics (ml/tests/conftest.py)
 
 echo "== test vectors (Python -> C#)"
 python tools/make_test_vectors.py unity-tests/vectors
