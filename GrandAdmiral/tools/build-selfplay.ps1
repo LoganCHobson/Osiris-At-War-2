@@ -16,6 +16,11 @@ param(
 )
 $ErrorActionPreference = "Stop"
 if (-not (Test-Path $Unity)) { throw "Unity with Linux build support not found at $Unity (pass -Unity)." }
+# TextMesh Pro's resources are gitignored, so a fresh clone lacks them; a player built from one has no
+# text settings or fonts and logs hundreds of errors a battle. Build from a working copy that has them.
+if (-not (Test-Path (Join-Path $Project "Assets\TextMesh Pro\Resources\TMP Settings.asset"))) {
+    throw "No Assets\TextMesh Pro\Resources in $Project (gitignored): import TMP Essential Resources or build from your own working copy."
+}
 
 Write-Host "Copying sources to $Work"
 foreach ($dir in "Assets", "Packages", "ProjectSettings") {

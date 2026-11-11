@@ -132,8 +132,46 @@ class Dataset:
                        self.temperature[index], self.epsilon[index], len(set(battles)))
 
 
+@dataclass
+class Battle:
+    """One battle already turned into arrays: what the trainer keeps instead of the parsed record,
+    which takes several times the memory (a self-play record is ~120 kB of JSON)."""
+    battle_id: str
+    client_version: str
+    data: Dataset
+
+
+def compact(record: BattleRecord) -> Battle:
+    return Battle(record.battle_id, record.client_version, _build([record]))
+
+
+def merge(battles, record_weights=None):
+    """battles: list of Battle (from compact). The same Dataset build() makes from their records."""
+    if not battles:
+        return _build([])
+    parts = [b.data for b in battles]
+    sizes = np.array([len(p.x) for p in parts], dtype=np.int64)
+    offsets = np.concatenate([[0], np.cumsum(sizes)[:-1]])
+    weights = np.ones(len(parts)) if record_weights is None else np.asarray(record_weights, dtype=np.float64)
+    heads = {}
+    for name in parts[0].heads:
+        keys = parts[0].heads[name].keys()
+        heads[name] = {key: np.concatenate([p.heads[name][key] + o if key == "rows" else p.heads[name][key]
+                                            for p, o in zip(parts, offsets)])
+                       for key in keys}
+    return Dataset(np.concatenate([p.x for p in parts]).reshape(-1, spec.N_FEATURES),
+                   np.concatenate([p.returns for p in parts]), np.repeat(weights, sizes),
+                   np.repeat(np.arange(len(parts), dtype=np.int64), sizes), heads,
+                   np.concatenate([p.temperature for p in parts]), np.concatenate([p.epsilon for p in parts]),
+                   len(parts))
+
+
 def build(records, record_weights=None):
     """records: list of BattleRecord. record_weights: optional per-record sample weight."""
+    return merge([compact(r) for r in records], record_weights)
+
+
+def _build(records, record_weights=None):
     xs, returns, weights, battle, temps, eps = [], [], [], [], [], []
     heads = {name: Head() for name in spec.HEADS}
     for b, record in enumerate(records):

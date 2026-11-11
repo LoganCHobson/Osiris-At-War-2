@@ -148,3 +148,20 @@ def test_battle_return_bounds(toy_record):
     for seed in range(20):
         r = dataset.battle_return(parse(toy_record(seed=seed)))
         assert -1.5 <= r <= 1.5
+
+
+def test_compact_battles_merge_to_the_same_dataset(toy_record):
+    """The trainer turns each record into arrays as it streams them in; that must change nothing."""
+    records = [parse(toy_record(seed=seed)) for seed in range(12)]
+    weights = np.linspace(0.5, 2.0, len(records))
+    direct = dataset._build(records, weights)
+    merged = dataset.merge([dataset.compact(r) for r in records], weights)
+    for name in ("x", "returns", "weights", "battle", "temperature", "epsilon"):
+        assert np.array_equal(getattr(direct, name), getattr(merged, name)), name
+    assert direct.n_battles == merged.n_battles
+    for head, arrays in direct.heads.items():
+        assert arrays.keys() == merged.heads[head].keys(), head
+        for key, value in arrays.items():
+            assert value.dtype == merged.heads[head][key].dtype and np.array_equal(value, merged.heads[head][key]), (head, key)
+    empty = dataset.merge([])
+    assert len(empty.x) == 0 and empty.n_battles == 0

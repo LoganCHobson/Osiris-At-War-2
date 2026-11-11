@@ -30,6 +30,8 @@ from .records import BattleRecord
 
 log = logging.getLogger("grand-admiral.trainer")
 
+POOL_BATCH = 50  # training-pool payloads held at once while reading them
+
 
 @dataclass
 class RoundConfig:
@@ -125,11 +127,13 @@ def block_bad_installs(conn, cfg: RoundConfig):
 def training_pool(conn, cfg: RoundConfig):
     b = storage.battles.c
     since = storage.now() - dt.timedelta(days=cfg.window_days)
-    rows = conn.execute(select(b.payload, b.install_id, b.network)
-                        .where(and_(b.status == "accepted", b.received_at >= since))
-                        .order_by(b.id.desc()).limit(cfg.max_pool)).all()
-    rows.reverse()
-    records, installs_, networks = [], [], []
+    # Streamed, and each record turned into arrays as it arrives: holding every payload and parsed
+    # record at once ran the trainer out of its 3Gi at 3,500 battles.
+    rows = conn.execution_options(stream_results=True, yield_per=POOL_BATCH).execute(
+        select(b.payload, b.install_id, b.network)
+        .where(and_(b.status == "accepted", b.received_at >= since))
+        .order_by(b.id.desc()).limit(cfg.max_pool))
+    battles, installs_, networks = [], [], []
     floor = version_key(cfg.min_client_version) if cfg.min_client_version else None
     stale = 0
     for payload, install, network in rows:
@@ -137,12 +141,13 @@ def training_pool(conn, cfg: RoundConfig):
         if floor is not None and version_key(record.client_version) < floor:
             stale += 1  # Fought under an older balance: what worked then may not work now.
             continue
-        records.append(record)
+        battles.append(dataset.compact(record))
         installs_.append(install)
         networks.append(network)
     if stale:
         log.info("skipped %d battles from game versions below %s", stale, cfg.min_client_version)
-    return records, installs_, networks
+    battles.reverse(); installs_.reverse(); networks.reverse()  # Oldest first, as before.
+    return battles, installs_, networks
 
 
 def version_key(version):
@@ -290,13 +295,13 @@ def run_round(engine, private_key, key_id, public_keys, cfg: RoundConfig = Round
             _retention(conn, cfg)
             return summary
 
-        candidate = train.train(current, dataset.build(train_records, weights[~held]), cfg.training).rounded()
+        candidate = train.train(current, dataset.merge(train_records, weights[~held]), cfg.training).rounded()
         candidate.version = max(models) + 1
         latest = conn.execute(select(func.max(storage.models.c.version))).scalar() or 0
         candidate.version = max(candidate.version, latest + 1)
 
         offline = dataclasses.replace(cfg.gating, require_arena=False)  # Self-play judges trials later.
-        report = gate.evaluate(current, candidate, dataset.build(hold_records, weights[held]),
+        report = gate.evaluate(current, candidate, dataset.merge(hold_records, weights[held]),
                                installs=summary["installs"], cfg=offline,
                                trusted_battles=summary["selfplay_battles"])
         summary["gate"] = report.to_dict()
