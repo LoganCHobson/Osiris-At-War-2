@@ -42,7 +42,9 @@ jobs:
         run: |
           curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz | tar xz kubeconform
           kubectl kustomize GrandAdmiral/k8s > rendered.yaml
-          ./kubeconform -strict -summary -kubernetes-version 1.30.0 -schema-location default \n            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \n            rendered.yaml GrandAdmiral/k8s/bootstrap-job.yaml
+          ./kubeconform -strict -summary -kubernetes-version 1.30.0 -schema-location default \
+            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+            rendered.yaml GrandAdmiral/k8s/bootstrap-job.yaml
 
   images:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
