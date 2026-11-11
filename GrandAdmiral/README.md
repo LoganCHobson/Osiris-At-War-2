@@ -45,9 +45,11 @@ or lose fights:
 | manoeuvre | line / flank / envelop | one battle line (a detachment swings round one wing, or both) |
 | tempo | steady / rotate / pulse | hold position (rotate = drained ships drop back to recharge shields, pulse = the whole line steps back) |
 
-**Grand Admiral commands Avanti only, never Human.** Its battle records don't carry the faction, so
-anything else would poison its training. In a Grand Admiral campaign every other faction fights as
-Admiral (`Faction.CanBeGrandAdmiral`), and the sims put it on Avanti every time.
+**Grand Admiral commands Avanti ships, never Human ones.** Its battle records don't say which navy it
+had, so a battle fought with Human ships would poison its training. Every AI faction in the campaign
+flies Avanti ships (the Avanti Empire, Ashcrown, Kesh, Severed Hand, Thessary, Vorrak and the neutral
+fleets), so on Grand Admiral they're all commanded by it; only the player's Titans of Osiris fly Human
+ships (`Faction.CanBeGrandAdmiral` checks the roster, not the name). The sims put it on Avanti every time.
 
 It sees 53 battle-state numbers (`ml/osiris_ml/spec.py`): force ratios, losses, health, DPS and
 range ratios, reserves, composition, defences and time; shields and how fast they're draining;
@@ -72,7 +74,8 @@ GAE(λ) advantages and a PPO-clipped objective with an L2 anchor to the released
 release is a small, conservative step. A candidate is released only if it passes the gate
 (`ml/osiris_ml/gate.py`):
 
-1. enough battles and distinct installs;
+1. enough battles, and either 20+ distinct player installs (so no one player can steer it) or enough
+   trusted self-play battles;
 2. a significant improvement on held-out battles (bootstrap lower bound > 0), estimated with one
    importance ratio per decision across every head that changed;
 3. a small step (per-head KL from the current model ≤ 0.05);

@@ -24,14 +24,30 @@ public class Faction : ScriptableObject
     [TextArea]
     public string description;
 
-    // The Avanti navy (and its neutral remnants). Same test the battle doctrine uses (GameManager.IsAvanti).
-    public bool IsAvanti =>
-        (factionName != null && factionName.IndexOf("Avanti", System.StringComparison.OrdinalIgnoreCase) >= 0)
-        || name.IndexOf("Avanti", System.StringComparison.OrdinalIgnoreCase) >= 0;
+    // Fields Avanti ships: every ship in its roster is an Avanti hull (shielded, as the battle doctrine tells
+    // them apart in GameManager.IsAvanti). That's the Avanti Empire and every other AI faction that flies
+    // Avanti ships; the Titans of Osiris fly Human ships.
+    public bool IsAvanti
+    {
+        get
+        {
+            bool any = false;
+            foreach (Ship ship in roster)
+            {
+                if (ship == null) continue;
+                bool avanti = ship.GetComponent<ShieldGenerator>() != null
+                    || ship.name.IndexOf("Avanti", System.StringComparison.OrdinalIgnoreCase) >= 0;
+                if (!avanti) return false;
+                any = true;
+            }
+            return any;
+        }
+    }
 
-    // Grand Admiral is an Avanti commander, and only ever learns as one: its battle records don't carry the
-    // faction, so a single battle fought for anyone else would poison its training.
-    public bool CanBeGrandAdmiral => IsAvanti && !isNeutral && !isPlayerFaction;
+    // Grand Admiral commands Avanti ships, never Human ones: its battle records don't say which navy it had,
+    // so a single battle fought with Human ships would poison its training. Any AI faction flying Avanti
+    // ships qualifies, neutral fleets included (they just never retreat); the player's faction never does.
+    public bool CanBeGrandAdmiral => IsAvanti && !isPlayerFaction;
 
     public float BuildTime(Ship ship)
     {

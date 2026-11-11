@@ -281,7 +281,8 @@ def run_round(engine, private_key, key_id, public_keys, cfg: RoundConfig = Round
         train_records = [r for r, h in zip(records, held) if not h]
         hold_records = [r for r, h in zip(records, held) if h]
         summary["pool"] = len(records)
-        summary["installs"] = len(set(install_ids))
+        summary["installs"] = len(set(i for i in install_ids if i not in cfg.selfplay_installs))  # players
+        summary["selfplay_battles"] = sum(1 for i in install_ids if i in cfg.selfplay_installs)
 
         if len(train_records) < cfg.gating.min_battles * (1 - cfg.holdout_share):
             summary["result"] = "waiting for data"
@@ -296,7 +297,8 @@ def run_round(engine, private_key, key_id, public_keys, cfg: RoundConfig = Round
 
         offline = dataclasses.replace(cfg.gating, require_arena=False)  # Self-play judges trials later.
         report = gate.evaluate(current, candidate, dataset.build(hold_records, weights[held]),
-                               installs=summary["installs"], cfg=offline)
+                               installs=summary["installs"], cfg=offline,
+                               trusted_battles=summary["selfplay_battles"])
         summary["gate"] = report.to_dict()
         if report.passed and cfg.gating.require_arena:
             publish(conn, candidate, "trial", report.to_dict(), private_key, key_id)

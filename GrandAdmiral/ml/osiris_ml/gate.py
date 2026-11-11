@@ -1,6 +1,7 @@
 """Should a candidate model replace the one players have? Every check must pass.
 
-1. Enough evidence: minimum battles and distinct installs in the round.
+1. Enough evidence: minimum battles, and either enough distinct player installs (so no one player can
+   steer the AI) or enough trusted self-play battles (the cluster's own, which can't be faked).
 2. It's better: estimated improvement on *held-out* battles (never trained on), with the lower
    end of a bootstrap confidence interval above zero. Resampled by battle, since decisions within
    a battle share one outcome.
@@ -106,17 +107,22 @@ def mean_kl(old, new, ds: Dataset):
     return result
 
 
-def evaluate(old, new, holdout: Dataset, installs: int, cfg: GateConfig = GateConfig(), arena=None):
-    """arena: optional {"current": win rate vs Admiral, "candidate": win rate vs Admiral}."""
+def evaluate(old, new, holdout: Dataset, installs: int, cfg: GateConfig = GateConfig(), arena=None,
+             trusted_battles: int = 0):
+    """installs: distinct *player* installs in the round. trusted_battles: self-play battles in it.
+    arena: optional {"current": win rate vs Admiral, "candidate": win rate vs Admiral}."""
     report = GateReport(passed=True)
     m = report.metrics
     m["battles"] = int(holdout.n_battles)
     m["installs"] = int(installs)
+    m["trusted_battles"] = int(trusted_battles)
 
     if not new.is_finite():
         report.reasons.append("candidate has non-finite weights")
-    if holdout.n_battles < cfg.min_battles * 0.2 or installs < cfg.min_installs:
-        report.reasons.append(f"not enough evidence ({holdout.n_battles} held-out battles, {installs} installs)")
+    enough_sources = installs >= cfg.min_installs or trusted_battles >= cfg.min_battles
+    if holdout.n_battles < cfg.min_battles * 0.2 or not enough_sources:
+        report.reasons.append(f"not enough evidence ({holdout.n_battles} held-out battles, {installs} player installs, "
+                              f"{trusted_battles} self-play battles)")
 
     if len(holdout.x) and new.is_finite():
         gain, weight = _per_battle_improvement(old, new, holdout)

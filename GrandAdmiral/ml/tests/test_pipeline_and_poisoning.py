@@ -333,3 +333,14 @@ def test_battles_played_by_a_trial_are_accepted(db, signing_key, baseline):
     _insert(db, record, "sp")
     summary = pipeline.run_round(db, signing_key, 1, _keys(signing_key), _trial_cfg(selfplay_installs=("sp",)))
     assert summary["accepted"] == 1 and summary["rejected"] == 0
+
+
+def test_self_play_alone_is_enough_evidence_but_one_player_is_not(baseline):
+    from osiris_ml import dataset, gate
+    rng = np.random.default_rng(8)
+    holdout = dataset.build([parse(toyenv.play(baseline, rng)) for _ in range(60)])
+    cfg = gate.GateConfig(min_battles=200, min_installs=20)
+    one_player = gate.evaluate(baseline, baseline.copy(), holdout, installs=1, cfg=cfg)
+    assert any("not enough evidence" in r for r in one_player.reasons)
+    farm = gate.evaluate(baseline, baseline.copy(), holdout, installs=0, cfg=cfg, trusted_battles=500)
+    assert not any("not enough evidence" in r for r in farm.reasons)  # (It still fails on improvement.)
