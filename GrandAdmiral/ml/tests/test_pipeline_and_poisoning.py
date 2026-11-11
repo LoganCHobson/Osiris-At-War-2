@@ -170,7 +170,9 @@ def test_outcome_poisoner_cannot_make_the_ai_worse(db, signing_key, baseline):
         _arena(db, version, **_toy_arena(trial))
         pipeline.run_round(db, signing_key, 1, _keys(signing_key), cfg)
         if _status(db, version) == "released":  # Whatever reaches players must not be worse.
-            assert toyenv.mean_return(trial, battles=1500) >= toyenv.mean_return(baseline, battles=1500) - 0.01
+            # Played as the game plays (sampled), on the same battles for both.
+            score = lambda m: toyenv.mean_return(m, battles=4000, seed=5, greedy=False)
+            assert score(trial) >= score(baseline) - 0.01
         else:
             assert _status(db, version) == "failed"
     else:

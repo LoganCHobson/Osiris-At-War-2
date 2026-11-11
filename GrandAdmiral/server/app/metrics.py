@@ -24,7 +24,8 @@ from osiris_ml import spec, storage
 
 log = logging.getLogger("grand-admiral.metrics")
 
-RECENT = 2000          # newest battles whose payloads feed the "recent" statistics
+RECENT = 500           # newest battles whose payloads feed the "recent" statistics (~120 kB each)
+PAYLOAD_BATCH = 50     # payloads held in memory at once while reading them
 CACHE_SECONDS = 15
 ORDER_KEYS = {name: key for name, (_, key) in spec.CATEGORICAL.items()}
 ACTIONS = {"stance": spec.STANCES, "commit": spec.COMMITS, "formation": spec.FORMATIONS,
@@ -136,9 +137,11 @@ class Collector:
                 arena.add_metric([str(version), "losses"], (games or 0) - (wins or 0) - (draws or 0))
             yield arena
 
-            # Recent battles in detail, from their payloads.
-            rows = conn.execute(select(b.install_id, b.payload).order_by(b.id.desc()).limit(RECENT)).all()
-        yield from self._recent(rows)
+            # Recent battles in detail, from their payloads. Streamed in small batches: a self-play payload
+            # carries every decision's features, and 2000 of them at once (230 MB of JSON) ran the exporter out of memory.
+            rows = conn.execution_options(stream_results=True, yield_per=PAYLOAD_BATCH).execute(
+                select(b.install_id, b.payload).order_by(b.id.desc()).limit(RECENT))
+            yield from self._recent(rows)
 
     def _recent(self, rows):
         durations = {"selfplay": [], "player": []}

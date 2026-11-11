@@ -60,6 +60,7 @@ public class DifficultySim : MonoBehaviour
         foreach ((DifficultyLevel stronger, DifficultyLevel weaker) in matchups)
         {
             int strongerWins = 0, weakerWins = 0, draws = 0;
+            int roundGames = 0, roundWins = 0, roundDraws = 0;
             float marginTotal = 0f;
 
             for (int variant = 0; variant < 4; variant++)
@@ -72,6 +73,10 @@ public class DifficultySim : MonoBehaviour
                 Heartbeat = wallStarted;
 
                 Clear();
+                // Free the last battle's leftovers: without this a run grew past its 2Gi pod limit by
+                // battle 20 and was killed before it could report anything.
+                yield return Resources.UnloadUnusedAssets();
+                System.GC.Collect();
                 if (BattleTerrain.Instance != null) BattleTerrain.Instance.Regenerate(attackerStart, defenderStart, terrainSeed, true);
                 yield return null;
 
@@ -120,9 +125,9 @@ public class DifficultySim : MonoBehaviour
                 weak.NotifyBattleEnded(weakWon, weak.Retreating, strong.Retreating);
                 if (stronger == DifficultyLevel.GrandAdmiral && weaker == DifficultyLevel.Admiral && strong.GrandAdmiralActive)
                 {
-                    gaGames++;
-                    if (strongWon) gaWins++;
-                    else if (!weakWon) gaDraws++;
+                    gaGames++; roundGames++;
+                    if (strongWon) { gaWins++; roundWins++; }
+                    else if (!weakWon) { gaDraws++; roundDraws++; }
                     // One machine-readable line per battle for the self-play dashboard (Loki parses it as JSON).
                     Debug.Log("GASTAT " + JsonUtility.ToJson(new BattleStat
                     {
@@ -147,6 +152,10 @@ public class DifficultySim : MonoBehaviour
 
             report.AppendLine($"== {stronger} vs {weaker}: {strongerWins} - {weakerWins} ({draws} draws), average margin {marginTotal / 4f:+0%;-0%}");
             report.AppendLine();
+            // Self-play reports every round as it finishes (the server adds them up), so a run that dies
+            // part-way still counts the battles it played.
+            if (selfPlay && roundGames > 0 && GrandAdmiral.Model != null)
+                yield return GrandAdmiralService.ReportArena(GrandAdmiral.Model.Version, "admiral", roundGames, roundWins, roundDraws);
         }
 
         Clear();
@@ -154,7 +163,6 @@ public class DifficultySim : MonoBehaviour
         if (gaGames > 0 && GrandAdmiral.Model != null)
         {
             report.AppendLine($"GRAND ADMIRAL v{GrandAdmiral.Model.Version} vs Admiral: {gaWins} wins, {gaDraws} draws, {gaGames} games");
-            if (selfPlay) yield return GrandAdmiralService.ReportArena(GrandAdmiral.Model.Version, "admiral", gaGames, gaWins, gaDraws);
         }
         if (selfPlay) yield return GrandAdmiralService.WaitForUploads();
         string text = report.ToString();

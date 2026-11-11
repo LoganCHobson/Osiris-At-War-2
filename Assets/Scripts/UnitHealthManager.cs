@@ -118,12 +118,17 @@ public class UnitHealthManager : MonoBehaviour
     public void DealRandomDamage(float damage) //Just to ensure the game doesn't go on FOREVER.
     {
         if (GameManager.CombatOver) return;
+        if (hardpointManager == null) hardpointManager = GetComponent<HardpointManager>();
+        if (hardpointManager == null) return;
 
-        if (hardpointManager.hardpoints.Count > 0)
+        // Only hardpoints still standing: a destroyed one would pass the hit straight back here.
+        List<HardpointHealth> hardpoints = hardpointManager.hardpoints;
+        hardpoints.RemoveAll(h => h == null || h.Destroyed);
+        if (hardpoints.Count > 0)
         {
-            int rand = Random.Range(0, hardpointManager.hardpoints.Count);
+            int rand = Random.Range(0, hardpoints.Count);
 
-            hardpointManager.hardpoints[rand].DealDamage(damage);
+            hardpoints[rand].DealDamage(damage);
         }
     }
 

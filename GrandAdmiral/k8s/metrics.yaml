@@ -38,9 +38,10 @@ spec:
           readinessProbe:
             httpGet: { path: /metrics, port: 9100 }
             periodSeconds: 30
+            timeoutSeconds: 10   # a fresh scrape reads and parses the recent payloads
           resources:
-            requests: { cpu: 20m, memory: 96Mi }
-            limits: { memory: 256Mi }
+            requests: { cpu: 20m, memory: 192Mi }
+            limits: { memory: 512Mi }
 ---
 apiVersion: v1
 kind: Service

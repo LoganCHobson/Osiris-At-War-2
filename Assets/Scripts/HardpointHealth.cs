@@ -27,6 +27,9 @@ public class HardpointHealth : MonoBehaviour, IPointerEnterHandler, IPointerExit
         healthManager = GetComponentInParent<UnitHealthManager>();
     }
 
+    // Hardpoints added mid-battle (HardpointFactory, shield generators) can be hit before their Start runs.
+    private UnitHealthManager Manager => healthManager != null ? healthManager : healthManager = GetComponentInParent<UnitHealthManager>();
+
     private bool destroyed;
     public bool Destroyed => destroyed;
     private const float WreckHitShare = 0.35f; // Same as a laser on bare hull (Laser.hullDamageMultiplier).
@@ -45,18 +48,21 @@ public class HardpointHealth : MonoBehaviour, IPointerEnterHandler, IPointerExit
 
         // Already destroyed (its wreck is still on the hull and still gets hit): the shot goes into the ship
         // like any other hull hit - reduced, onto a surviving hardpoint - instead of being lost.
+        UnitHealthManager manager = Manager;
         if (destroyed)
         {
-            if (healthManager != null && !healthManager.IsDead) healthManager.DealRandomDamage(value * WreckHitShare);
+            // DealRandomDamage only picks hardpoints still standing, so this can't bounce back here.
+            if (manager != null && !manager.IsDead) manager.DealRandomDamage(value * WreckHitShare);
             return;
         }
+        if (manager == null) return; // Not on a ship (yet): nothing to damage.
 
-        DamageLedger.Hull(healthManager, Mathf.Min(value, Mathf.Max(0f, currentHealth)), currentHealth - value <= 0);
+        DamageLedger.Hull(manager, Mathf.Min(value, Mathf.Max(0f, currentHealth)), currentHealth - value <= 0);
 
         if(currentHealth - value > 0)
         {
             dealDamage.Invoke();
-            healthManager.SubtractHealth(value, this); //Actual health subtraction in this script is done by the manager.
+            manager.SubtractHealth(value, this); //Actual health subtraction in this script is done by the manager.
 
             float healthPercent = currentHealth / maxHealth;
             UpdateHealth(healthPercent);
@@ -64,8 +70,10 @@ public class HardpointHealth : MonoBehaviour, IPointerEnterHandler, IPointerExit
         else
         {
             destroyed = true;
-            die.Invoke();
-            healthManager.HardpointDeath(this);
+            // The ship always learns of the loss, even if a death listener throws: a destroyed hardpoint left
+            // in its list sent wreck hits round in circles until the stack overflowed.
+            try { die.Invoke(); }
+            finally { manager.HardpointDeath(this); }
         }
         
     }

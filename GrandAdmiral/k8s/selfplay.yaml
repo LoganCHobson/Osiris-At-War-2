@@ -72,7 +72,7 @@ spec:
             - -nographics
             - -selfPlay
             - -selfPlayRounds
-            - "10"
+            - "4"   # 16 battles a run: short runs, and each round reports as it finishes
             - -simSpeed
             - "6"
             - -gaServer
@@ -90,7 +90,7 @@ spec:
           resources:
             # A small CPU request on purpose: the farm fits wherever there's room and soaks up idle cores,
             # and when other workloads want CPU the kernel shares it by request, so the farm gets little.
-            requests: { cpu: 250m, memory: 1Gi }
+            requests: { cpu: 250m, memory: 2Gi }   # = the limit: never overcommit node memory (node-04 froze)
             limits: { cpu: "2", memory: 2Gi }
           volumeMounts:
             - { name: player, mountPath: /player, readOnly: true }
