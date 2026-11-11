@@ -17,9 +17,30 @@ public partial class FactionBrain
         public string targetName;
         // Worth pulling ships from anywhere in the empire, however far away, and splitting fleets to do it.
         public bool urgent;
+        // Defences: when the current threat here started (or last came to blows), and whether the guard has
+        // been cut to a deterrent because the enemy has just sat there (see StandoffTime).
+        public float threatSince = -1f;
+        public bool standoff;
     }
 
     public const string StrikePrefix = "Strike:";
+
+    // Guarding a world against a stack parked next door. Matching the enemy ship for ship at one choke lets a
+    // single parked fleet pin the whole navy there while raiders burn the back line, and neither side ever
+    // moves. Instead:
+    //   * even a critical world never holds more than CriticalDefenseShare of the navy;
+    //   * a guard keeps DeterrentShare of what it needs - enough to make an attack expensive - and anything
+    //     above that may be pulled away to answer a raid;
+    //   * after StandoffTime with the enemy just sitting there (no battle at the world), the guard drops to
+    //     the deterrent and the rest is released for other work. A fight there resets the clock.
+    private const float CriticalDefenseShare = 0.65f;
+    private const float DeterrentShare = 0.6f;
+    private const float StandoffTime = 240f;
+
+    // Dev comparison switch (GalacticSim -legacy): the old match-the-enemy defence. Always off in play.
+    public static bool LegacyDefense;
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetSwitches() => LegacyDefense = false;
 
     public class Assignment
     {
@@ -361,10 +382,8 @@ public partial class FactionBrain
             bool critical = planet.hasCapitalShipyard || value >= personality.criticalPlanetValue;
             if (!critical && need > TotalPower * 1.5f) continue;
 
-            if (!critical)
-            {
-                need = Mathf.Min(need, Mathf.Max(ShipPower, TotalPower * personality.maxDefenseShare));
-            }
+            if (critical && !LegacyDefense) need = Mathf.Min(need, Mathf.Max(ShipPower, TotalPower * CriticalDefenseShare));
+            else if (!critical) need = Mathf.Min(need, Mathf.Max(ShipPower, TotalPower * personality.maxDefenseShare));
 
             need = Mathf.Max(need, ShipPower * detachment);
 
@@ -373,7 +392,14 @@ public partial class FactionBrain
             bool interior = InteriorShare(planet) >= 0.5f;
             float raidBonus = interior || RecentLosses > 0 ? 1.5f : 1f;
             NeedTask(OrderKind.Defend, planet, need, 100f * value * personality.defensiveness * raidBonus, critical);
-            taskBook[Key(OrderKind.Defend, planet)].urgent = critical || interior || RecentLosses > 0;
+            MilitaryTask defend = taskBook[Key(OrderKind.Defend, planet)];
+            defend.urgent = critical || interior || RecentLosses > 0;
+            if (defend.threatSince < 0f) defend.threatSince = now;
+            defend.standoff = !LegacyDefense && now - defend.threatSince > StandoffTime && !interior;
+            if (defend.standoff)
+            {
+                defend.required = Mathf.Max(ShipPower * detachment, defend.required * DeterrentShare);
+            }
         }
 
         NeedExpansionTasks();
@@ -620,7 +646,8 @@ public partial class FactionBrain
     {
         foreach (MilitaryTask task in activeTasks)
         {
-            if (task.kind == OrderKind.Stage || task.assigned <= task.required * 1.75f) continue;
+            float keep = task.standoff ? 1.15f : 1.75f; // A guard in a standoff gives its surplus back promptly.
+            if (task.kind == OrderKind.Stage || task.assigned <= task.required * keep) continue;
 
             foreach (GalacticFleet fleet in myFleets)
             {
@@ -753,17 +780,27 @@ public partial class FactionBrain
             if (fleet == null || fleet.ships.Count == 0 || fleet.IsTraveling || fleet.IsHolding) continue;
             if (!assignments.TryGetValue(fleet.gameObject.name, out Assignment assignment)) continue;
             if (!taskBook.TryGetValue(assignment.taskKey, out MilitaryTask current) || current == task) continue;
-            if (current.priority * personality.emergencyPriorityRatio > task.priority) continue;
-            if (current.kind == OrderKind.Defend && current.critical && current.assigned <= current.required) continue;
+
+            // A raid in our territory may take from posts that outrank it, but only what they can spare above
+            // their deterrent; a critical guard always keeps its deterrent.
+            bool outranked = current.priority * personality.emergencyPriorityRatio > task.priority;
+            bool raidResponse = !LegacyDefense && task.kind == OrderKind.Defend && task.urgent;
+            if (outranked && !raidResponse) continue;
+            bool guarding = current.kind == OrderKind.Defend || current.kind == OrderKind.Garrison || current.kind == OrderKind.Stage;
+            float floor = (outranked || (current.kind == OrderKind.Defend && current.critical)) && guarding
+                ? current.required * (LegacyDefense ? 1f : DeterrentShare) : 0f;
+            float spare = current.assigned - floor;
+            if (spare <= 0f) continue;
 
             int hops = world.Hops(fleet.currentPlanet, planet);
             if (hops == int.MaxValue || hops > radius) continue;
             if (!IsRouteSafe(fleet.currentPlanet, planet)) continue;
 
             GalacticFleet sent = fleet;
-            float need = task.required - task.assigned;
+            float need = Mathf.Min(task.required - task.assigned, spare);
             float power = Strength.Of(fleet);
-            if (power > need * 1.5f && fleet.ships.Count > detachment)
+            if (power > spare && fleet.ships.Count <= detachment) continue; // Can't send it without dropping below the deterrent.
+            if ((power > need * 1.5f || power > spare) && fleet.ships.Count > detachment)
             {
                 float perShip = power / fleet.ships.Count;
                 int count = Mathf.Clamp(Mathf.CeilToInt(need * 1.1f / perShip), 1, fleet.ships.Count - 1);

@@ -481,6 +481,14 @@ public partial class FactionBrain
             AddGrievance(report.attacker, report.defenderLosses + BattleInsult);
         }
 
+        // A fight at one of our guarded worlds means the threat there is real, not a standoff: full guard again.
+        if (report.planet != null && (report.defender == faction || report.attacker == faction)
+            && taskBook.TryGetValue(Key(OrderKind.Defend, report.planet), out MilitaryTask guard))
+        {
+            guard.threatSince = now;
+            guard.standoff = false;
+        }
+
         foreach (Campaign campaign in campaigns)
         {
             if (report.attacker == faction && report.defender == campaign.target)

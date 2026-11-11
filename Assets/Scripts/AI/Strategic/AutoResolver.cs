@@ -15,6 +15,23 @@ public static class AutoResolver
     public const float RollVariance = 0.25f;
     // Winner's losses = this x loser strength squared / winner strength.
     public const float WinnerLossScale = 0.45f;
+
+    // Retreats. The beaten side pulls out to its nearest friendly world instead of being wiped out, unless
+    // it was routed (beaten by RoutRatio or more), has nowhere to go, or holds to the death (neutrals).
+    // Pulling out mid-battle is costly: it loses RetreatLossShare of its strength at even odds, scaling with
+    // how badly it lost (clamped to MinRetreatLoss..MaxRetreatLoss). The Avanti are slow and their commanders
+    // stay in too long, so they lose AvantiRetreatPenalty times as much. A winner whose enemy escaped fought
+    // a shorter battle: RetreatWinnerShare of the usual losses.
+    public const float RoutRatio = 4f;
+    public const float RetreatLossShare = 0.35f;
+    public const float MinRetreatLoss = 0.2f, MaxRetreatLoss = 0.9f;
+    public const float AvantiRetreatPenalty = 1.5f;
+    public const float RetreatWinnerShare = 0.5f;
+
+    // Dev comparison switch (GalacticSim -legacy): off = the old fight-to-the-death resolution. Always on in play.
+    public static bool RetreatsEnabled = true;
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetSwitches() => RetreatsEnabled = true;
     // A ship only dies if the damage left over is at least this share of its worth.
     public const float KillThreshold = 0.5f;
 
@@ -84,12 +101,23 @@ public static class AutoResolver
 
         if (attackerWon)
         {
-            report.attackerLosses = ApplyWinnerLosses(attacker.ships, defenders, attackerRoll, defenderRoll);
-            report.defenderLosses = Strength.Of(defenderRoster) + defenses;
+            // Planet defences stand and fall; a defending fleet may pull out instead of dying with them.
+            bool escapes = defender != null && CanEscape(defender, attackerRoll, defenderRoll);
+            report.attackerLosses = ApplyWinnerLosses(attacker.ships, defenders, attackerRoll, defenderRoll,
+                escapes ? RetreatWinnerShare : 1f);
 
-            if (defender != null)
+            if (escapes)
             {
-                Eliminate(defender);
+                report.defenderLosses = ApplyRetreatLosses(defender.ships, attackers, attackerRoll, defenderRoll, IsAvanti(defender.faction));
+                report.loserRetreated = defender.RetreatFrom(planet) != null;
+            }
+            else
+            {
+                report.defenderLosses = Strength.Of(defenderRoster) + defenses;
+                if (defender != null)
+                {
+                    Eliminate(defender);
+                }
             }
 
             if (includeDefenses)
@@ -100,10 +128,20 @@ public static class AutoResolver
         }
         else
         {
-            report.defenderLosses = defender != null ? ApplyWinnerLosses(defender.ships, attackers, defenderRoll, attackerRoll) : 0f;
-            report.attackerLosses = Strength.Of(attacker.ships);
+            bool escapes = CanEscape(attacker, defenderRoll, attackerRoll);
+            report.defenderLosses = defender != null
+                ? ApplyWinnerLosses(defender.ships, attackers, defenderRoll, attackerRoll, escapes ? RetreatWinnerShare : 1f) : 0f;
 
-            Eliminate(attacker);
+            if (escapes)
+            {
+                report.attackerLosses = ApplyRetreatLosses(attacker.ships, defenders, defenderRoll, attackerRoll, IsAvanti(attacker.faction));
+                report.loserRetreated = attacker.RetreatFrom(planet) != null;
+            }
+            else
+            {
+                report.attackerLosses = Strength.Of(attacker.ships);
+                Eliminate(attacker);
+            }
             defender?.HoldAfterBattle();
         }
 
@@ -176,10 +214,48 @@ public static class AutoResolver
         return Random.Range(1f - RollVariance, 1f + RollVariance);
     }
 
-    private static float ApplyWinnerLosses(List<ShipEntry> roster, List<Force> enemy, float winnerRoll, float loserRoll)
+    private static float ApplyWinnerLosses(List<ShipEntry> roster, List<Force> enemy, float winnerRoll, float loserRoll,
+        float share = 1f)
     {
-        float damage = WinnerLossScale * loserRoll * loserRoll / Mathf.Max(winnerRoll, 1f);
+        float damage = share * WinnerLossScale * loserRoll * loserRoll / Mathf.Max(winnerRoll, 1f);
         return ApplyLosses(roster, enemy, damage);
+    }
+
+    // ---------------- Retreats ----------------
+
+    // A beaten fleet gets away unless it was routed or never retreats (neutrals hold to the death). Whether it
+    // has somewhere to go is settled by GalacticFleet.RetreatFrom: with no route home it's destroyed there.
+    private static bool CanEscape(GalacticFleet loser, float winnerRoll, float loserRoll)
+    {
+        return RetreatsEnabled && loser != null && loser.CanRetreat && winnerRoll < loserRoll * RoutRatio;
+    }
+
+    // Share of a retreating fleet's strength lost pulling out: RetreatLossShare at even odds, more the worse
+    // the defeat, AvantiRetreatPenalty times as much for the Avanti.
+    public static float RetreatLossFraction(float winnerRoll, float loserRoll, bool avanti)
+    {
+        float margin = winnerRoll / Mathf.Max(loserRoll, 1f);
+        float fraction = Mathf.Clamp(RetreatLossShare * margin, MinRetreatLoss, MaxRetreatLoss);
+        if (avanti) fraction = Mathf.Min(MaxRetreatLoss, fraction * AvantiRetreatPenalty);
+        return fraction;
+    }
+
+    private static float ApplyRetreatLosses(List<ShipEntry> roster, List<Force> enemy, float winnerRoll, float loserRoll, bool avanti)
+    {
+        float damage = Strength.Of(roster) * RetreatLossFraction(winnerRoll, loserRoll, avanti);
+        return ApplyLosses(roster, enemy, damage);
+    }
+
+    private static bool IsAvanti(Faction faction) => faction != null && faction.IsAvanti;
+
+    // Whether a list of ships is an Avanti fleet (shielded hulls), for forecasts that have no fleet object.
+    private static bool IsAvantiRoster(List<ShipEntry> roster)
+    {
+        foreach (ShipEntry ship in roster)
+        {
+            if (ship != null && ship.type != null) return ship.type.GetComponent<ShieldGenerator>() != null;
+        }
+        return false;
     }
 
     // How much of the fighting each kind of ship actually stands in. Screens are out front, the line takes
@@ -268,13 +344,19 @@ public static class AutoResolver
 
     // What autoresolving is likely to do, by running the same maths many times on copies of the fleets
     // (nothing is changed). All the defending fleets and the planet's defenses are treated as one force.
-    public static Forecast Predict(List<ShipEntry> attacker, List<ShipEntry> defender, float defenses, int samples = 80)
+    // A beaten side that can retreat (not routed, not holding to the death) loses its retreat share, not
+    // everything; the forecast can't know whether it has a route home, so it assumes it does.
+    public static Forecast Predict(List<ShipEntry> attacker, List<ShipEntry> defender, float defenses, int samples = 80,
+        bool attackerCanRetreat = true, bool defenderCanRetreat = true)
     {
         Forecast forecast = new Forecast();
         List<Force> attackers = Forces(attacker, 0f);
         List<Force> defenders = Forces(defender, defenses);
         float attackEffective = Effective(attackers, defenders);
         float defendEffective = Effective(defenders, attackers);
+        bool attackerAvanti = IsAvantiRoster(attacker), defenderAvanti = IsAvantiRoster(defender);
+        attackerCanRetreat &= RetreatsEnabled;
+        defenderCanRetreat &= RetreatsEnabled;
 
         int wins = 0;
         for (int i = 0; i < samples; i++)
@@ -288,15 +370,19 @@ public static class AutoResolver
             List<ShipEntry> defenderCopy = defender.Where(s => s != null).ToList();
             if (attackerWon)
             {
-                ApplyWinnerLosses(attackerCopy, defenders, attackerRoll, defenderRoll);
+                bool escapes = defenderCanRetreat && defenderCopy.Count > 0 && attackerRoll < defenderRoll * RoutRatio;
+                ApplyWinnerLosses(attackerCopy, defenders, attackerRoll, defenderRoll, escapes ? RetreatWinnerShare : 1f);
+                if (escapes) ApplyRetreatLosses(defenderCopy, attackers, attackerRoll, defenderRoll, defenderAvanti);
                 Tally(forecast.attackerLosses, attacker, attackerCopy);
-                Tally(forecast.defenderLosses, defender, new List<ShipEntry>());
+                Tally(forecast.defenderLosses, defender, escapes ? defenderCopy : new List<ShipEntry>());
             }
             else
             {
-                ApplyWinnerLosses(defenderCopy, attackers, defenderRoll, attackerRoll);
+                bool escapes = attackerCanRetreat && defenderRoll < attackerRoll * RoutRatio;
+                ApplyWinnerLosses(defenderCopy, attackers, defenderRoll, attackerRoll, escapes ? RetreatWinnerShare : 1f);
+                if (escapes) ApplyRetreatLosses(attackerCopy, defenders, defenderRoll, attackerRoll, attackerAvanti);
                 Tally(forecast.defenderLosses, defender, defenderCopy);
-                Tally(forecast.attackerLosses, attacker, new List<ShipEntry>());
+                Tally(forecast.attackerLosses, attacker, escapes ? attackerCopy : new List<ShipEntry>());
             }
         }
 

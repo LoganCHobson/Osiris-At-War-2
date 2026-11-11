@@ -9,6 +9,7 @@ public class BattleReport
     public float defenderLosses;
     public bool attackerWon;
     public bool autoResolved;
+    public bool loserRetreated; // The beaten fleet pulled out (with losses) instead of being destroyed.
 }
 
 public static class GalacticEvents
