@@ -6,7 +6,7 @@ kind: CronJob
 metadata:
   name: grand-admiral-trainer
 spec:
-  schedule: "17 9 * * *"          # 09:17 UTC, after the night's self-play
+  schedule: "17 */6 * * *"         # every 6 hours (00:17, 06:17, 12:17, 18:17 UTC)
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3

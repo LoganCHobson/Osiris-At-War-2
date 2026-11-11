@@ -10,7 +10,7 @@ cluster.
 ```
  Player's game                        Homelab cluster (namespace oawga-machine-learning)
  ─────────────                        ─────────────────────────────────────────────────────────────
- battle ends ──record──► outbox ──HTTPS + HMAC──► API ──► Postgres ◄── trainer CronJob (nightly)
+ battle ends ──record──► outbox ──HTTPS + HMAC──► API ──► Postgres ◄── trainer CronJob (every 6 h)
                                          (no signing key,      │    ▲   check · train · gate · sign
  next launch ◄──signed model bundle──────  can't write models)  │    │   → trial → release
    verify RSA signature with the          ▲                    ▼    │

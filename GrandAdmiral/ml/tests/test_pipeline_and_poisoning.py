@@ -77,16 +77,20 @@ def _honest_population(engine, model, installs=40, per_install=40, seed=10, expl
 
 
 @pytest.mark.slow
-@pytest.mark.xfail(strict=False, reason="known issue (2026-11-10): with the schema 2 orders the toy trainer gains about as much per round as evaluation noise (~+-0.01; +0.02 per round with the orders taken out), so the offline gate can pass a worse model or reject a better one. Releases now need self-play to confirm them (require_arena). Being worked on: the toy simulator and the trainer's credit assignment.")
 def test_full_round_releases_a_verified_better_model(db, signing_key, baseline):
-    installs = _honest_population(db, baseline)
+    # 3,200 battles: with eight heads a round's real gain (~+0.02) needs about this much held-out
+    # evidence to clear the gate's 95% lower bound. Rejected rounds keep their data, so the cluster
+    # gets there by accumulating.
+    installs = _honest_population(db, baseline, per_install=80)
     summary = pipeline.run_round(db, signing_key, 1, _keys(signing_key), _cfg(selfplay_installs=installs))
-    assert summary["accepted"] == 1600 and summary["rejected"] == 0
+    assert summary["accepted"] == 3200 and summary["rejected"] == 0
     assert summary["result"] == "released v2", summary
     with db.connect() as conn:
         data = conn.execute(select(storage.models.c.bundle).where(storage.models.c.version == 2)).scalar()
     released = Model.from_bytes(bundle.verify(bytes(data), _keys(signing_key)))
-    assert toyenv.mean_return(released, battles=1500) > toyenv.mean_return(baseline, battles=1500)
+    # Played as the game plays (sampled), on the same battles for both.
+    score = lambda m: toyenv.mean_return(m, battles=4000, seed=5, greedy=False)
+    assert score(released) > score(baseline)
 
 
 def test_forger_is_rejected_and_blocked(db, signing_key, baseline):

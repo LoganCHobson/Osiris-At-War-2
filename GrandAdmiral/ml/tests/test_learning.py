@@ -52,6 +52,12 @@ def test_gradients_match_finite_differences(baseline):
             assert abs(numeric - g[idx]) <= 1e-5 + 1e-4 * abs(numeric)
 
 
+def _score(model):
+    """Mean return played the way the game plays: actions sampled from the policy, not its top choice.
+    Every model meets the same 4,000 battles, so differences between models aren't battle luck."""
+    return toyenv.mean_return(model, battles=4000, seed=5, greedy=False)
+
+
 def _explore(model, rate=0.2):
     explorer = model.copy()
     explorer.knobs[spec.KNOB_IDS["exploration"]] = rate
@@ -59,13 +65,12 @@ def _explore(model, rate=0.2):
 
 
 @pytest.mark.slow
-@pytest.mark.xfail(strict=False, reason="known issue (2026-11-10): with the schema 2 orders the toy trainer gains about as much per round as evaluation noise (~+-0.01; +0.02 per round with the orders taken out), so the offline gate can pass a worse model or reject a better one. Releases now need self-play to confirm them (require_arena). Being worked on: the toy simulator and the trainer's credit assignment.")
 def test_training_rounds_improve_the_toy_ai(baseline):
     """Five rounds of play -> train -> gate. Every release must be at least as good as the one it
     replaced (within evaluation noise), and the end result clearly better than the Admiral."""
     rng = np.random.default_rng(1)
     current = baseline
-    start = toyenv.mean_return(current, battles=2000)
+    start = _score(current)
     score = start
     released = 0
     for _ in range(5):
@@ -74,7 +79,7 @@ def test_training_rounds_improve_the_toy_ai(baseline):
         candidate.version = current.version + 1
         report = gate.evaluate(current, candidate, dataset.build(records[1600:]), installs=50)
         if report.passed:
-            new_score = toyenv.mean_return(candidate, battles=2000)
+            new_score = _score(candidate)
             assert new_score > score - 0.015, report.metrics
             current, score = candidate, new_score
             released += 1
