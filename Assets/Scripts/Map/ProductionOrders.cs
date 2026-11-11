@@ -211,6 +211,7 @@ public static class ProductionOrders
         System.Func<Planet, bool> dangerous = p => convoy.HasBattleAt(p) && (!player || FogOfWar.CanSee(p));
         if (convoy.TrySetDestination(destination, -1, dangerous))
         {
+            convoy.deliveringTo = destination.planetName;
             if (player)
             {
                 Toast.Show($"{convoy.ships.Count} new ship{(convoy.ships.Count == 1 ? "" : "s")} leaving {convoy.currentPlanet.planetName} for {destination.planetName}");

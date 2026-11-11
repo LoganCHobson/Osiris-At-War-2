@@ -248,9 +248,11 @@ public class FleetMapIcon : MonoBehaviour
             markers[i].enabled = fleet.IsRevealed && (i < tier || showUnlit);
         }
 
-        bool delivering = !string.IsNullOrEmpty(fleet.pendingDelivery) && fleet.faction != null && fleet.faction.isPlayerFaction && fleet.IsRevealed;
+        bool gathering = !string.IsNullOrEmpty(fleet.pendingDelivery);
+        bool enRoute = !gathering && !string.IsNullOrEmpty(fleet.deliveringTo);
+        bool delivering = (gathering || enRoute) && fleet.faction != null && fleet.faction.isPlayerFaction && fleet.IsRevealed;
         deliveryText.enabled = delivering;
-        if (delivering) deliveryText.text = $"BUILD ORDER  > {fleet.pendingDelivery}";
+        if (delivering) deliveryText.text = gathering ? $"BUILD ORDER  > {fleet.pendingDelivery}" : $"CONVOY  > {fleet.deliveringTo}";
 
         if (count == shownCount && tier == shownTier && factionColor == shownFaction) return;
 

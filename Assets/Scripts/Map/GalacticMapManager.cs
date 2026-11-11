@@ -84,6 +84,7 @@ public class GalacticMapManager : MonoBehaviour
         }
         routeArrows = new GameObject("RouteArrows").AddComponent<RouteArrows>();
         routeArrows.transform.SetParent(transform, false);
+        new GameObject("DeliveryMarkers").AddComponent<DeliveryMarkers>().transform.SetParent(transform, false);
 
         if (AIDirector.Instance == null)
         {
@@ -272,6 +273,12 @@ public class GalacticMapManager : MonoBehaviour
             return;
         }
 
+        if (picking)
+        {
+            UpdatePlanetPick();
+            return;
+        }
+
         if (Input.GetMouseButtonDown(0))
         {
             HandlePress();
@@ -294,6 +301,92 @@ public class GalacticMapManager : MonoBehaviour
             FleetPanel.Instance?.Hide();
             PlanetBuildPanel.Instance?.Hide();
         }
+    }
+
+    // ---------------- Picking a planet on the map ----------------
+    // A window (the production window's "deliver to") hands the map over to the player to click a planet,
+    // instead of making them flip through names. Left-click an allowed planet to pick it; right-click or
+    // Escape to cancel. A banner across the top says what's being picked and what's under the cursor.
+
+    private bool picking;
+    private string pickPrompt;
+    private System.Func<Planet, bool> pickAllowed;
+    private System.Action<Planet> onPicked;
+    private System.Action onPickCancelled;
+    private GameObject pickBanner;
+    private TMPro.TMP_Text pickBannerText;
+
+    public bool IsPickingPlanet => picking;
+
+    public void BeginPlanetPick(string prompt, System.Func<Planet, bool> allowed, System.Action<Planet> picked, System.Action cancelled)
+    {
+        isDragging = false;
+        ClearRoutePreview();
+        FleetPanel.Instance?.Hide();
+        PlanetBuildPanel.Instance?.Hide();
+        picking = true;
+        pickPrompt = prompt;
+        pickAllowed = allowed;
+        onPicked = picked;
+        onPickCancelled = cancelled;
+        ShowPickBanner(true);
+    }
+
+    private void UpdatePlanetPick()
+    {
+        Planet hovered = null;
+        Ray ray = cam.ScreenPointToRay(Input.mousePosition);
+        if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, planetLayer)) hovered = hit.collider.GetComponentInParent<Planet>();
+        bool allowed = hovered != null && (pickAllowed == null || pickAllowed(hovered));
+
+        string under = hovered == null ? MapText.Tint("Hover a planet", MapText.Muted)
+            : allowed ? MapText.Tint(hovered.planetName, MapText.Good)
+            : MapText.Tint($"{hovered.planetName} - not yours", MapText.Bad);
+        pickBannerText.text = $"<b>{pickPrompt}</b>    {under}\n<size=75%>Left-click to pick  -  right-click or Esc to cancel</size>";
+
+        bool overUI = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+        if (Input.GetMouseButtonDown(0) && !overUI && allowed)
+        {
+            System.Action<Planet> done = onPicked;
+            EndPlanetPick();
+            done?.Invoke(hovered);
+        }
+        else if (Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.Escape))
+        {
+            // Picking counts as a modal window (ProductionWindow keeps ModalOpen set), so the pause menu
+            // leaves this Escape alone; also mark the frame so nothing else takes it on the way out.
+            if (Input.GetKeyDown(KeyCode.Escape)) UIBits.EscapeConsumedFrame = Time.frameCount;
+            System.Action cancelled = onPickCancelled;
+            EndPlanetPick();
+            cancelled?.Invoke();
+        }
+    }
+
+    private void EndPlanetPick()
+    {
+        picking = false;
+        onPicked = null;
+        onPickCancelled = null;
+        pickAllowed = null;
+        ShowPickBanner(false);
+    }
+
+    private void ShowPickBanner(bool show)
+    {
+        if (pickBanner == null && show)
+        {
+            Canvas canvas = UIKit.Canvas("PlanetPickCanvas", 85, transform);
+            RectTransform bar = UIKit.Rect("PickBanner", canvas.transform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                new Vector2(0f, -70f), new Vector2(760f, 74f));
+            UnityEngine.UI.Image back = bar.gameObject.AddComponent<UnityEngine.UI.Image>();
+            back.color = new Color(0.05f, 0.07f, 0.11f, 0.9f);
+            back.raycastTarget = false;
+            pickBannerText = UIKit.Text(bar, "", 24f, Color.white, TMPro.TextAlignmentOptions.Center);
+            pickBannerText.richText = true;
+            pickBannerText.raycastTarget = false;
+            pickBanner = canvas.gameObject;
+        }
+        if (pickBanner != null) pickBanner.SetActive(show);
     }
 
     private void HandlePress()
@@ -704,8 +797,10 @@ public class GalacticMapManager : MonoBehaviour
     // destination. (Ships still being built for that order gather in a new convoy at the yard.)
     private static void TakeOverDelivery(GalacticFleet fleet)
     {
-        if (string.IsNullOrEmpty(fleet.pendingDelivery)) return;
-        Toast.Show($"{fleet.ships.Count} new ship{(fleet.ships.Count == 1 ? "" : "s")} taken off the build order for {fleet.pendingDelivery}");
+        string order = !string.IsNullOrEmpty(fleet.pendingDelivery) ? fleet.pendingDelivery : fleet.deliveringTo;
+        fleet.deliveringTo = null;
+        if (string.IsNullOrEmpty(order)) return;
+        Toast.Show($"{fleet.ships.Count} new ship{(fleet.ships.Count == 1 ? "" : "s")} taken off the build order for {order}");
         fleet.pendingDelivery = null;
     }
 

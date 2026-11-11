@@ -37,7 +37,8 @@ public class ProductionWindow : MonoBehaviour
     private TMP_InputField nameField;
     private RectTransform shipList;
     private TMP_Text totals;
-    private UIBits.Cycler destinationCycler;
+    private UIBits.PillButton destinationButton;
+    private static bool PickingDestination => GalacticMapManager.Instance != null && GalacticMapManager.Instance.IsPickingPlanet;
     private UIBits.Cycler yardCycler;
     private UIBits.PillButton orderButton;
     private TMP_Text orderResult;
@@ -98,7 +99,7 @@ public class ProductionWindow : MonoBehaviour
             UIBits.EscapeConsumedFrame = Time.frameCount;
             Close();
         }
-        UIBits.ModalOpen = IsOpen || DefensePlanner.IsOpen;
+        UIBits.ModalOpen = IsOpen || DefensePlanner.IsOpen || PickingDestination;
 
         if (!IsOpen || Time.unscaledTime < nextRefreshAt) return;
         nextRefreshAt = Time.unscaledTime + RefreshInterval;
@@ -291,11 +292,34 @@ public class ProductionWindow : MonoBehaviour
 
     private void RefreshOrderControls()
     {
-        destinationCycler.SetOptions(destinations.Select(p => p.planetName + (p.hasCapitalShipyard ? "  (shipyard)" : "")).ToList(), Mathf.Max(0, destinations.IndexOf(destination)));
+        string where = destination != null ? destination.planetName + (destination.hasCapitalShipyard ? "  (shipyard)" : "") : "none";
+        destinationButton.Set($"DELIVER TO:  {where}   -   PICK ON MAP", true);
 
         List<string> yardOptions = new List<string> { $"All shipyards ({yards.Count})" };
         yardOptions.AddRange(yards.Select(y => y.planetName));
         yardCycler.SetOptions(yardOptions, onlyYard != null ? yards.IndexOf(onlyYard) + 1 : 0);
+    }
+
+    // Hide the window and let the player click the destination planet on the map; come back either way.
+    private void PickDestinationOnMap()
+    {
+        GalacticMapManager map = GalacticMapManager.Instance;
+        if (map == null) return;
+        window.gameObject.SetActive(false);
+        map.BeginPlanetPick("Click a planet to deliver to:", p => p.owner == faction, picked =>
+        {
+            destination = picked;
+            if (!destinations.Contains(picked)) destinations.Add(picked);
+            ReopenAfterPick();
+        }, ReopenAfterPick);
+    }
+
+    private void ReopenAfterPick()
+    {
+        window.gameObject.SetActive(true);
+        UIBits.ModalOpen = true;
+        RefreshOrderControls();
+        RefreshTotals();
     }
 
     private void Order()
@@ -436,11 +460,8 @@ public class ProductionWindow : MonoBehaviour
         // Right: order + shipyards.
         RectTransform right = UIBits.Column(panel, 816f, 416f, 76f, 24f, 8f);
         UIBits.Heading(right, "ORDER");
-        destinationCycler = UIBits.CyclerRow(right, "DELIVER TO", 48f, i =>
-        {
-            destination = i >= 0 && i < destinations.Count ? destinations[i] : null;
-            RefreshTotals();
-        });
+        // Picked on the map, not from a list of names: the window steps aside, the player clicks a planet.
+        destinationButton = UIBits.Button(right, "DELIVER TO", 15f, new Vector2(0f, 48f), PickDestinationOnMap);
         yardCycler = UIBits.CyclerRow(right, "BUILD AT", 48f, i =>
         {
             onlyYard = i > 0 && i - 1 < yards.Count ? yards[i - 1] : null;

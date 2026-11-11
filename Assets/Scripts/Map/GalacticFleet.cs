@@ -38,6 +38,8 @@ public class GalacticFleet : MonoBehaviour
     // Production deliveries: ships collecting at a shipyard until its share of the order is done, then
     // sent to this planet (by name). Null for ordinary fleets.
     public string pendingDelivery;
+    // A convoy on its way to a build order's destination (set when it leaves the yard, cleared on arrival).
+    public string deliveringTo;
 
     public bool IsTraveling { get; private set; }
     public bool IsHolding => holdTimer > 0f;
@@ -67,6 +69,7 @@ public class GalacticFleet : MonoBehaviour
         public Vector3 position;
         public int parkedSlot = -1;
         public string pendingDelivery;
+        public string deliveringTo;
     }
 
     public TravelState CaptureTravel()
@@ -81,7 +84,8 @@ public class GalacticFleet : MonoBehaviour
             holdTimer = holdTimer,
             position = transform.position,
             parkedSlot = currentPlanet != null ? currentPlanet.SlotOf(this) : -1,
-            pendingDelivery = pendingDelivery
+            pendingDelivery = pendingDelivery,
+            deliveringTo = deliveringTo
         };
         foreach (Planet stop in route)
         {
@@ -97,6 +101,7 @@ public class GalacticFleet : MonoBehaviour
 
         holdTimer = state.holdTimer;
         pendingDelivery = string.IsNullOrEmpty(state.pendingDelivery) ? null : state.pendingDelivery;
+        deliveringTo = string.IsNullOrEmpty(state.deliveringTo) ? null : state.deliveringTo;
 
         if (!state.traveling)
         {
@@ -458,6 +463,7 @@ public class GalacticFleet : MonoBehaviour
             route.Clear();
             routeIndex = 0;
             finalSlot = -1;
+            deliveringTo = null; // Delivered (or, if this wasn't the destination, no longer a delivery).
         }
         else
         {
@@ -569,6 +575,7 @@ public class GalacticFleet : MonoBehaviour
 
     public Planet RetreatFrom(Planet from)
     {
+        deliveringTo = null; // Driven off: the delivery's over.
         if (from == null) from = currentPlanet;
 
         List<Planet> path = CanRetreat ? GalacticPathfinder.FindNearest(from, planet => planet.owner == faction) : new List<Planet>();
