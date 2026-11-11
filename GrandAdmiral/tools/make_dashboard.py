@@ -29,10 +29,19 @@ def row(title, y):
                    "gridPos": {"h": 1, "w": 24, "x": 0, "y": y}})
 
 
-def stat(title, expr, x, y, w=4, h=4, unit="short", source=PROM, decimals=None, description=""):
+def stat(title, expr, x, y, w=4, h=4, unit="short", source=PROM, decimals=None, description="", alert_above=None):
+    """A single number. Plain counts and versions are blue (no good or bad value); alert_above makes it
+    green up to that value and red above it."""
+    if alert_above is None:
+        color = {"color": {"mode": "fixed", "fixedColor": "blue"}}
+    else:
+        color = {"color": {"mode": "thresholds"},
+                 "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": None},
+                                                              {"color": "red", "value": alert_above}]}}
     p = {"type": "stat", "title": title, "id": _next(), "datasource": source, "description": description,
          "gridPos": {"h": h, "w": w, "x": x, "y": y},
-         "fieldConfig": {"defaults": {"unit": unit, **({"decimals": decimals} if decimals is not None else {})}, "overrides": []},
+         "fieldConfig": {"defaults": {"unit": unit, **color, **({"decimals": decimals} if decimals is not None else {})},
+                         "overrides": []},
          "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": False},
                      "colorMode": "value", "graphMode": "area", "textMode": "auto"},
          "targets": [{"refId": "A", "expr": expr, "datasource": source, **({"queryType": "range"} if source is LOKI else {})}]}
@@ -118,7 +127,8 @@ series("Battle length, recent uploads", [('ga_recent_battle_duration_seconds{sta
 # ---- players ----
 row("Players", 56)
 stat("Installs", 'sum(ga_installs{blocked="false"})', 0, 57)
-stat("Blocked installs", 'sum(ga_installs{blocked="true"})', 4, 57)
+stat("Blocked installs", 'sum(ga_installs{blocked="true"})', 4, 57, alert_above=1,
+     description="Installs cut off for sending forged or broken battle records. Red once any are.")
 series("Player battles received", [('ga_battles_received{source="player", window="24h"}', "last 24h")], 8, 57, w=8)
 series("Player outcomes (recent)", [('ga_recent_outcomes{source="player"}', "{{outcome}}")], 16, 57, w=8, stack=True)
 

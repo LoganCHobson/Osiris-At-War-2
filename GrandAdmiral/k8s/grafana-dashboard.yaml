@@ -52,7 +52,11 @@ data:
        },
        "fieldConfig": {
         "defaults": {
-         "unit": "short"
+         "unit": "short",
+         "color": {
+          "mode": "fixed",
+          "fixedColor": "blue"
+         }
         },
         "overrides": []
        },
@@ -96,7 +100,11 @@ data:
        },
        "fieldConfig": {
         "defaults": {
-         "unit": "short"
+         "unit": "short",
+         "color": {
+          "mode": "fixed",
+          "fixedColor": "blue"
+         }
         },
         "overrides": []
        },
@@ -140,7 +148,11 @@ data:
        },
        "fieldConfig": {
         "defaults": {
-         "unit": "short"
+         "unit": "short",
+         "color": {
+          "mode": "fixed",
+          "fixedColor": "blue"
+         }
         },
         "overrides": []
        },
@@ -185,6 +197,10 @@ data:
        "fieldConfig": {
         "defaults": {
          "unit": "short",
+         "color": {
+          "mode": "fixed",
+          "fixedColor": "blue"
+         },
          "decimals": 0
         },
         "overrides": []
@@ -230,6 +246,10 @@ data:
        "fieldConfig": {
         "defaults": {
          "unit": "short",
+         "color": {
+          "mode": "fixed",
+          "fixedColor": "blue"
+         },
          "decimals": 0
         },
         "overrides": []
@@ -275,6 +295,10 @@ data:
        "fieldConfig": {
         "defaults": {
          "unit": "short",
+         "color": {
+          "mode": "fixed",
+          "fixedColor": "blue"
+         },
          "decimals": 0
         },
         "overrides": []
@@ -1435,7 +1459,11 @@ data:
        },
        "fieldConfig": {
         "defaults": {
-         "unit": "short"
+         "unit": "short",
+         "color": {
+          "mode": "fixed",
+          "fixedColor": "blue"
+         }
         },
         "overrides": []
        },
@@ -1470,7 +1498,7 @@ data:
         "type": "prometheus",
         "uid": "prometheus"
        },
-       "description": "",
+       "description": "Installs cut off for sending forged or broken battle records. Red once any are.",
        "gridPos": {
         "h": 4,
         "w": 4,
@@ -1479,7 +1507,23 @@ data:
        },
        "fieldConfig": {
         "defaults": {
-         "unit": "short"
+         "unit": "short",
+         "color": {
+          "mode": "thresholds"
+         },
+         "thresholds": {
+          "mode": "absolute",
+          "steps": [
+           {
+            "color": "green",
+            "value": null
+           },
+           {
+            "color": "red",
+            "value": 1
+           }
+          ]
+         }
         },
         "overrides": []
        },
