@@ -43,7 +43,8 @@ spec:
       initContainers:
         - name: fetch-player
           image: busybox:1.36
-          command: [sh, -c, "wget -q -O - http://grand-admiral-player-store:8080/osiris-selfplay.tar.gz | tar -xz -C /player"]
+          # Built on Windows, so the tarball carries no exec bits: set them after unpacking.
+          command: [sh, -c, "wget -q -O - http://grand-admiral-player-store:8080/osiris-selfplay.tar.gz | tar -xz -C /player && chmod +x /player/osiris-selfplay"]
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true

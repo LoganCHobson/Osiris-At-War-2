@@ -448,7 +448,8 @@ public class FTLJump : MonoBehaviour
                     shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off,
                     receiveShadows = false
                 };
-                Graphics.RenderMesh(renderParams, part.mesh, sub, matrix);
+                if (SystemInfo.graphicsDeviceType != UnityEngine.Rendering.GraphicsDeviceType.Null) // Headless server: nothing to draw on.
+                    Graphics.RenderMesh(renderParams, part.mesh, sub, matrix);
             }
         }
     }

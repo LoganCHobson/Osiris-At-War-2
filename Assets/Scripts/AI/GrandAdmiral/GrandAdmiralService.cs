@@ -139,7 +139,9 @@ public class GrandAdmiralService : MonoBehaviour
         using (UnityWebRequest request = UnityWebRequest.Get($"{GrandAdmiral.Server}/v1/model/latest?have={have}"))
         {
             request.timeout = Timeout;
-            yield return request.SendWebRequest();
+            UnityWebRequestAsyncOperation sending = TrySend(request);
+            if (sending == null) { yield break; }
+            yield return sending;
             if (request.result != UnityWebRequest.Result.Success || request.responseCode != 200) yield break;
             byte[] bundle = request.downloadHandler.data;
             if (bundle == null || bundle.Length > GABundle.MaxModelBytes + 1024) yield break;
@@ -184,6 +186,21 @@ public class GrandAdmiralService : MonoBehaviour
         }
     }
 
+    // A request that can't even start (blocked http, a bad URL) throws from SendWebRequest. Inside a coroutine
+    // that would end every coroutine waiting on it, self-play's whole run included, so it's a plain failure here.
+    private static UnityWebRequestAsyncOperation TrySend(UnityWebRequest request)
+    {
+        try
+        {
+            return request.SendWebRequest();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"[GrandAdmiral] {request.method} {request.url} failed: {e.Message}");
+            return null;
+        }
+    }
+
     private IEnumerator SignedPost(string path, byte[] body, Action<long> done, Action<byte[]> response = null)
     {
         Credentials credentials = null;
@@ -201,7 +218,9 @@ public class GrandAdmiralService : MonoBehaviour
                 request.SetRequestHeader("X-GA-Install", credentials.install_id);
                 request.SetRequestHeader("X-GA-Time", now.ToString(System.Globalization.CultureInfo.InvariantCulture));
                 request.SetRequestHeader("X-GA-Signature", GAAuth.Sign(credentials.token, "POST", path, now, body));
-                yield return request.SendWebRequest();
+                UnityWebRequestAsyncOperation sending = TrySend(request);
+                if (sending == null) { done(0); yield break; }
+                yield return sending;
 
                 if (request.responseCode == 401 && attempt == 0)
                 {
@@ -229,7 +248,9 @@ public class GrandAdmiralService : MonoBehaviour
         using (UnityWebRequest request = UnityWebRequest.Get(GrandAdmiral.Server + "/v1/challenge"))
         {
             request.timeout = Timeout;
-            yield return request.SendWebRequest();
+            UnityWebRequestAsyncOperation sending = TrySend(request);
+            if (sending == null) { done(null); yield break; }
+            yield return sending;
             if (request.result != UnityWebRequest.Result.Success) { done(null); yield break; }
             challenge = JsonUtility.FromJson<Challenge>(request.downloadHandler.text);
         }
@@ -251,7 +272,9 @@ public class GrandAdmiralService : MonoBehaviour
             request.uploadHandler = new UploadHandlerRaw(body) { contentType = "application/json" };
             request.downloadHandler = new DownloadHandlerBuffer();
             request.timeout = Timeout;
-            yield return request.SendWebRequest();
+            UnityWebRequestAsyncOperation sending = TrySend(request);
+            if (sending == null) { done(null); yield break; }
+            yield return sending;
             if (request.result != UnityWebRequest.Result.Success) { done(null); yield break; }
             Credentials credentials = JsonUtility.FromJson<Credentials>(request.downloadHandler.text);
             if (credentials == null || string.IsNullOrEmpty(credentials.install_id) || string.IsNullOrEmpty(credentials.token)) { done(null); yield break; }

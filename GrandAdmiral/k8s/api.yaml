@@ -16,6 +16,7 @@ spec:
         runAsNonRoot: true
         runAsUser: 10001
         runAsGroup: 10001
+        fsGroup: 10001   # secrets are mounted root:10001 0440, readable by the app user only
         seccompProfile: { type: RuntimeDefault }
       containers:
         - name: api
@@ -50,7 +51,7 @@ spec:
           secret:
             secretName: grand-admiral-api
             items: [{ key: server-key, path: server-key }]
-            defaultMode: 0400
+            defaultMode: 0440
         - { name: tmp, emptyDir: { medium: Memory, sizeLimit: 16Mi } }
 ---
 apiVersion: v1

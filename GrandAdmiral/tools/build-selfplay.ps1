@@ -36,7 +36,12 @@ Get-ChildItem $build -Directory -Filter "*DoNotShip*" | Remove-Item -Recurse -Fo
 $tarball = Join-Path $Work "osiris-selfplay.tar.gz"
 if (Test-Path $tarball) { Remove-Item -Force $tarball }
 tar -czf $tarball -C $build .
-if ($LASTEXITCODE -ne 0) { throw "tar failed" }
+if ($LASTEXITCODE -ne 0) {
+    # Unity can still hold a file for a moment after it exits: wait and try once more.
+    Start-Sleep -Seconds 15
+    tar -czf $tarball -C $build .
+    if ($LASTEXITCODE -ne 0) { throw "tar failed" }
+}
 Write-Host ("Packed {0:N0} MB" -f ((Get-Item $tarball).Length / 1MB))
 if ($NoUpload) { return }
 

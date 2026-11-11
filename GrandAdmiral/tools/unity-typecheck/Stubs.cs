@@ -47,7 +47,7 @@ namespace UnityEngine.Networking
     public class UploadHandlerRaw : IDisposable { public UploadHandlerRaw(byte[] b) { } public string contentType; public void Dispose() { } }
     public class DownloadHandlerBuffer : IDisposable { public byte[] data; public string text; public void Dispose() { } }
     public class UnityWebRequestAsyncOperation { }
-    public class UnityWebRequest : IDisposable {
+    public class UnityWebRequest : IDisposable { public string url, method;
         public enum Result { InProgress, Success, ConnectionError, ProtocolError, DataProcessingError }
         public const string kHttpVerbPOST = "POST";
         public UnityWebRequest(string url, string method) { }

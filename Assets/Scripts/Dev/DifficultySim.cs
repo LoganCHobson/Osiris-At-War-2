@@ -224,6 +224,9 @@ public class DifficultySim : MonoBehaviour
         }
         Application.runInBackground = true;
         Application.targetFrameRate = -1;
+        // The farm's logs go to the cluster's Loki: plain lines without a stack trace each (errors keep theirs).
+        Application.SetStackTraceLogType(LogType.Log, StackTraceLogType.None);
+        Application.SetStackTraceLogType(LogType.Warning, StackTraceLogType.None);
         DifficultySim sim = new GameObject("DifficultySim").AddComponent<DifficultySim>();
         sim.factionA = assets.titans;
         sim.factionB = assets.avanti;

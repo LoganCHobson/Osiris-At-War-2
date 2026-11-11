@@ -145,6 +145,9 @@ public class AsteroidField : MonoBehaviour
     private void Update()
     {
         if (material == null || rocks.Count == 0) return;
+        // Drawing only. A headless server build (the self-play farm) has no graphics device, and
+        // instanced rendering throws there every frame.
+        if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null) return;
 
         foreach (List<Matrix4x4> batch in batches) batch.Clear();
 
