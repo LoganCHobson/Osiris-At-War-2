@@ -1,0 +1,119 @@
+# Image updater: rolls the API, metrics exporter and trainer forward to the newest images CI built from main.
+#
+# Pull, not push. CI can't deploy (this repository is public, and the cluster's self-hosted runners hold
+# router and DNS credentials, so they must never run its workflows). Instead, every 10 minutes this asks
+# GitHub's public API for the newest successful "Grand Admiral" run on main and, if its images differ from
+# what's running, sets them. GitHub gets no way in; this pod holds no secret but its own service account,
+# which may only patch those three objects. Manifest changes still go out by hand (kubectl apply -k);
+# an apply resets the images to kustomization.yaml's pins, and this moves them forward again.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: grand-admiral-updater
+automountServiceAccountToken: false
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: grand-admiral-updater
+rules:
+  - apiGroups: [apps]
+    resources: [deployments]
+    resourceNames: [grand-admiral-api, grand-admiral-metrics]
+    verbs: [get, patch, watch, list]
+  - apiGroups: [batch]
+    resources: [cronjobs]
+    resourceNames: [grand-admiral-trainer]
+    verbs: [get, patch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: grand-admiral-updater
+subjects: [{ kind: ServiceAccount, name: grand-admiral-updater }]
+roleRef: { apiGroup: rbac.authorization.k8s.io, kind: Role, name: grand-admiral-updater }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grand-admiral-updater
+data:
+  update.sh: |
+    set -eu
+    repo=LoganCHobson/Osiris-At-War-2
+    runs=$(curl -fsS --max-time 20 -H "Accept: application/vnd.github+json" \
+      "https://api.github.com/repos/$repo/actions/workflows/grand-admiral.yml/runs?branch=main&event=push&status=success&per_page=1")
+    sha=$(printf '%s' "$runs" | jq -r '.workflow_runs[0].head_sha // empty')
+    tag=$(printf '%s' "$sha" | cut -c1-12)
+    # Only ever a 12-character commit hash: nothing GitHub says can become anything but an image tag.
+    printf '%s' "$tag" | grep -Eq '^[0-9a-f]{12}$' || { echo "no usable run ($sha)"; exit 1; }
+    api=ghcr.io/loganchobson/grand-admiral-api:$tag
+    trainer=ghcr.io/loganchobson/grand-admiral-trainer:$tag
+    now=$(kubectl get deploy grand-admiral-api -o jsonpath='{.spec.template.spec.containers[0].image}')
+    if [ "$now" = "$api" ]; then echo "up to date ($tag)"; exit 0; fi
+    echo "updating $now -> $tag"
+    kubectl set image deploy/grand-admiral-api api="$api"
+    kubectl set image deploy/grand-admiral-metrics metrics="$api"
+    kubectl set image cronjob/grand-admiral-trainer trainer="$trainer"
+    # A bad image never takes over: rolling updates keep the old pods until the new ones are ready.
+    kubectl rollout status deploy/grand-admiral-api --timeout=300s
+    kubectl rollout status deploy/grand-admiral-metrics --timeout=300s
+    echo "deployed $tag"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: grand-admiral-updater
+spec:
+  schedule: "*/10 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 900
+      ttlSecondsAfterFinished: 86400
+      template:
+        metadata:
+          labels: { app: grand-admiral-updater }
+        spec:
+          restartPolicy: Never
+          serviceAccountName: grand-admiral-updater
+          automountServiceAccountToken: true
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            seccompProfile: { type: RuntimeDefault }
+          containers:
+            - name: updater
+              image: alpine/k8s:1.36.5
+              command: [sh, /scripts/update.sh]
+              env:
+                - { name: HOME, value: /tmp }
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: { drop: [ALL] }
+              resources:
+                requests: { cpu: 10m, memory: 32Mi }
+                limits: { memory: 128Mi }
+              volumeMounts:
+                - { name: scripts, mountPath: /scripts, readOnly: true }
+                - { name: tmp, mountPath: /tmp }
+          volumes:
+            - name: scripts
+              configMap: { name: grand-admiral-updater }
+            - { name: tmp, emptyDir: { sizeLimit: 64Mi } }
+---
+# Updater: no ingress; out to the Kubernetes API and to HTTPS (GitHub's API) only.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: updater
+spec:
+  podSelector: { matchLabels: { app: grand-admiral-updater } }
+  policyTypes: [Ingress, Egress]
+  egress:
+    - ports: [{ port: 443, protocol: TCP }, { port: 6443, protocol: TCP }]

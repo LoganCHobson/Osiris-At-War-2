@@ -76,28 +76,5 @@ jobs:
           provenance: true
           tags: ghcr.io/loganchobson/grand-admiral-trainer:${{ steps.tag.outputs.tag }}
 
-  deploy:
-    needs: images
-    # Off until a homelab-k8s runner can serve this repository (the cluster's runners belong to the
-    # LogansOrganization org). Without one the job waits forever and blocks every later run in the
-    # concurrency group. Set the repository variable HOMELAB_DEPLOY=true once a runner is available.
-    if: vars.HOMELAB_DEPLOY == 'true'
-    # The homelab runner: only ever runs code that is already on main.
-    runs-on: [self-hosted, homelab-k8s]
-    environment: grand-admiral   # add required reviewers in repo settings to gate deploys by hand
-    steps:
-      - uses: actions/checkout@v4
-      - name: Apply
-        env:
-          TAG: ${{ needs.images.outputs.tag }}
-        run: |
-          set -euo pipefail
-          kubectl apply -k GrandAdmiral/k8s
-          kubectl -n oawga-machine-learning set image deployment/grand-admiral-api api=ghcr.io/loganchobson/grand-admiral-api:$TAG
-          kubectl -n oawga-machine-learning patch cronjob grand-admiral-trainer --type=json \
-            -p "[{\"op\":\"replace\",\"path\":\"/spec/jobTemplate/spec/template/spec/containers/0/image\",\"value\":\"ghcr.io/loganchobson/grand-admiral-trainer:$TAG\"}]"
-          kubectl -n oawga-machine-learning rollout status deployment/grand-admiral-api --timeout=180s
-      - name: Smoke test
-        run: |
-          kubectl -n oawga-machine-learning exec deploy/grand-admiral-api -- python -c \
-            "import urllib.request as u; print(u.urlopen('http://localhost:8080/healthz', timeout=5).read().decode())"
+  # No deploy job: the cluster pulls. GrandAdmiral/k8s/updater.yaml rolls the API, metrics and trainer
+  # to the newest successful run on main within 10 minutes, so this public repo never runs on cluster runners.

@@ -13,6 +13,7 @@ resources:
   - selfplay.yaml
   - metrics.yaml
   - grafana-dashboard.yaml
+  - updater.yaml
 configMapGenerator:
   - name: grand-admiral-db-init
     files: [postgres-init.sql, postgres-init.sh]
@@ -20,6 +21,6 @@ generatorOptions:
   disableNameSuffixHash: true
 images:
   - name: ghcr.io/loganchobson/grand-admiral-api
-    newTag: 255eedac1e63   # the deployed build; CI bumps it on deploy, set it by hand when deploying by hand
+    newTag: 5d0a67b31ef1   # first deploy only: updater.yaml moves the live images to each new CI build
   - name: ghcr.io/loganchobson/grand-admiral-trainer
-    newTag: 255eedac1e63   # the deployed build; CI bumps it on deploy, set it by hand when deploying by hand
+    newTag: 5d0a67b31ef1   # first deploy only: updater.yaml moves the live images to each new CI build
