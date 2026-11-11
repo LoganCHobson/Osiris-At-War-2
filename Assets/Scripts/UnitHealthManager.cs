@@ -111,7 +111,8 @@ public class UnitHealthManager : MonoBehaviour
     public void HardpointDeath(HardpointHealth hardpoint)
     {
         SubtractHealth(hardpoint.currentHealth, hardpoint);
-        hardpointManager.hardpoints.Remove(hardpoint);
+        if (hardpointManager == null) hardpointManager = GetComponent<HardpointManager>(); // Hit before Start ran.
+        if (hardpointManager != null) hardpointManager.hardpoints.Remove(hardpoint);
         //Destroy(hardpoint.gameObject);
     }
 

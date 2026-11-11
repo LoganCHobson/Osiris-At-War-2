@@ -70,6 +70,7 @@ GRANT SELECT, INSERT ON ga_installs TO ga_api;
 GRANT SELECT, INSERT ON ga_battles TO ga_api;
 GRANT USAGE ON SEQUENCE ga_battles_id_seq TO ga_api;
 GRANT INSERT ON ga_arena TO ga_api;
+GRANT SELECT (id) ON ga_arena TO ga_api;  -- INSERT ... RETURNING id needs it (SQLAlchemy always asks)
 GRANT USAGE ON SEQUENCE ga_arena_id_seq TO ga_api;
 GRANT SELECT ON ga_models TO ga_api;
 
