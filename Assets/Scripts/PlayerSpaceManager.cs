@@ -75,6 +75,14 @@ public class PlayerSpaceManager : MonoBehaviour
 
     void Update()
     {
+        if (hardpointOverlay == null)
+        {
+            hardpointOverlay = new GameObject("HardpointOverlay").AddComponent<HardpointOverlay>();
+            new GameObject("PlaneShadows").AddComponent<PlaneShadows>(); // Depth cue: where every ship sits over the plane.
+        }
+        if (PlayerRetreating) hardpointOverlay.HideAll();
+        else hardpointOverlay.UpdateOverlay(cam, selectedUnits, enemyUnitLayer, !UIKit.PointerOverScreenUI());
+
         ShipHeathHighlighter();
         CursorSelector();
         UpdatePausePreview();
@@ -87,6 +95,7 @@ public class PlayerSpaceManager : MonoBehaviour
         }
 
         HandleCommandKeys();
+        if (Keybinds.Down(KeyAction.CycleHardpoint) && HasSelection) CycleTargetHardpoint();
 
         if (Mode != CommandMode.None && !HasSelection)
         {
@@ -110,7 +119,11 @@ public class PlayerSpaceManager : MonoBehaviour
             RaycastHit hit;
             Ray ray = cam.ScreenPointToRay(Input.mousePosition);
 
-            if (TryHostileTargetIcon(ray, out hit))
+            if (selectedUnits.Count > 0 && hardpointOverlay.HoveredHardpoint != null)
+            {
+                AttackHardpoint(hardpointOverlay.HoveredHardpoint); // Snapped to the icon nearest the pointer.
+            }
+            else if (TryHostileTargetIcon(ray, out hit))
             {
                 if (selectedUnits.Count > 0)
                 {
@@ -550,6 +563,58 @@ public class PlayerSpaceManager : MonoBehaviour
             if (unit.IsMobile) attackers.Add(unit);
         }
 
+        MoveIntoAttack(attackers, targetCenter);
+    }
+
+    // Attack one specific hardpoint (picked by its screen icon, or cycled to with the hardpoint key).
+    private void AttackHardpoint(HardpointHealth hardpoint)
+    {
+        PruneSelection();
+        if (hardpoint == null || hardpoint.Destroyed) return;
+        HardpointManager targetManager = hardpoint.GetComponentInParent<HardpointManager>();
+        UnitHealthManager targetUnit = hardpoint.GetComponentInParent<UnitHealthManager>();
+        if (targetUnit != null && !BattleSensors.PlayerCanSee(targetUnit)) return;
+
+        List<SpaceUnit> attackers = new List<SpaceUnit>();
+        foreach (SpaceUnit unit in selectedUnits)
+        {
+            if (!unit.TryGetComponent(out HardpointManager own)) continue;
+            ShipGuard.Cancel(unit);
+            own.AssignTarget(hardpoint.transform, false);
+            if (unit.IsMobile) attackers.Add(unit);
+        }
+        MoveIntoAttack(attackers, targetManager != null ? targetManager.transform.position : hardpoint.transform.position);
+    }
+
+    // Tab (rebindable): the selection's target moves to the next hardpoint on the same ship - engines, then the
+    // shield generator, then weapons. With no target yet, starts on the ship under the pointer.
+    private void CycleTargetHardpoint()
+    {
+        PruneSelection();
+        Transform current = null;
+        HardpointManager ship = null;
+        foreach (SpaceUnit unit in selectedUnits)
+        {
+            if (unit == null || !unit.TryGetComponent(out HardpointManager own) || own.OrderedTarget == null) continue;
+            current = own.OrderedTarget;
+            ship = current.GetComponentInParent<HardpointManager>();
+            if (ship != null) break;
+        }
+        if (ship == null) ship = hardpointOverlay != null ? hardpointOverlay.FocusShip : null;
+        if (ship == null) return;
+
+        List<HardpointHealth> order = HardpointOverlay.CycleOrder(ship);
+        if (order.Count == 0) return;
+        int index = order.FindIndex(h => h.transform == current);
+        HardpointHealth next = order[(index + 1) % order.Count];
+        AttackHardpoint(next);
+        Toast.Show($"Target: {HardpointOverlay.Name(HardpointOverlay.KindOf(next))}");
+    }
+
+    private HardpointOverlay hardpointOverlay;
+
+    private void MoveIntoAttack(List<SpaceUnit> attackers, Vector3 targetCenter)
+    {
         if (attackers.Count == 0) return;
 
         List<Vector3> origins = new List<Vector3>();
@@ -787,7 +852,11 @@ public class PlayerSpaceManager : MonoBehaviour
             return;
         }
 
-        if (Physics.Raycast(ray, out hit, Mathf.Infinity, friendlyUnitLayer))
+        if (selectedUnits.Count > 0 && hardpointOverlay != null && hardpointOverlay.HoveredHardpoint != null)
+        {
+            CursorManager.Instance.SetMarkerType(CursorManager.CursorType.Attackable); // A click hits that hardpoint.
+        }
+        else if (Physics.Raycast(ray, out hit, Mathf.Infinity, friendlyUnitLayer))
         {
             CursorManager.Instance.SetMarkerType(CursorManager.CursorType.Selectable);
         }

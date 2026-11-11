@@ -196,6 +196,13 @@ public class SettingsPanel : MonoBehaviour
             GameSettings.Apply();
         });
 
+        UIKit.Selector(UIKit.Row(content, "Battle Cursor Size"), new[] { "Normal", "Large", "Extra Large" }, GameSettings.CursorSize, i =>
+        {
+            GameSettings.CursorSize = i;
+            GameSettings.Apply();
+            CursorManager.Instance?.ReapplyCursor();
+        });
+
         // Anonymous: the AI's own decisions and the battle's outcome, nothing about you or your saves.
         UIKit.Selector(UIKit.Row(content, "Share Grand Admiral Battles"), new[] { "Off", "On" }, GameSettings.ShareBattleData ? 1 : 0, i =>
         {

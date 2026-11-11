@@ -9,7 +9,7 @@ public enum KeyAction
     CameraForward, CameraBack, CameraLeft, CameraRight, RotateLeft, RotateRight,
     Guard, PriorityMove, Ability, Stance,
     Climb, Dive, ToPlane, RollLeft, RollRight, PitchUp, PitchDown, Level, VerticalFormation, SideView,
-    Pause, Production, Help, Quicksave, Quickload, CinematicCamera, Overview
+    Pause, Production, Help, Quicksave, Quickload, CinematicCamera, Overview, CycleHardpoint
 }
 
 public static class Keybinds
@@ -30,6 +30,7 @@ public static class Keybinds
         { KeyAction.Pause, KeyCode.Space }, { KeyAction.Production, KeyCode.P }, { KeyAction.Help, KeyCode.F1 },
         { KeyAction.Quicksave, KeyCode.F5 }, { KeyAction.Quickload, KeyCode.F9 },
         { KeyAction.CinematicCamera, KeyCode.C }, { KeyAction.Overview, KeyCode.V },
+        { KeyAction.CycleHardpoint, KeyCode.Tab },
     };
 
     public static readonly HashSet<KeyCode> Reserved = new HashSet<KeyCode>
@@ -118,6 +119,7 @@ public static class Keybinds
             case KeyAction.Help: return "Controls help";
             case KeyAction.CinematicCamera: return "Cinematic camera";
             case KeyAction.Overview: return "Cinematic overview";
+            case KeyAction.CycleHardpoint: return "Cycle target hardpoint";
             default: return action.ToString();
         }
     }

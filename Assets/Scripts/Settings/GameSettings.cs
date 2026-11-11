@@ -26,6 +26,7 @@ public static class GameSettings
     public static bool EdgeScrolling = true;
     public static float CameraSpeed = 1f;
     public static bool ConfineCursor = true;
+    public static int CursorSize = 1; // 0 normal, 1 large, 2 extra large (the battle cursor; CursorManager).
 
     // Grand Admiral: upload anonymous battle records so the AI learns from everyone's games.
     public static bool ShareBattleData = true;
@@ -60,6 +61,7 @@ public static class GameSettings
         EdgeScrolling = PlayerPrefs.GetInt(Prefix + "edgeScrolling", 1) == 1;
         CameraSpeed = PlayerPrefs.GetFloat(Prefix + "cameraSpeed", 1f);
         ConfineCursor = PlayerPrefs.GetInt(Prefix + "confineCursor", 1) == 1;
+        CursorSize = Mathf.Clamp(PlayerPrefs.GetInt(Prefix + "cursorSize", 1), 0, 2);
         ShareBattleData = PlayerPrefs.GetInt(Prefix + "shareBattleData", 1) == 1;
         loaded = true;
     }
@@ -80,6 +82,7 @@ public static class GameSettings
         PlayerPrefs.SetInt(Prefix + "edgeScrolling", EdgeScrolling ? 1 : 0);
         PlayerPrefs.SetFloat(Prefix + "cameraSpeed", CameraSpeed);
         PlayerPrefs.SetInt(Prefix + "confineCursor", ConfineCursor ? 1 : 0);
+        PlayerPrefs.SetInt(Prefix + "cursorSize", CursorSize);
         PlayerPrefs.SetInt(Prefix + "shareBattleData", ShareBattleData ? 1 : 0);
         PlayerPrefs.Save();
     }

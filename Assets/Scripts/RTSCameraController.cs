@@ -286,7 +286,9 @@ public class RTSCameraController : MonoBehaviour
                     Cursor.SetCursor(cursorArrowRight, new Vector2(cursorArrowRight.width, cursorArrowRight.height), CursorMode.Auto); //So the Cursor will stay inside view
                     break;
                 case CursorArrow.DEFAULT:
-                    Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
+                    // In battle the cursor manager owns the pointer: hand it back rather than the plain system arrow.
+                    if (CursorManager.Instance != null) CursorManager.Instance.ReapplyCursor();
+                    else Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
                     break;
             }
 
