@@ -117,6 +117,15 @@ namespace Osiris.GrandAdmiral
             return Categorical(state, GASpec.OutCommit, new[] { true, true, true });
         }
 
+        // The schema 2 orders. Each is a three-way choice over whatever the game says is possible
+        // right now (null when fewer than two options are).
+        public GAChoice ChooseOrder(GAState state, int offset, bool[] mask)
+        {
+            int allowed = 0;
+            foreach (bool m in mask) if (m) allowed++;
+            return allowed >= 2 ? Categorical(state, offset, mask) : null;
+        }
+
         public GAChoice ChooseRetreat(GAState state)
         {
             double p1 = RetreatProbability(state.Output[GASpec.OutRetreat], Temperature, Exploration);

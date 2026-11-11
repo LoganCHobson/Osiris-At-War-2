@@ -16,11 +16,8 @@ public static class DifficultySimRunner
         DifficultySim sim = new GameObject("DifficultySim").AddComponent<DifficultySim>();
         sim.factionA = AssetDatabase.LoadAssetAtPath<Faction>(Argument("-factionA", "Assets/Data/Factions/Faction_TitansOfOsiris.asset"));
         sim.factionB = AssetDatabase.LoadAssetAtPath<Faction>(Argument("-factionB", "Assets/Data/Factions/Faction_AvantiEmpire.asset"));
-        sim.reportPath = Argument("-simReport", Path.Combine(Application.dataPath, "..", "Logs", "DifficultySim.txt"));
-        if (float.TryParse(Argument("-simSpeed", ""), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float speed)) sim.simSpeed = speed;
-        sim.selfPlay = Array.IndexOf(Environment.GetCommandLineArgs(), "-selfPlay") >= 0;
-        if (int.TryParse(Argument("-selfPlayRounds", ""), out int rounds)) sim.selfPlayRounds = Mathf.Clamp(rounds, 1, 250);
-        if (float.TryParse(Argument("-simLimit", ""), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float limit)) sim.battleTimeLimit = limit;
+        sim.reportPath = Path.Combine(Application.dataPath, "..", "Logs", "DifficultySim.txt");
+        sim.Configure(); // -simSpeed, -simLimit, -selfPlay, -grandAdmiralOnly, -selfPlayRounds, -simReport
 
         Application.runInBackground = true;
         EditorApplication.EnterPlaymode();

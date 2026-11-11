@@ -1,64 +1,144 @@
-# Nightly Grand Admiral vs Admiral battles in headless Unity (the shared unity-ci-build image).
-# Gives the trainer clean, high-exploration data and the win rates behind the automatic rollback.
-# Needs: the unity-license Secret (copied from the build pipeline's) and the grand-admiral-selfplay
-# Secret (README, "Self-play"). Suspended until those exist: set suspend: false to start it.
-apiVersion: batch/v1
-kind: CronJob
+# The self-play farm: headless Linux players (Assets/Editor/SelfPlayBuild.cs) fighting Grand Admiral
+# (always Avanti) against Admiral at equal cost, round after round. A built player needs no Unity
+# license, so the farm is limited only by spare CPU. Each pod plays a run of rounds, uploads its
+# battles and win rates as the trusted self-play install, exits and is restarted; every run asks the
+# API which model to play (a trial waiting to be proven, else the release).
+#
+# It runs at the lowest priority and never preempts anything: whatever else needs the room gets it,
+# and self-play waits. Scale with `kubectl -n oawga-machine-learning scale deploy/grand-admiral-selfplay --replicas N`.
+#
+# The player is served by grand-admiral-player-store (below): GrandAdmiral/tools/build-selfplay.ps1
+# builds it and uploads it there, then restarts the farm.
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: grand-admiral-selfplay
+value: -100
+preemptionPolicy: Never
+globalDefault: false
+description: Grand Admiral self-play. Uses spare capacity only; evicted first, never evicts anything.
+---
+apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: grand-admiral-selfplay
 spec:
-  schedule: "17 3 * * *"          # 03:17 UTC, finishes well before the trainer at 09:17
-  suspend: true
-  concurrencyPolicy: Forbid
-  successfulJobsHistoryLimit: 2
-  failedJobsHistoryLimit: 3
-  jobTemplate:
+  replicas: 4
+  selector:
+    matchLabels: { app: grand-admiral-selfplay }
+  strategy: { type: Recreate }
+  template:
+    metadata:
+      labels: { app: grand-admiral-selfplay }
     spec:
-      backoffLimit: 0
-      activeDeadlineSeconds: 19800
-      ttlSecondsAfterFinished: 259200
-      template:
-        metadata:
-          labels: { app: grand-admiral-selfplay }
-        spec:
-          restartPolicy: Never
-          automountServiceAccountToken: false
+      priorityClassName: grand-admiral-selfplay
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile: { type: RuntimeDefault }
+      initContainers:
+        - name: fetch-player
+          image: busybox:1.36
+          command: [sh, -c, "wget -q -O - http://grand-admiral-player-store:8080/osiris-selfplay.tar.gz | tar -xz -C /player"]
           securityContext:
-            runAsNonRoot: true
-            runAsUser: 10001
-            runAsGroup: 10001
-            fsGroup: 10001
-            seccompProfile: { type: RuntimeDefault }
-          containers:
-            - name: unity
-              image: ghcr.io/logansorganization/unity-ci-build:v1
-              command: [/bin/bash, /scripts/selfplay.sh]
-              env:
-                - { name: GIT_REPO_URL, value: "https://github.com/LoganCHobson/Osiris-At-War-2" }
-                - { name: GIT_REF, value: main }
-                - { name: SELFPLAY_ROUNDS, value: "25" }
-                - name: UNITY_SERIAL
-                  valueFrom: { secretKeyRef: { name: unity-license, key: serial } }
-                - name: UNITY_EMAIL
-                  valueFrom: { secretKeyRef: { name: unity-license, key: email } }
-                - name: UNITY_PASSWORD
-                  valueFrom: { secretKeyRef: { name: unity-license, key: password } }
-              securityContext:
-                allowPrivilegeEscalation: false
-                capabilities: { drop: [ALL] }
-              resources:
-                requests: { cpu: "1", memory: 4Gi }
-                limits: { cpu: "2", memory: 8Gi }
-              volumeMounts:
-                - { name: scripts, mountPath: /scripts, readOnly: true }
-                - { name: selfplay, mountPath: /secrets/selfplay, readOnly: true }
-                - { name: workspace, mountPath: /workspace }
-                - { name: tmp, mountPath: /tmp }
-          imagePullSecrets: [{ name: ghcr-pull-secret }]
-          volumes:
-            - name: scripts
-              configMap: { name: grand-admiral-selfplay-script }
-            - name: selfplay
-              secret: { secretName: grand-admiral-selfplay, defaultMode: 0400 }
-            - { name: workspace, emptyDir: { sizeLimit: 20Gi } }
-            - { name: tmp, emptyDir: { sizeLimit: 10Gi } }
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: [ALL] }
+          volumeMounts:
+            - { name: player, mountPath: /player }
+      containers:
+        - name: selfplay
+          image: ubuntu:24.04
+          command: [/player/osiris-selfplay]
+          args:
+            - -batchmode
+            - -nographics
+            - -selfPlay
+            - -selfPlayRounds
+            - "10"
+            - -simSpeed
+            - "6"
+            - -gaServer
+            - http://grand-admiral-api.oawga-machine-learning.svc.cluster.local:8080
+            - -gaCredentials
+            - /secrets/selfplay/credentials.json
+            - -logFile
+            - "-"
+          env:
+            - { name: HOME, value: /home/selfplay }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: [ALL] }
+          resources:
+            requests: { cpu: "1", memory: 1536Mi }
+            limits: { cpu: "2", memory: 3Gi }
+          volumeMounts:
+            - { name: player, mountPath: /player, readOnly: true }
+            - { name: home, mountPath: /home/selfplay }
+            - { name: tmp, mountPath: /tmp }
+            - { name: selfplay, mountPath: /secrets/selfplay, readOnly: true }
+      volumes:
+        - { name: player, emptyDir: { sizeLimit: 1Gi } }
+        - { name: home, emptyDir: { sizeLimit: 512Mi } }
+        - { name: tmp, emptyDir: { sizeLimit: 512Mi } }
+        - name: selfplay
+          secret: { secretName: grand-admiral-selfplay, defaultMode: 0440 }
+---
+# Serves the current self-play player build to the farm. Upload with build-selfplay.ps1.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grand-admiral-player-store
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: longhorn
+  resources: { requests: { storage: 2Gi } }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grand-admiral-player-store
+spec:
+  replicas: 1
+  strategy: { type: Recreate }
+  selector:
+    matchLabels: { app: grand-admiral-player-store }
+  template:
+    metadata:
+      labels: { app: grand-admiral-player-store }
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        fsGroup: 101
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: nginx
+          image: nginxinc/nginx-unprivileged:1.27-alpine
+          ports: [{ containerPort: 8080 }]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+          resources:
+            requests: { cpu: 10m, memory: 16Mi }
+            limits: { memory: 64Mi }
+          volumeMounts:
+            - { name: store, mountPath: /usr/share/nginx/html }
+      volumes:
+        - name: store
+          persistentVolumeClaim: { claimName: grand-admiral-player-store }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grand-admiral-player-store
+spec:
+  selector: { app: grand-admiral-player-store }
+  ports: [{ name: http, port: 8080, targetPort: 8080 }]

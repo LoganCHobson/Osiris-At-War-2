@@ -36,18 +36,23 @@ def target_scores(out, contacts):
     return np.einsum("...nk,...k->...n", np.asarray(contacts, dtype=np.float64), w)
 
 
-def decide(out, *, stance_mask=None, commit_mask=None, retreat_open=False, contacts=None,
-           temperature=1.0, epsilon=0.05):
-    """All four head distributions for one decision (used by parity tests and the toy env)."""
+def decide(out, *, masks=None, retreat_open=False, contacts=None, temperature=1.0, epsilon=0.05,
+           stance_mask=None, commit_mask=None):
+    """Every head's distribution for one decision (used by parity tests and the toy env).
+    masks: {categorical head name: allowed actions}; heads left out weren't decided."""
     out = np.asarray(out, dtype=np.float64)
-    result = {}
+    masks = dict(masks or {})
     if stance_mask is not None:
-        result["stance"] = masked_softmax(out[spec.OUT_STANCE], stance_mask, temperature, epsilon)[0]
+        masks["stance"] = stance_mask
+    if commit_mask is not None:
+        masks["commit"] = commit_mask
+    result = {}
+    for name, (outputs, _) in spec.CATEGORICAL.items():
+        if masks.get(name) is not None:
+            result[name] = masked_softmax(out[outputs], masks[name], temperature, epsilon)[0]
     if retreat_open:
         p1 = retreat_probability(out[spec.OUT_RETREAT], temperature, epsilon)[0]
         result["retreat"] = np.array([1.0 - p1, p1])
-    if commit_mask is not None:
-        result["commit"] = masked_softmax(out[spec.OUT_COMMIT], commit_mask, temperature, epsilon)[0]
     if contacts is not None and len(contacts) > 0:
         scores = target_scores(out, contacts)
         result["target"] = masked_softmax(scores, np.ones(len(contacts), bool), temperature, epsilon)[0]

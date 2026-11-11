@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: grand-admiral
+  name: oawga-machine-learning
   labels:
     # Pods that run as root, escalate, mount host paths, etc. are refused outright.
     pod-security.kubernetes.io/enforce: restricted

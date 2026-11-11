@@ -59,12 +59,13 @@ def main():
     parts = urllib.parse.urlsplit(admin_url)
     env = dict(os.environ, PGPASSWORD=parts.password or "")
     subprocess.run(["psql", "-h", parts.hostname, "-p", str(parts.port or 5432), "-U", parts.username,
-                    "-d", parts.path.lstrip("/"), "-v", "api_password=api-pw", "-v", "trainer_password=trainer-pw",
+                    "-d", parts.path.lstrip("/"), "-v", "api_password=api-pw", "-v", "trainer_password=trainer-pw", "-v", "metrics_password=metrics-pw",
                     "-q", "-f", str(ROOT / "k8s" / "postgres-init.sql")], check=True, env=env)
     print("schema applied")
 
     api_engine = create_engine(role_url(admin_url, "ga_api", "api-pw"))
     trainer_engine = create_engine(role_url(admin_url, "ga_trainer", "trainer-pw"))
+    metrics_engine = create_engine(role_url(admin_url, "ga_metrics", "metrics-pw"))
 
     # Bootstrap (as the trainer, like the bootstrap Job).
     key = bundle.generate_key()
@@ -124,6 +125,17 @@ def main():
     must_fail(trainer_engine, storage.installs.insert().values(id="x", created_at=storage.now(), network="n",
                                                                blocked=False), "trainer creates installs")
     must_fail(trainer_engine, text("DROP TABLE ga_battles"), "trainer drops a table")
+
+    print("ga_metrics privileges:")
+    with metrics_engine.connect() as conn:
+        conn.execute(text("SELECT count(*) FROM ga_battles")).scalar()
+        conn.execute(text("SELECT count(*) FROM ga_arena")).scalar()
+        conn.execute(text("SELECT version, status, report FROM ga_models")).all()
+    must_fail(metrics_engine, text("SELECT bundle FROM ga_models"), "metrics reads model weights")
+    must_fail(metrics_engine, update(storage.battles).values(status="accepted"), "metrics updates battles")
+    must_fail(metrics_engine, storage.arena.insert().values(received_at=storage.now(), install_id="x", version=1,
+                                                            opponent="admiral", games=1, wins=1, draws=0), "metrics writes arena")
+    must_fail(metrics_engine, delete(storage.installs), "metrics deletes installs")
 
     cfg = pipeline.RoundConfig()
     summary = pipeline.run_round(trainer_engine, key, 1, {1: key.public_key()}, cfg)

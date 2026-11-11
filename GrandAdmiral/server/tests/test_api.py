@@ -276,6 +276,24 @@ def test_unreleased_models_never_served(api, model, signing_key):
     assert client.get("/v1/model/latest?have=1").status_code == 204
 
 
+def test_trials_go_to_self_play_only(tmp_path, model, signing_key):
+    client, app = make_client(tmp_path, model, signing_key)
+    creds = register(client)
+    trial = model.copy()
+    trial.version = 2
+    with app.state.engine.begin() as conn:
+        pipeline.publish(conn, trial, "trial", {}, signing_key, 1)
+    assert client.get("/v1/model/latest?have=1").status_code == 204          # Players never see a trial.
+    assert signed_post(client, "/v1/selfplay/model", creds, {}).status_code == 403  # Nor does a non-self-play install.
+    app.state.settings.selfplay_installs = (creds["install_id"],)
+    r = signed_post(client, "/v1/selfplay/model", creds, {})
+    assert r.status_code == 200 and r.headers["x-ga-model-version"] == "2"
+    assert bundle.verify(r.content, {1: signing_key.public_key()}) == trial.to_bytes()
+    with app.state.engine.begin() as conn:  # Trial failed: self-play goes back to the release.
+        conn.execute(update(storage.models).where(storage.models.c.version == 2).values(status="failed"))
+    assert signed_post(client, "/v1/selfplay/model", creds, {}).headers["x-ga-model-version"] == "1"
+
+
 def test_bad_have_parameter(api):
     client, _ = api
     assert client.get("/v1/model/latest?have=abc").status_code == 422

@@ -93,7 +93,8 @@ def cmd_bootstrap(args):
 def cmd_round(args):
     key, key_id, public = _signing()
     selfplay = tuple(i for i in (_env("GA_SELFPLAY_INSTALLS", "") or "").split(",") if i)
-    cfg = pipeline.RoundConfig(selfplay_installs=selfplay)
+    cfg = pipeline.RoundConfig(selfplay_installs=selfplay,
+                               min_client_version=(_env("GA_MIN_CLIENT_VERSION", "") or "").strip())
     cfg.gating.require_arena = _env("GA_REQUIRE_ARENA", "false").lower() == "true"
     summary = pipeline.run_round(_engine(args), key, key_id, public, cfg)
     print(json.dumps(summary, indent=2, default=str))
@@ -157,7 +158,7 @@ def main(argv=None):
     p.set_defaults(func=cmd_keygen)
 
     p = sub.add_parser("bootstrap")
-    p.add_argument("--hidden", type=int, default=32)
+    p.add_argument("--hidden", type=int, default=64)
     p.add_argument("--bundle-out")
     p.add_argument("--from-bundle", help="release this signed bundle instead of building one")
     p.add_argument("--no-db", action="store_true")

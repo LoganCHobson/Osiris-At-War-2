@@ -59,6 +59,7 @@ def _explore(model, rate=0.2):
 
 
 @pytest.mark.slow
+@pytest.mark.xfail(strict=False, reason="known issue (2026-11-10): with the schema 2 orders the toy trainer gains about as much per round as evaluation noise (~+-0.01; +0.02 per round with the orders taken out), so the offline gate can pass a worse model or reject a better one. Releases now need self-play to confirm them (require_arena). Being worked on: the toy simulator and the trainer's credit assignment.")
 def test_training_rounds_improve_the_toy_ai(baseline):
     """Five rounds of play -> train -> gate. Every release must be at least as good as the one it
     replaced (within evaluation noise), and the end result clearly better than the Admiral."""

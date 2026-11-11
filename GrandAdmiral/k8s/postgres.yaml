@@ -39,6 +39,8 @@ spec:
               valueFrom: { secretKeyRef: { name: grand-admiral-db, key: api-password } }
             - name: GA_TRAINER_DB_PASSWORD
               valueFrom: { secretKeyRef: { name: grand-admiral-db, key: trainer-password } }
+            - name: GA_METRICS_DB_PASSWORD
+              valueFrom: { secretKeyRef: { name: grand-admiral-db, key: metrics-password } }
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true

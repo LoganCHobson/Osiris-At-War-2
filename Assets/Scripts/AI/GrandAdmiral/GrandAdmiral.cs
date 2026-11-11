@@ -107,6 +107,16 @@ public static class GrandAdmiral
         return true;
     }
 
+    // Self-play only: use this model for the coming battles whatever its version (a trial can be newer than
+    // anything released, and the next run may be told to play an older release again). Not saved.
+    public static bool UseForSelfPlay(byte[] bundle)
+    {
+        GAModel incoming = TryLoad(bundle, "self-play");
+        if (incoming == null) return false;
+        SetModel(incoming);
+        return true;
+    }
+
     // After a Grand Admiral battle: learn from it locally, and queue it for the global model.
     public static void Complete(GARecord record, IReadOnlyList<GAAdaptation.Step> steps, bool learnLocally)
     {

@@ -1,0 +1,4 @@
+# Shell scripts, SQL and manifests run on Linux (containers, CI): always LF, even on a Windows checkout.
+*.sh text eol=lf
+*.sql text eol=lf
+k8s/** text eol=lf

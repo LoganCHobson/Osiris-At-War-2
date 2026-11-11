@@ -193,6 +193,19 @@ public class PolicyTests
 
             Assert.Equal(c.GetProperty("retreat").GetDouble(), GAPolicy.RetreatProbability(output[GASpec.OutRetreat], t, e), 9);
 
+            // Schema 2 orders, at the offsets the C# spec claims (so a layout mismatch fails here).
+            int[] offsets = { GASpec.OutFormation, GASpec.OutEscort, GASpec.OutManeuver, GASpec.OutTempo };
+            string[] names = { "formation", "escort", "maneuver", "tempo" };
+            for (int h = 0; h < names.Length; h++)
+            {
+                JsonElement order = c.GetProperty("orders").GetProperty(names[h]);
+                Assert.Equal(order.GetProperty("offset").GetInt32(), offsets[h]);
+                bool[] orderMask = order.GetProperty("mask").EnumerateArray().Select(v => v.GetBoolean()).ToArray();
+                double[] p = GAPolicy.MaskedSoftmax(output, offsets[h], 3, orderMask, t, e);
+                double[] want = Fixtures.Doubles(order.GetProperty("p"));
+                for (int i = 0; i < 3; i++) Assert.Equal(want[i], p[i], 9);
+            }
+
             GAPolicy policy = new GAPolicy(model, null, 1);
             GAState state = new GAState { Features = Fixtures.Doubles(c.GetProperty("x")), Output = output, Hidden = new double[model.Hidden] };
             double[][] contacts = c.GetProperty("contacts").EnumerateArray().Select(Fixtures.Doubles).ToArray();
@@ -283,7 +296,8 @@ public class AdaptationTests
             GAState state = policy.Evaluate(x);
             double[] p = GAPolicy.MaskedSoftmax(state.Output, GASpec.OutCommit, 3, null, policy.Temperature, policy.Exploration);
             GAChoice surge = new GAChoice { Action = GASpec.CommitSurge, Probability = p[2], Mask = new[] { true, true, true } };
-            adaptation.Learn(new[] { new GAAdaptation.Step { State = state, Commit = surge } }, reward: 1.5, learningRate: 0.05, epsilon: policy.Exploration);
+            // "Rewarded" means better than the critic expected, whatever this fixture's critic says.
+            adaptation.Learn(new[] { new GAAdaptation.Step { State = state, Commit = surge } }, reward: state.Value + 1.0, learningRate: 0.05, epsilon: policy.Exploration);
         }
         Assert.True(adaptation.IsActive);
         Assert.True(policy.Evaluate(x).Output[GASpec.OutCommit + GASpec.CommitSurge] > before);
@@ -418,8 +432,13 @@ public class RecordTests
                 var decision = new GARecord.Decision
                 {
                     Time = t * 3.0, State = state, Stance = policy.ChooseStance(state, t % 2 == 0),
-                    Retreat = policy.ChooseRetreat(state), Commit = policy.ChooseCommit(state), Target = policy.ChooseTarget(state, contacts)
+                    Retreat = policy.ChooseRetreat(state), Commit = policy.ChooseCommit(state), Target = policy.ChooseTarget(state, contacts),
+                    Formation = policy.ChooseOrder(state, GASpec.OutFormation, new[] { true, true, true }),
+                    Escort = policy.ChooseOrder(state, GASpec.OutEscort, new[] { true, t % 3 != 0, true }),
+                    Maneuver = policy.ChooseOrder(state, GASpec.OutManeuver, new[] { true, true, t % 2 == 0 }),
+                    Tempo = policy.ChooseOrder(state, GASpec.OutTempo, new[] { true, false, false }) // one option: not decided
                 };
+                Assert.Null(decision.Tempo);
                 record.Add(decision);
                 steps.Add(new GAAdaptation.Step { State = state, Stance = decision.Stance, Retreat = decision.Retreat, Commit = decision.Commit });
             }

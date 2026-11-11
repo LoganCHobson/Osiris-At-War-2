@@ -44,6 +44,16 @@ class GateReport:
         return asdict(self)
 
 
+def changed_heads(old, new):
+    """The heads a candidate actually changed. A change to the shared hidden layer changes them all."""
+    if not (np.array_equal(old.w1, new.w1) and np.array_equal(old.b1, new.b1)
+            and np.array_equal(old.in_mean, new.in_mean) and np.array_equal(old.in_std, new.in_std)):
+        return spec.HEADS
+    return tuple(name for name in spec.HEADS
+                 if not (np.array_equal(old.w2[spec.HEAD_OUTPUTS[name]], new.w2[spec.HEAD_OUTPUTS[name]])
+                         and np.array_equal(old.b2[spec.HEAD_OUTPUTS[name]], new.b2[spec.HEAD_OUTPUTS[name]])))
+
+
 def _per_battle_improvement(old, new, ds: Dataset):
     """Each held-out battle's estimated advantage gain: sum over its decisions of
     (pi_new - pi_old)/mu * A, with importance ratios capped to keep the variance sane. Advantages
@@ -55,13 +65,24 @@ def _per_battle_improvement(old, new, ds: Dataset):
     index = {b: i for i, b in enumerate(battles)}
     gain = np.zeros(len(battles))
     weight = np.zeros(len(battles))
-    for name in spec.HEADS:
+    # One importance ratio per decision over every head it used (the product, as log sums). Scoring
+    # heads separately and adding them up assumes each changed alone; with many heads changing at
+    # once that overstates the gain and lets worse models through.
+    log_new = np.zeros(len(ds.x))
+    log_old = np.zeros(len(ds.x))
+    used = np.zeros(len(ds.x), dtype=bool)
+    for name in changed_heads(old, new):  # Unchanged heads' ratios cancel exactly; leaving them out cuts noise.
         rows, pa_new, _, _ = head_terms(out_new, ds, name)
         if len(rows) == 0:
             continue
         _, pa_old, _, _ = head_terms(out_old, ds, name)
         mu = ds.heads[name]["mu"]
-        delta = (np.minimum(pa_new / mu, 3.0) - np.minimum(pa_old / mu, 3.0)) * adv[rows]
+        np.add.at(log_new, rows, np.log(np.maximum(pa_new, 1e-12) / mu))
+        np.add.at(log_old, rows, np.log(np.maximum(pa_old, 1e-12) / mu))
+        used[rows] = True
+    rows = np.flatnonzero(used)
+    if len(rows):
+        delta = (np.minimum(np.exp(log_new[rows]), 3.0) - np.minimum(np.exp(log_old[rows]), 3.0)) * adv[rows]
         b = np.array([index[x] for x in ds.battle[rows]])
         np.add.at(gain, b, delta * ds.weights[rows])
     for b, i in index.items():

@@ -1,7 +1,7 @@
 -- Grand Admiral database: schema and least-privilege roles. Applied once by the postgres init
 -- container (k8s/postgres.yaml), with the role passwords passed in as psql variables:
 --   psql -v api_password=... -v trainer_password=... -f postgres-init.sql
--- Must match grand-admiral/ml/osiris_ml/storage.py (tests/pg_integration.py checks it does).
+-- Must match GrandAdmiral/ml/osiris_ml/storage.py (tools/pg_integration.py checks it does).
 
 \set ON_ERROR_STOP on
 
@@ -34,7 +34,7 @@ CREATE INDEX IF NOT EXISTS ix_ga_battles_status ON ga_battles (status);
 CREATE TABLE IF NOT EXISTS ga_models (
     version     integer PRIMARY KEY,
     created_at  timestamptz NOT NULL,
-    status      varchar(10) NOT NULL CHECK (status IN ('candidate', 'released', 'rejected', 'revoked')),
+    status      varchar(10) NOT NULL CHECK (status IN ('candidate', 'released', 'rejected', 'revoked', 'trial', 'failed')),
     bundle      bytea       NOT NULL,
     sha256      varchar(64) NOT NULL,
     report      text
@@ -58,9 +58,11 @@ REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 
 SELECT 'CREATE ROLE ga_api LOGIN' WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ga_api') \gexec
 SELECT 'CREATE ROLE ga_trainer LOGIN' WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ga_trainer') \gexec
+SELECT 'CREATE ROLE ga_metrics LOGIN' WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ga_metrics') \gexec
 ALTER ROLE ga_api WITH LOGIN PASSWORD :'api_password' NOSUPERUSER NOCREATEDB NOCREATEROLE CONNECTION LIMIT 40;
 ALTER ROLE ga_trainer WITH LOGIN PASSWORD :'trainer_password' NOSUPERUSER NOCREATEDB NOCREATEROLE CONNECTION LIMIT 5;
-GRANT USAGE ON SCHEMA public TO ga_api, ga_trainer;
+ALTER ROLE ga_metrics WITH LOGIN PASSWORD :'metrics_password' NOSUPERUSER NOCREATEDB NOCREATEROLE CONNECTION LIMIT 3;
+GRANT USAGE ON SCHEMA public TO ga_api, ga_trainer, ga_metrics;
 
 -- The internet-facing API: add installs, battles and arena results; read released models.
 -- It can't change or delete data, and it can't touch models at all.
@@ -77,5 +79,12 @@ GRANT SELECT, UPDATE (blocked, blocked_reason) ON ga_installs TO ga_trainer;
 GRANT SELECT, INSERT, UPDATE (status) ON ga_models TO ga_trainer;
 GRANT SELECT, DELETE ON ga_arena TO ga_trainer;
 
+-- The metrics exporter (Prometheus): read-only, and never sees model weights or signatures.
+GRANT SELECT (id, created_at, network, blocked) ON ga_installs TO ga_metrics;
+GRANT SELECT ON ga_battles TO ga_metrics;
+GRANT SELECT ON ga_arena TO ga_metrics;
+GRANT SELECT (version, created_at, status, report) ON ga_models TO ga_metrics;
+
 ALTER ROLE ga_api SET statement_timeout = '5s';
 ALTER ROLE ga_trainer SET statement_timeout = '10min';
+ALTER ROLE ga_metrics SET statement_timeout = '10s';

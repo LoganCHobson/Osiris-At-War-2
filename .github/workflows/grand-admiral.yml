@@ -42,7 +42,7 @@ jobs:
         run: |
           curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz | tar xz kubeconform
           kubectl kustomize GrandAdmiral/k8s > rendered.yaml
-          ./kubeconform -strict -summary -kubernetes-version 1.30.0 rendered.yaml GrandAdmiral/k8s/bootstrap-job.yaml
+          ./kubeconform -strict -summary -kubernetes-version 1.30.0 -schema-location default \n            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \n            rendered.yaml GrandAdmiral/k8s/bootstrap-job.yaml
 
   images:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -61,14 +61,14 @@ jobs:
         with: { registry: ghcr.io, username: "${{ github.actor }}", password: "${{ secrets.GITHUB_TOKEN }}" }
       - uses: docker/build-push-action@v6
         with:
-          context: grand-admiral
+          context: GrandAdmiral
           file: GrandAdmiral/server/Dockerfile
           push: true
           provenance: true
           tags: ghcr.io/loganchobson/grand-admiral-api:${{ steps.tag.outputs.tag }}
       - uses: docker/build-push-action@v6
         with:
-          context: grand-admiral
+          context: GrandAdmiral
           file: GrandAdmiral/ml/Dockerfile
           push: true
           provenance: true
@@ -87,11 +87,11 @@ jobs:
         run: |
           set -euo pipefail
           kubectl apply -k GrandAdmiral/k8s
-          kubectl -n grand-admiral set image deployment/grand-admiral-api api=ghcr.io/loganchobson/grand-admiral-api:$TAG
-          kubectl -n grand-admiral patch cronjob grand-admiral-trainer --type=json \
+          kubectl -n oawga-machine-learning set image deployment/grand-admiral-api api=ghcr.io/loganchobson/grand-admiral-api:$TAG
+          kubectl -n oawga-machine-learning patch cronjob grand-admiral-trainer --type=json \
             -p "[{\"op\":\"replace\",\"path\":\"/spec/jobTemplate/spec/template/spec/containers/0/image\",\"value\":\"ghcr.io/loganchobson/grand-admiral-trainer:$TAG\"}]"
-          kubectl -n grand-admiral rollout status deployment/grand-admiral-api --timeout=180s
+          kubectl -n oawga-machine-learning rollout status deployment/grand-admiral-api --timeout=180s
       - name: Smoke test
         run: |
-          kubectl -n grand-admiral exec deploy/grand-admiral-api -- python -c \
+          kubectl -n oawga-machine-learning exec deploy/grand-admiral-api -- python -c \
             "import urllib.request as u; print(u.urlopen('http://localhost:8080/healthz', timeout=5).read().decode())"

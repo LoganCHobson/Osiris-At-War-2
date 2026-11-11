@@ -51,6 +51,38 @@ def sample_states(n, rng):
     x[:, F["stance_press"]] = stance == 1
     x[:, F["stance_fallback"]] = stance == 2
     x[:, F["vs_player"]] = rng.random(n) < 0.5
+
+    shielded = rng.random(n) < 0.6
+    shield = np.where(shielded, rng.uniform(0.0, 1.0, n), 0.0)
+    x[:, F["our_shield"]] = shield
+    x[:, F["shield_trend"]] = np.where(shielded, np.clip(rng.normal(-0.05, 0.15, n), -1, 1), 0.0)
+    x[:, F["low_shield_share"]] = np.where(shielded, np.clip((0.5 - shield) * 1.5 + rng.normal(0, 0.1, n), 0, 1), 0.0)
+    x[:, F["missile_pressure"]] = np.where(rng.random(n) < 0.5, 0.0, rng.uniform(0.0, 2.0, n))
+    x[:, F["pd_idle_share"]] = rng.uniform(0.0, 1.0, n)
+    x[:, F["enemy_craft_ratio"]] = np.where(rng.random(n) < 0.3, 0.0, rng.uniform(0.0, 2.5, n))
+    x[:, F["bombers_on_capitals"]] = np.where(x[:, F["enemy_craft_ratio"]] > 0, rng.uniform(0.0, 0.8, n), 0.0)
+    x[:, F["bow_alignment"]] = rng.uniform(0.0, 1.0, n)
+    x[:, F["los_blocked_share"]] = rng.uniform(0.0, 0.7, n)
+    x[:, F["cover_between"]] = np.where(rng.random(n) < 0.5, 0.0, rng.uniform(0.0, 0.8, n))
+    x[:, F["cover_near"]] = rng.random(n) < 0.4
+    x[:, F["enemy_waves"]] = rng.integers(1, 5, n) / 5
+    x[:, F["since_enemy_wave"]] = rng.uniform(0.0, 2.0, n)
+    has_flagship = rng.random(n) < 0.85
+    x[:, F["flagship_health"]] = np.where(has_flagship, rng.uniform(0.1, 1.0, n), 0.0)
+    x[:, F["flagship_under_fire"]] = np.where(has_flagship, rng.uniform(0.0, 0.7, n), 0.0)
+    x[:, F["kited"]] = rng.random(n) < 0.15
+    x[:, F["closing_rate"]] = np.clip(rng.normal(0.0, 0.2, n), -1, 1)
+    x[:, F["our_spread"]] = rng.uniform(0.1, 1.5, n)
+    x[:, F["enemy_spread"]] = rng.uniform(0.1, 1.8, n)
+    x[:, F["log_speed_ratio"]] = np.clip(rng.normal(0.0, 0.4, n), -2, 2)
+    x[:, F["damage_exchange"]] = np.clip(x[:, F["log_field_ratio"]] * 0.8 + rng.normal(0.0, 0.6, n), -3, 3)
+    for middle, last in (("formation_tight", "formation_loose"), ("escort_screen", "escort_hunt"),
+                         ("maneuver_flank", "maneuver_envelop"), ("tempo_rotate", "tempo_pulse")):
+        current = rng.choice(3, n, p=[0.6, 0.2, 0.2])
+        x[:, F[middle]] = current == 1
+        x[:, F[last]] = current == 2
+    x[:, F["tempo_rotate"]] *= shielded
+    x[:, F["tempo_pulse"]] *= shielded
     return x
 
 
@@ -94,11 +126,106 @@ def heuristic_retreat(x):
     return (outlook(x) < threshold).astype(np.int64)
 
 
+# ---- the playbook for the schema 2 orders ----
+# Each rule reads only battle-state features, so v1 can learn it exactly. Each has a little
+# hysteresis (the current order is a feature) so the fleet doesn't flip orders every decision.
+
+def _current(x, middle, last):
+    """0 / 1 / 2 from a pair of one-hot 'current order' features."""
+    return np.where(x[..., F[middle]] > 0.5, 1, np.where(x[..., F[last]] > 0.5, 2, 0))
+
+
+def formation_mask(x):
+    return np.ones(x.shape[:-1] + (3,), dtype=bool)
+
+
+def heuristic_formation(x):
+    """Tight under missile or bomber pressure (overlapping point defence); loose when our own ships
+    block each other's shots; otherwise standard."""
+    current = _current(x, "formation_tight", "formation_loose")
+    hold = np.where(current == 1, 0.7, 1.0)  # Once tight, stay tight a little longer.
+    pressure = ((x[:, F["missile_pressure"]] >= 0.5 * hold) | (x[:, F["bombers_on_capitals"]] >= 0.3 * hold)
+                | (x[:, F["enemy_craft_ratio"]] >= 1.2 * hold))
+    blocked = x[:, F["los_blocked_share"]] >= np.where(current == 2, 0.25, 0.35)
+    return np.where(pressure, 1, np.where(blocked, 2, 0)).astype(np.int64)
+
+
+def escort_mask(x):
+    return np.ones(x.shape[:-1] + (3,), dtype=bool)  # The game masks screen/hunt when it has no escorts.
+
+
+def heuristic_escort(x):
+    """Screen the capitals when bombers are on them or the flagship is being swarmed; hunt craft
+    when the sky is full of them and the capitals are safe; otherwise hold the line."""
+    current = _current(x, "escort_screen", "escort_hunt")
+    bombers = x[:, F["bombers_on_capitals"]]
+    craft = x[:, F["enemy_craft_ratio"]]
+    screen = ((bombers >= np.where(current == 1, 0.15, 0.25))
+              | ((x[:, F["flagship_under_fire"]] >= 0.4) & (craft >= 0.5) & (x[:, F["flagship_health"]] > 0)))
+    hunt = (craft >= np.where(current == 2, 0.55, 0.75)) & (bombers < 0.25)
+    return np.where(screen, 1, np.where(hunt, 2, 0)).astype(np.int64)
+
+
+def maneuver_mask(x):
+    mask = np.ones(x.shape[:-1] + (3,), dtype=bool)
+    falling_back = x[..., F["stance_fallback"]] > 0.5
+    mask[..., 1] = ~falling_back
+    mask[..., 2] = ~falling_back
+    return mask
+
+
+def heuristic_maneuver(x):
+    """Envelop a compact enemy we badly outnumber; flank when we're stronger and at least as fast,
+    or when asteroids block the straight approach. Never while kited (close the gap instead),
+    falling back, or assaulting defences (the objective decides the approach)."""
+    field = np.exp(x[:, F["log_field_ratio"]])
+    current = _current(x, "maneuver_flank", "maneuver_envelop")
+    lean = np.where(current > 0, 0.85, 1.0)  # A wing already out stays out a little longer.
+    free = (x[:, F["kited"]] < 0.5) & (x[:, F["stance_fallback"]] < 0.5) & (x[:, F["enemy_defenses"]] < 0.5)
+    envelop = free & (field >= 2.0 * lean) & (x[:, F["enemy_spread"]] < 0.9)
+    flank = free & (((field >= 1.4 * lean) & (x[:, F["log_speed_ratio"]] >= -0.2) & (x[:, F["enemy_spread"]] < 1.3))
+                    | ((x[:, F["cover_between"]] >= 0.4) & (field >= 1.0 * lean)))
+    return np.where(envelop, 2, np.where(flank, 1, 0)).astype(np.int64)
+
+
+def tempo_mask(x):
+    mask = np.ones(x.shape[:-1] + (3,), dtype=bool)
+    shielded = x[..., F["our_shield"]] > 0
+    mask[..., 1] = shielded
+    mask[..., 2] = shielded
+    return mask
+
+
+def heuristic_tempo(x):
+    """Shield rhythm: pulse the whole line back while shields are collapsing in an even fight the
+    enemy isn't running from; rotate drained ships out when only some are low; otherwise hold.
+    Never while kited: stepping back only lets the enemy keep shooting from range."""
+    field = np.exp(x[:, F["log_field_ratio"]])
+    shield = x[:, F["our_shield"]]
+    shielded = shield > 0
+    current = _current(x, "tempo_rotate", "tempo_pulse")
+    calm = (x[:, F["kited"]] < 0.5) & (x[:, F["enemy_retreating"]] < 0.5)
+    pulse = (shielded & calm & (shield < np.where(current == 2, 0.45, 0.3)) & (x[:, F["shield_trend"]] <= 0.02)
+             & (field >= 0.7) & (field <= 1.6))
+    rotate = shielded & calm & (x[:, F["low_shield_share"]] >= np.where(current == 1, 0.1, 0.15)) & (field >= 0.8)
+    return np.where(pulse, 2, np.where(rotate, 1, 0)).astype(np.int64)
+
+
+# head -> (label rule, mask rule). Commit has no rule: it's set straight to Admiral's "match".
+PLAYBOOK = {
+    "stance": (lambda x: heuristic_stance(x), lambda x: stance_mask(x)),
+    "formation": (heuristic_formation, formation_mask),
+    "escort": (heuristic_escort, escort_mask),
+    "maneuver": (heuristic_maneuver, maneuver_mask),
+    "tempo": (heuristic_tempo, tempo_mask),
+}
+
+
 def value_prior(x):
     return 0.9 * np.tanh(x[:, F["log_total_ratio"]])
 
 
-def baseline(n_hidden=32, samples=40000, epochs=60, seed=7, knobs=None):
+def baseline(n_hidden=64, samples=40000, epochs=100, seed=7, knobs=None):
     """Grand Admiral model v1: the Admiral rules in network form."""
     rng = np.random.default_rng(seed)
     model = Model(n_hidden=n_hidden, version=1, seed=seed, knobs=knobs)
@@ -108,15 +235,15 @@ def baseline(n_hidden=32, samples=40000, epochs=60, seed=7, knobs=None):
     model.b2[spec.OUT_COMMIT] = [0.0, 3.0, 0.0]         # Commit like Admiral ("match").
 
     x = sample_states(samples, rng)
-    stance = heuristic_stance(x)
-    smask = stance_mask(x)
+    labels = {name: (rule(x), mask(x)) for name, (rule, mask) in PLAYBOOK.items()}
     retreat = heuristic_retreat(x)
     open_ = retreat_open(x)
     value = value_prior(x)
 
     optimiser = Adam(model.params(), 3e-3)
     trainable = np.zeros(spec.N_OUT, dtype=bool)
-    trainable[spec.OUT_STANCE] = True
+    for name in PLAYBOOK:
+        trainable[spec.CATEGORICAL[name][0]] = True
     trainable[spec.OUT_RETREAT] = True
     trainable[spec.OUT_VALUE] = True
 
@@ -127,13 +254,15 @@ def baseline(n_hidden=32, samples=40000, epochs=60, seed=7, knobs=None):
             out, cache = model.forward(x[b])
             d = np.zeros_like(out)
 
-            logits = np.where(smask[b], out[:, spec.OUT_STANCE], -np.inf)
-            logits -= logits.max(axis=1, keepdims=True)
-            p = np.where(smask[b], np.exp(logits), 0.0)
-            p /= p.sum(axis=1, keepdims=True)
-            target = np.zeros_like(p)
-            target[np.arange(len(b)), stance[b]] = 1.0
-            d[:, spec.OUT_STANCE] = (p - target) / len(b)
+            for name, (label, mask) in labels.items():
+                outputs = spec.CATEGORICAL[name][0]
+                logits = np.where(mask[b], out[:, outputs], -np.inf)
+                logits -= logits.max(axis=1, keepdims=True)
+                p = np.where(mask[b], np.exp(logits), 0.0)
+                p /= p.sum(axis=1, keepdims=True)
+                target = np.zeros_like(p)
+                target[np.arange(len(b)), label[b]] = 1.0
+                d[:, outputs] = (p - target) / len(b)
 
             q = 1.0 / (1.0 + np.exp(-out[:, spec.OUT_RETREAT]))
             weight = open_[b] * 3.0 + 0.05  # Mostly matters where retreat is actually on the table.
@@ -189,11 +318,13 @@ def heuristic_agreement(model):
     rng = np.random.default_rng(1234)
     x = sample_states(5000, rng)
     out, _ = model.forward(x)
-    logits = np.where(stance_mask(x), out[:, spec.OUT_STANCE], -np.inf)
-    stance = float((logits.argmax(axis=1) == heuristic_stance(x)).mean())
+    result = {}
+    for name, (rule, mask) in PLAYBOOK.items():
+        logits = np.where(mask(x), out[:, spec.CATEGORICAL[name][0]], -np.inf)
+        result[name] = float((logits.argmax(axis=1) == rule(x)).mean())
     o = retreat_open(x)
-    retreat = float(((out[o, spec.OUT_RETREAT] > 0) == (heuristic_retreat(x)[o] == 1)).mean())
-    return {"stance": stance, "retreat": retreat}
+    result["retreat"] = float(((out[o, spec.OUT_RETREAT] > 0) == (heuristic_retreat(x)[o] == 1)).mean())
+    return result
 
 
 def log_priority(priorities):
@@ -202,4 +333,5 @@ def log_priority(priorities):
 
 
 __all__ = ["baseline", "canaries", "canary_scores", "heuristic_agreement", "sample_states", "log_priority",
-           "heuristic_stance", "heuristic_retreat", "stance_mask", "retreat_open"]
+           "heuristic_stance", "heuristic_retreat", "stance_mask", "retreat_open", "PLAYBOOK",
+           "heuristic_formation", "heuristic_escort", "heuristic_maneuver", "heuristic_tempo"]

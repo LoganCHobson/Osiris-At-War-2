@@ -16,6 +16,7 @@ namespace Osiris.GrandAdmiral
             public double Time;
             public GAState State;
             public GAChoice Stance, Retreat, Commit, Target;
+            public GAChoice Formation, Escort, Maneuver, Tempo; // schema 2
         }
 
         public string BattleId = Guid.NewGuid().ToString("D").ToLowerInvariant();
@@ -34,7 +35,8 @@ namespace Osiris.GrandAdmiral
         public void Add(Decision decision)
         {
             if (Full) return;
-            if (decision.Stance == null && decision.Retreat == null && decision.Commit == null && decision.Target == null) return;
+            if (decision.Stance == null && decision.Retreat == null && decision.Commit == null && decision.Target == null
+                && decision.Formation == null && decision.Escort == null && decision.Maneuver == null && decision.Tempo == null) return;
             Decisions.Add(decision);
         }
 
@@ -87,6 +89,10 @@ namespace Osiris.GrandAdmiral
                 if (d.Stance != null) { sb.Append(",\"s\":"); Choice(sb, d.Stance); }
                 if (d.Retreat != null) { sb.Append(",\"r\":{"); Field(sb, "a", d.Retreat.Action); sb.Append(','); Field(sb, "p", d.Retreat.Probability); sb.Append('}'); }
                 if (d.Commit != null) { sb.Append(",\"c\":"); Choice(sb, d.Commit); }
+                if (d.Formation != null) { sb.Append(",\"f\":"); Choice(sb, d.Formation); }
+                if (d.Escort != null) { sb.Append(",\"e\":"); Choice(sb, d.Escort); }
+                if (d.Maneuver != null) { sb.Append(",\"n\":"); Choice(sb, d.Maneuver); }
+                if (d.Tempo != null) { sb.Append(",\"w\":"); Choice(sb, d.Tempo); }
                 if (d.Target != null)
                 {
                     sb.Append(",\"g\":{\"c\":[");

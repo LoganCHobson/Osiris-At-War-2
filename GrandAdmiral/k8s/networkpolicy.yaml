@@ -20,7 +20,7 @@ spec:
           podSelector: { matchLabels: { k8s-app: kube-dns } }
       ports: [{ port: 53, protocol: UDP }, { port: 53, protocol: TCP }]
 ---
-# API: reachable from the ingress controller (the internet) and from self-play; talks only to the DB.
+# API: reachable from the shared Gateway's nginx pods (the internet) and from self-play; talks only to the DB.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -30,7 +30,8 @@ spec:
   policyTypes: [Ingress, Egress]
   ingress:
     - from:
-        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: ingress-nginx } }
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: nginx-gateway } }
+          podSelector: { matchLabels: { gateway.networking.k8s.io/gateway-name: home } }
         - podSelector: { matchLabels: { app: grand-admiral-selfplay } }
       ports: [{ port: 8080 }]
   egress:
@@ -49,6 +50,7 @@ spec:
     - from:
         - podSelector: { matchLabels: { app: grand-admiral-api } }
         - podSelector: { matchLabels: { app: grand-admiral-trainer } }
+        - podSelector: { matchLabels: { app: grand-admiral-metrics } }
       ports: [{ port: 5432 }]
 ---
 # Trainer (holds the signing key): no ingress, egress to the DB only.
@@ -63,8 +65,7 @@ spec:
     - to: [{ podSelector: { matchLabels: { app: grand-admiral-db } } }]
       ports: [{ port: 5432 }]
 ---
-# Self-play: the API, plus HTTPS to the internet (GitHub for the game source, Unity licensing);
-# never the DB or anything else inside the cluster or the home network.
+# Self-play farm: the API and the player store, nothing else (a built player needs no licensing or GitHub).
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -75,8 +76,34 @@ spec:
   egress:
     - to: [{ podSelector: { matchLabels: { app: grand-admiral-api } } }]
       ports: [{ port: 8080 }]
-    - to:
-        - ipBlock:
-            cidr: 0.0.0.0/0
-            except: [10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 100.64.0.0/10, 169.254.0.0/16]
-      ports: [{ port: 443 }]
+    - to: [{ podSelector: { matchLabels: { app: grand-admiral-player-store } } }]
+      ports: [{ port: 8080 }]
+---
+# Player store: serves the self-play build to the farm only.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: player-store
+spec:
+  podSelector: { matchLabels: { app: grand-admiral-player-store } }
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from: [{ podSelector: { matchLabels: { app: grand-admiral-selfplay } } }]
+      ports: [{ port: 8080 }]
+---
+# Metrics exporter: scraped by Prometheus, reads the database.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: metrics
+spec:
+  podSelector: { matchLabels: { app: grand-admiral-metrics } }
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: monitoring } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: prometheus } }
+      ports: [{ port: 9100 }]
+  egress:
+    - to: [{ podSelector: { matchLabels: { app: grand-admiral-db } } }]
+      ports: [{ port: 5432 }]

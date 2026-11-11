@@ -50,8 +50,10 @@ def main(out):
         stance_mask = [True, True, bool(i % 3)]
         n_contacts = 2 + i % 9
         contacts = np.round(rng.normal(0, 1, (n_contacts, spec.N_CONTACT)), 4)
-        decided = policy.decide(out_vec, stance_mask=stance_mask, commit_mask=[True] * 3, retreat_open=True,
-                                contacts=contacts, temperature=temperature, epsilon=epsilon)
+        order_masks = {"formation": [True, True, True], "escort": [True, bool(i % 2), True],
+                       "maneuver": [True, True, bool(i % 4)], "tempo": [bool(i % 5), True, True]}
+        decided = policy.decide(out_vec, masks=dict(order_masks, stance=stance_mask, commit=[True] * 3),
+                                retreat_open=True, contacts=contacts, temperature=temperature, epsilon=epsilon)
         cases.append({
             "x": x.tolist(),
             "output": out_vec.tolist(),
@@ -61,6 +63,8 @@ def main(out):
             "retreat": float(decided["retreat"][1]),
             "contacts": contacts.tolist(),
             "target": decided["target"].tolist(),
+            "orders": {name: {"offset": spec.CATEGORICAL[name][0].start, "mask": mask, "p": decided[name].tolist()}
+                       for name, mask in order_masks.items()},
         })
 
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "server"))

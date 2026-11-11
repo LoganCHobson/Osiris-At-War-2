@@ -58,7 +58,7 @@ rollback is the backstop, and `GA_REQUIRE_ARENA` is reserved for making self-pla
   arena results and read models. It can't update, delete or write models. The trainer can't
   rewrite payloads or model bundles. Tested on real Postgres: `tools/pg_integration.py`
   (11 refused escalations).
-* **Network policies:** default deny. The API is reachable only from the ingress controller and
+* **Network policies:** default deny. The API is reachable only from the shared Gateway's nginx pods and
   self-play, and talks only to the DB. The DB accepts only the API and the trainer, with no egress.
   The trainer has no ingress and talks only to the DB. Self-play gets the API plus public HTTPS
   (GitHub, Unity licensing); private ranges are excluded, so it can't reach the home network.

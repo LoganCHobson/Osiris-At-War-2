@@ -79,6 +79,10 @@ class Decision(_Strict):
     r: Optional[Binary] = None
     c: Optional[Choice] = None
     g: Optional[Target] = None
+    f: Optional[Choice] = None   # formation
+    e: Optional[Choice] = None   # escort
+    n: Optional[Choice] = None   # manoeuvre
+    w: Optional[Choice] = None   # tempo
 
     @field_validator("x")
     @classmethod
@@ -137,6 +141,7 @@ class BattleRecord(_Strict):
             if decision.t < last or decision.t > self.duration + 5.0:
                 raise ValueError("decision times must be ordered and inside the battle")
             last = decision.t
-            if decision.s is None and decision.r is None and decision.c is None and decision.g is None:
+            if decision.r is None and decision.g is None and all(
+                    getattr(decision, key) is None for _, key in spec.CATEGORICAL.values()):
                 raise ValueError("empty decision")
         return self

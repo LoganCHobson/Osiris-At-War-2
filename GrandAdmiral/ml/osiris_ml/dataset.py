@@ -39,15 +39,14 @@ def battle_return(record):
 def _head_probabilities(model, out, decision, temperature, epsilon):
     """(head, logged p, recomputed p) for every head this decision used."""
     found = []
-    if decision.s is not None:
-        mixed, _ = policy.masked_softmax(out[spec.OUT_STANCE], decision.s.m, temperature, epsilon)
-        found.append(("stance", decision.s.p, mixed[decision.s.a]))
+    for name, (outputs, key) in spec.CATEGORICAL.items():
+        choice = getattr(decision, key)
+        if choice is not None:
+            mixed, _ = policy.masked_softmax(out[outputs], choice.m, temperature, epsilon)
+            found.append((name, choice.p, mixed[choice.a]))
     if decision.r is not None:
         p1, _ = policy.retreat_probability(out[spec.OUT_RETREAT], temperature, epsilon)
         found.append(("retreat", decision.r.p, p1 if decision.r.a == 1 else 1.0 - p1))
-    if decision.c is not None:
-        mixed, _ = policy.masked_softmax(out[spec.OUT_COMMIT], decision.c.m, temperature, epsilon)
-        found.append(("commit", decision.c.p, mixed[decision.c.a]))
     if decision.g is not None:
         scores = policy.target_scores(out, decision.g.c)
         mixed, _ = policy.masked_softmax(scores, np.ones(len(decision.g.c), bool), temperature, epsilon)
@@ -148,15 +147,14 @@ def build(records, record_weights=None):
             battle.append(b)
             temps.append(record.temperature)
             eps.append(record.exploration)
-            if decision.s is not None:
-                h = heads["stance"]
-                h.rows.append(row); h.actions.append(decision.s.a); h.mu.append(decision.s.p); h.masks.append(decision.s.m)
+            for name, (_, key) in spec.CATEGORICAL.items():
+                choice = getattr(decision, key)
+                if choice is not None:
+                    h = heads[name]
+                    h.rows.append(row); h.actions.append(choice.a); h.mu.append(choice.p); h.masks.append(choice.m)
             if decision.r is not None:
                 h = heads["retreat"]
                 h.rows.append(row); h.actions.append(decision.r.a); h.mu.append(decision.r.p)
-            if decision.c is not None:
-                h = heads["commit"]
-                h.rows.append(row); h.actions.append(decision.c.a); h.mu.append(decision.c.p); h.masks.append(decision.c.m)
             if decision.g is not None:
                 h = heads["target"]
                 h.rows.append(row); h.actions.append(decision.g.a); h.mu.append(decision.g.p); h.contacts.append(decision.g.c)
@@ -167,7 +165,7 @@ def build(records, record_weights=None):
         if name == "target" and "contacts" not in arrays:
             arrays["contacts"] = np.zeros((0, spec.MAX_CONTACTS, spec.N_CONTACT))
             arrays["mask"] = np.zeros((0, spec.MAX_CONTACTS), bool)
-        if name in ("stance", "commit") and "mask" not in arrays:
+        if name in spec.CATEGORICAL and "mask" not in arrays:
             arrays["mask"] = np.zeros((0, 3), bool)
         head_arrays[name] = arrays
 

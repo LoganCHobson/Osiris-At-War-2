@@ -74,7 +74,7 @@ public class AIDirector : MonoBehaviour
 
             World.Refresh();
             brain.Think(World, GalacticTime);
-            brain.nextThinkAt = GalacticTime + thinkInterval * Difficulty.Profile.thinkIntervalScale;
+            brain.nextThinkAt = GalacticTime + thinkInterval * Difficulty.ProfileFor(brain.faction).thinkIntervalScale;
             break;
         }
     }
@@ -123,7 +123,7 @@ public class AIDirector : MonoBehaviour
             : defaultPersonality != null ? defaultPersonality
             : AIPersonality.CreateVaried(StableHash(faction.factionName));
 
-        personality = Difficulty.Profile.Apply(personality); // Campaign difficulty: behaviour only, never stats.
+        personality = Difficulty.ProfileFor(faction).Apply(personality); // Campaign difficulty: behaviour only, never stats.
 
         FactionBrain brain = new FactionBrain(faction, personality)
         {

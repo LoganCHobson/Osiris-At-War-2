@@ -260,6 +260,31 @@ def create_app(settings: Settings = None):
                                                        **data.model_dump()))
         return JSONResponse({"status": "recorded"}, status_code=202)
 
+    @app.post("/v1/selfplay/model")
+    async def selfplay_model(request: Request):
+        """The model self-play should play: the newest trial (a candidate that passed the offline checks
+        and is waiting for self-play to prove it), else the newest release. Players never get trials."""
+        body = await read_body(request)
+        if body is None:
+            return _error(413, "too large")
+        with engine.connect() as conn:
+            install_id, failure = authenticate(request, body, conn)
+            if failure:
+                return failure
+            if install_id not in settings.selfplay_installs:
+                return _error(403, "self-play only")
+            m = storage.models.c
+            row = None
+            for status in ("trial", "released"):
+                row = conn.execute(select(m.version, m.bundle, m.sha256).where(m.status == status)
+                                   .order_by(m.version.desc()).limit(1)).first()
+                if row is not None:
+                    break
+        if row is None:
+            return Response(status_code=204)
+        return Response(content=bytes(row.bundle), media_type="application/octet-stream",
+                        headers={"Cache-Control": "no-store", "X-GA-Model-Version": str(row.version)})
+
     @app.get("/v1/model/latest")
     def latest_model(have: int = 0):
         with engine.connect() as conn:

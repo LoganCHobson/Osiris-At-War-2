@@ -11,16 +11,16 @@ namespace UnityEngine
     public class Coroutine { }
     public class ScriptableObject : Object { public static T CreateInstance<T>() where T : ScriptableObject, new() => new T(); }
     public class GameObject : Object { public GameObject(string n) { } public T AddComponent<T>() where T : Component, new() => new T(); public T GetComponent<T>() => default; }
-    public class Transform : Component { public Vector3 position; public Vector3 forward; public Quaternion rotation; }
+    public class Transform : Component { public Vector3 position; public Vector3 forward; public Quaternion rotation; public bool IsChildOf(Transform parent) => false; }
     public class TextAsset : Object { public byte[] bytes; }
     public struct Vector3 { public float x, y, z; public Vector3(float x, float y, float z) { this.x = x; this.y = y; this.z = z; }
         public static Vector3 zero, up, forward, positiveInfinity; public Vector3 normalized => this; public float sqrMagnitude => 0; public float magnitude => 0;
-        public static float Distance(Vector3 a, Vector3 b) => 0; public static float Dot(Vector3 a, Vector3 b) => 0; public static Vector3 Cross(Vector3 a, Vector3 b) => a; public static Vector3 Lerp(Vector3 a, Vector3 b, float t) => a;
+        public static float Distance(Vector3 a, Vector3 b) => 0; public static float Angle(Vector3 a, Vector3 b) => 0; public static float Dot(Vector3 a, Vector3 b) => 0; public static Vector3 Cross(Vector3 a, Vector3 b) => a; public static Vector3 Lerp(Vector3 a, Vector3 b, float t) => a;
         public static Vector3 operator +(Vector3 a, Vector3 b) => a; public static Vector3 operator -(Vector3 a, Vector3 b) => a; public static Vector3 operator -(Vector3 a) => a;
         public static Vector3 operator *(Vector3 a, float b) => a; public static Vector3 operator *(float b, Vector3 a) => a; public static Vector3 operator /(Vector3 a, float b) => a; }
-    public struct Vector2 { public Vector2(float x, float y) { } }
+    public struct Vector2 { public float x, y; public Vector2(float x, float y) { this.x = x; this.y = y; } public static float Distance(Vector2 a, Vector2 b) => 0; }
     public struct Quaternion { public static Quaternion LookRotation(Vector3 f) => default; public static Quaternion identity; public static Vector3 operator *(Quaternion q, Vector3 v) => v; }
-    public static class Mathf { public static float Max(float a, float b) => a; public static float Min(float a, float b) => a; public static float Lerp(float a, float b, float t) => a; public static float Clamp01(float v) => v; public static int Clamp(int v, int a, int b) => v; public static float Clamp(float v, float a, float b) => v; }
+    public static class Mathf { public static float Max(float a, float b) => a; public static float Min(float a, float b) => a; public static float Lerp(float a, float b, float t) => a; public static float Clamp01(float v) => v; public static int Clamp(int v, int a, int b) => v; public static float Clamp(float v, float a, float b) => v; public static int FloorToInt(float v) => 0; public static int RoundToInt(float v) => 0; }
     public static class Random { public static float value; public static int Range(int a, int b) => a; }
     public static class Time { public static float time, deltaTime, realtimeSinceStartup; }
     public static class Debug { public static void Log(object o) { } public static void LogWarning(object o) { } }
@@ -40,7 +40,7 @@ namespace UnityEngine.AI
 {
     public struct NavMeshHit { public Vector3 position; }
     public static class NavMesh { public const int AllAreas = -1; public static bool SamplePosition(Vector3 p, out NavMeshHit h, float d, int m) { h = default; return false; } }
-    public class NavMeshAgent : Component { public bool isOnNavMesh, hasPath, isStopped; public bool SetDestination(Vector3 v) => true; }
+    public class NavMeshAgent : Component { public bool isOnNavMesh, hasPath, isStopped; public float speed; public bool SetDestination(Vector3 v) => true; }
 }
 namespace UnityEngine.Networking
 {
@@ -64,18 +64,18 @@ namespace SolarStudios
 public enum FleetRole { Line, Screen, Carrier, Fighter, Interceptor, Bomber }
 public enum ShipType { Station, Battleship, Carrier, Cruiser, Destroyer, Corvette, Fighter }
 public class Ship : UnityEngine.MonoBehaviour { public float combatPower; public int populationCost; public FleetRole fleetRole; public bool CanLead => true; }
-public class Faction : UnityEngine.ScriptableObject { public AIPersonality personality; public bool isNeutral, isPlayerFaction; public string factionName; }
+public class Faction : UnityEngine.ScriptableObject { public AIPersonality personality; public bool isNeutral, isPlayerFaction; public string factionName; public bool IsAvanti => false; public bool CanBeGrandAdmiral => false; }
 public class UnitHealthManager : UnityEngine.MonoBehaviour { public static readonly List<UnitHealthManager> Active = new List<UnitHealthManager>(); public float maxHealth, currentHealth; public Ship sourceShip; public bool isAttackerSide, isShipyardBonus, isBattleStation; public bool IsDead => false; public bool IsDefense => false; }
 public class SpaceUnit : UnityEngine.MonoBehaviour { public UnityEngine.AI.NavMeshAgent agent; public SolarStudios.PlayerUnitMoveState moveState; public SolarStudios.PlayerUnitStateMachine stateMachine; public float maxRange; public ShipType shipType; }
 public class HardpointHealth : UnityEngine.MonoBehaviour { public float currentHealth; }
 public class HardpointManager : UnityEngine.MonoBehaviour { public List<HardpointHealth> hardpoints; public void AssignTarget(UnityEngine.Transform t) { } public List<T> GetSpecificHardpoints<T>() => new List<T>(); }
-public class TurretController : UnityEngine.MonoBehaviour { public enum TargetFilter { All, FightersOnly } public TargetFilter targetFilter; public float damage, fireRate; public List<UnityEngine.Transform> firingPoints; }
+public class TurretController : UnityEngine.MonoBehaviour { public enum TargetFilter { All, FightersOnly } public TargetFilter targetFilter; public float damage, fireRate; public List<UnityEngine.Transform> firingPoints; public UnityEngine.Transform target; public bool gatling, beam; public bool CanFire => false; }
 public class EngineHardpoint : UnityEngine.MonoBehaviour { }
-public class Squadron : UnityEngine.MonoBehaviour { public enum Role { Fighter, Interceptor, Bomber } public Role CraftRole { get; private set; } public float Dps() => 0; }
+public class Squadron : UnityEngine.MonoBehaviour { public enum Role { Fighter, Interceptor, Bomber } public Role CraftRole { get; private set; } public UnitHealthManager CurrentTarget { get; private set; } public float Dps() => 0; }
 public static class FleetFormation { public static float Spacing(List<SpaceUnit> u) => 0; }
 public static class FTLJump { public static void Arrive(UnityEngine.GameObject g) { } }
 public static class BattleDeployment { public class Placement { public ShipEntry ship; public UnityEngine.Vector3 position; public float altitude; } public static List<Placement> Arrange(IList<ShipEntry> s, ShipEntry l, UnityEngine.Vector3 a, UnityEngine.Vector3 f) => null; public static List<Placement> ArrangeFormation(IList<ShipEntry> s, DefenseFormation d, ShipEntry l, UnityEngine.Vector3 a, UnityEngine.Vector3 f) => null; public static ShipEntry ChooseLead(IEnumerable<ShipEntry> s) => null; }
-public class BattleTerrain { public static BattleTerrain Instance; public bool CanDrop(UnityEngine.Vector3 p, bool a) => true; public UnityEngine.Vector3 NearestDropPoint(UnityEngine.Vector3 p, bool a) => p; public bool InField(UnityEngine.Vector3 p) => false; public bool CrossesField(UnityEngine.Vector3 a, UnityEngine.Vector3 b) => false; public static float SizeFactor(ShipType t) => 1; public static void SetAIPriority(SpaceUnit u, bool p) { } }
+public class BattleTerrain { public static BattleTerrain Instance; public IReadOnlyList<AsteroidField> Fields => null; public bool InAsteroids(UnityEngine.Vector3 p) => false; public bool CanDrop(UnityEngine.Vector3 p, bool a) => true; public UnityEngine.Vector3 NearestDropPoint(UnityEngine.Vector3 p, bool a) => p; public bool InField(UnityEngine.Vector3 p) => false; public bool CrossesField(UnityEngine.Vector3 a, UnityEngine.Vector3 b) => false; public static float SizeFactor(ShipType t) => 1; public static void SetAIPriority(SpaceUnit u, bool p) { } }
 public class RetreatManager { public static RetreatManager Instance; public bool IsRetreating(bool a) => false; public bool CanRetreat(bool a) => false; public void BeginRetreat(bool a) { } public bool IsBlocked(bool a) => false; }
 public class GameManager { public static GameManager Instance; public UnityEngine.GameObject SpawnShip(Ship s, UnityEngine.Vector3 p, UnityEngine.Quaternion r, bool a) => null; }
 public class BattleContext { public static BattleContext Instance; public bool hasPendingBattle, defenderHasShipyard, defenderHasBattleStation; public List<ShipEntry> attackerRoster, defenderRoster; public Faction attackerFaction, defenderFaction; }
@@ -89,3 +89,8 @@ public class ShipEntry { public Ship type; public string shipName, hero; public 
 public class ShipAltitude : UnityEngine.MonoBehaviour { public static float AltitudeOf(UnityEngine.Transform t) => 0; }
 public class ShipAbility : UnityEngine.MonoBehaviour { }
 public class DefenseFormation { }
+
+public enum AsteroidDensity { Field, Dense }
+public class AsteroidField : UnityEngine.MonoBehaviour { public struct Blob { public UnityEngine.Vector2 centre; public float radius; } public AsteroidDensity density; public List<Blob> blobs; }
+public class ShieldGenerator : UnityEngine.MonoBehaviour { public float Fraction => 0; public bool GeneratorDestroyed => false; }
+public class Missile : UnityEngine.MonoBehaviour { public static readonly List<Missile> Active = new List<Missile>(); public bool InFlight => false; public UnitHealthManager TargetShip => null; }

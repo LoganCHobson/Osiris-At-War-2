@@ -165,6 +165,13 @@ public static class Difficulty
 
     public static DifficultyProfile Profile => profile != null && profile.level == Current ? profile : (profile = DifficultyProfile.For(Current));
 
+    // The campaign profile as it applies to one faction: Grand Admiral commands Avanti only, so every other
+    // faction in a Grand Admiral campaign plays as Admiral.
+    public static DifficultyProfile ProfileFor(Faction faction) =>
+        Current == DifficultyLevel.GrandAdmiral && (faction == null || !faction.CanBeGrandAdmiral)
+            ? DifficultyProfile.For(DifficultyLevel.Admiral)
+            : Profile;
+
     // A new Grand Admiral model may retune the profile.
     public static void Invalidate() => profile = null;
 
@@ -176,8 +183,8 @@ public static class Difficulty
         {
             case DifficultyLevel.GrandAdmiral:
                 return GrandAdmiral.Available
-                    ? $"Learns from every battle fought against it, by every player. Model v{GrandAdmiral.Model.Version}."
-                    : "Learns from every battle fought against it. (Model not installed yet: plays as Admiral.)";
+                    ? "An enemy that learns from your battles."
+                    : "An enemy that learns from your battles. (Model not installed yet: plays as Admiral.)";
             case DifficultyLevel.Cadet: return "A slow, predictable enemy that makes mistakes. Learn the ropes.";
             case DifficultyLevel.Admiral: return "A sharp commander: fast reactions, focused fire, smart retreats and a full strategic playbook.";
             default: return "A capable enemy that fights sensibly but can be outmanoeuvred.";

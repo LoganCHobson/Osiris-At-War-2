@@ -1,5 +1,7 @@
 """Operator commands, end to end on SQLite with a throwaway key."""
 
+import os
+
 import pytest
 from sqlalchemy import select
 
@@ -27,7 +29,8 @@ def test_keygen_refuses_to_overwrite(tmp_path, capsys):
     out = tmp_path / "k.pem"
     cli.main(["keygen", "--out", str(out), "--key-id", "2"])
     assert "{ 2, (" in capsys.readouterr().out
-    assert (out.stat().st_mode & 0o777) == 0o600
+    if os.name != "nt":  # Windows has no Unix permission bits; chmod there only sets read-only.
+        assert (out.stat().st_mode & 0o777) == 0o600
     with pytest.raises(FileExistsError):
         cli.main(["keygen", "--out", str(out)])
 

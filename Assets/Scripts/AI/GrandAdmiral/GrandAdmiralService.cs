@@ -93,6 +93,25 @@ public class GrandAdmiralService : MonoBehaviour
         yield return instance.CheckForModel();
     }
 
+    // Self-play: play whatever the server says to - the newest trial model if there is one (a candidate
+    // waiting for self-play to prove it), else the newest release. Never saved, so the next run asks again.
+    public static IEnumerator SelfPlayModel()
+    {
+        Ensure();
+        long code = 0;
+        byte[] bundle = null;
+        yield return instance.SignedPost("/v1/selfplay/model", Encoding.UTF8.GetBytes("{}"), c => code = c, data => bundle = data);
+        if (code == 200 && bundle != null && bundle.Length <= GABundle.MaxModelBytes + 1024 && GrandAdmiral.UseForSelfPlay(bundle))
+        {
+            Debug.Log($"[GrandAdmiral] Self-play is playing model v{GrandAdmiral.Model.Version}");
+        }
+        else
+        {
+            Debug.LogWarning($"[GrandAdmiral] No self-play model from the server ({code}); checking for a release instead");
+            yield return instance.CheckForModel();
+        }
+    }
+
     // Self-play: wait until queued uploads are done (or have failed for now).
     public static IEnumerator WaitForUploads(float timeout = 120f)
     {
@@ -165,7 +184,7 @@ public class GrandAdmiralService : MonoBehaviour
         }
     }
 
-    private IEnumerator SignedPost(string path, byte[] body, Action<long> done)
+    private IEnumerator SignedPost(string path, byte[] body, Action<long> done, Action<byte[]> response = null)
     {
         Credentials credentials = null;
         yield return EnsureRegistered(c => credentials = c);
@@ -193,6 +212,7 @@ public class GrandAdmiralService : MonoBehaviour
                     if (credentials == null) { done(0); yield break; }
                     continue;
                 }
+                if (request.result == UnityWebRequest.Result.Success) response?.Invoke(request.downloadHandler.data);
                 done(request.result == UnityWebRequest.Result.ConnectionError ? 0 : request.responseCode);
                 yield break;
             }

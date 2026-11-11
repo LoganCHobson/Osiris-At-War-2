@@ -35,6 +35,7 @@ public partial class AIBattleCommander
     private void InitGrandAdmiral(List<ShipEntry> roster)
     {
         if (Difficulty.level != DifficultyLevel.GrandAdmiral || !GrandAdmiral.Available) return;
+        if (Faction == null || !Faction.CanBeGrandAdmiral) return; // Avanti only, never Human: no network, no record.
 
         GAModel model = GrandAdmiral.Model;
         GAAdaptation adaptation = OpponentIsPlayer && !SelfPlay ? GrandAdmiral.Adaptation : null;
@@ -88,6 +89,8 @@ public partial class AIBattleCommander
             decision.Commit = gaPolicy.ChooseCommit(state);
             gaCommit = decision.Commit.Action;
         }
+
+        ChooseOrders(state, decision); // Formation, escort, manoeuvre, tempo (AIBattleCommander.GrandAdmiralOrders.cs).
 
         List<Contact> ranked = RankedContacts();
         if (ranked.Count >= 2)
@@ -158,6 +161,7 @@ public partial class AIBattleCommander
         x[GASpec.StancePress] = CurrentStance == Stance.Press ? 1 : 0;
         x[GASpec.StanceFallback] = CurrentStance == Stance.FallBack ? 1 : 0;
         x[GASpec.VsPlayer] = OpponentIsPlayer ? 1 : 0;
+        SchemaTwoFeatures(x);
         return x;
     }
 
@@ -207,6 +211,7 @@ public partial class AIBattleCommander
         {
             if (contact.health.IsDefense || gaEnemySeen.ContainsKey(contact.health)) continue;
             gaEnemySeen[contact.health] = BasePower(contact.health);
+            NoteEnemyArrival();
         }
     }
 

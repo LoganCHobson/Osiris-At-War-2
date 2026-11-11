@@ -28,7 +28,7 @@ BAD = {
     "inf feature": lambda r: r["decisions"][0]["x"].__setitem__(0, math.inf),
     "huge feature": lambda r: r["decisions"][0]["x"].__setitem__(0, 1e6),
     "short features": lambda r: r["decisions"][0]["x"].pop(),
-    "wrong schema": lambda r: r.update(schema=2),
+    "wrong schema": lambda r: r.update(schema=spec.RECORD_SCHEMA + 1),
     "wrong feature schema": lambda r: r.update(feature_schema=7),
     "bad uuid": lambda r: r.update(battle_id="not-a-uuid"),
     "uppercase uuid": lambda r: r.update(battle_id=r["battle_id"].upper()),

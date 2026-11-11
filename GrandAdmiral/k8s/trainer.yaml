@@ -21,6 +21,7 @@ spec:
         spec:
           restartPolicy: Never
           automountServiceAccountToken: false
+          imagePullSecrets: [{ name: ghcr-pull-secret }]
           securityContext:
             runAsNonRoot: true
             runAsUser: 10001
@@ -40,6 +41,9 @@ spec:
                   valueFrom: { secretKeyRef: { name: grand-admiral-trainer, key: key-id } }
                 - name: GA_SELFPLAY_INSTALLS
                   valueFrom: { configMapKeyRef: { name: grand-admiral-config, key: selfplay-installs } }
+                - { name: GA_REQUIRE_ARENA, value: "true" }   # New models must win in self-play before players get them.
+                - name: GA_MIN_CLIENT_VERSION
+                  valueFrom: { configMapKeyRef: { name: grand-admiral-config, key: min-client-version, optional: true } }
               securityContext:
                 allowPrivilegeEscalation: false
                 readOnlyRootFilesystem: true

@@ -1,0 +1,64 @@
+# Prometheus exporter (server/app/metrics.py): battles, installs, models, the trainer's last gate verdict,
+# self-play results and the recent order mix, read from the database with the read-only ga_metrics role.
+# Scraped by the homelab's kube-prometheus-stack (ServiceMonitor label release: monitoring); the
+# dashboard is grafana-dashboard.yaml. Not reachable from the internet (no route; network policy).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grand-admiral-metrics
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: grand-admiral-metrics }
+  template:
+    metadata:
+      labels: { app: grand-admiral-metrics }
+    spec:
+      automountServiceAccountToken: false
+      imagePullSecrets: [{ name: ghcr-pull-secret }]
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: metrics
+          image: ghcr.io/loganchobson/grand-admiral-api:latest
+          command: [python, -m, app.metrics]
+          ports: [{ name: metrics, containerPort: 9100 }]
+          env:
+            - name: GA_METRICS_DB_URL
+              valueFrom: { secretKeyRef: { name: grand-admiral-metrics, key: db-url } }
+            - name: GA_SELFPLAY_INSTALLS
+              valueFrom: { configMapKeyRef: { name: grand-admiral-config, key: selfplay-installs } }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: [ALL] }
+          readinessProbe:
+            httpGet: { path: /metrics, port: 9100 }
+            periodSeconds: 30
+          resources:
+            requests: { cpu: 20m, memory: 96Mi }
+            limits: { memory: 256Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grand-admiral-metrics
+  labels: { app: grand-admiral-metrics }
+spec:
+  selector: { app: grand-admiral-metrics }
+  ports: [{ name: metrics, port: 9100, targetPort: 9100 }]
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: grand-admiral
+  labels: { release: monitoring }
+spec:
+  selector:
+    matchLabels: { app: grand-admiral-metrics }
+  endpoints:
+    - port: metrics
+      interval: 30s

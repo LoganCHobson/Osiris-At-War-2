@@ -16,7 +16,7 @@ def test_round_trip_preserves_outputs(baseline):
 
 
 def test_size_is_small(baseline):
-    assert len(baseline.to_bytes()) < 8 * 1024  # a few KB: trivial to download on any connection
+    assert len(baseline.to_bytes()) < 32 * 1024  # tens of KB: trivial to download on any connection
 
 
 @pytest.mark.parametrize("mutate,message", [

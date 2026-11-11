@@ -26,6 +26,24 @@ public static class SiegeRecorderBuild
 
     private static void Build(string location, BuildOptions buildOptions)
     {
+        PrepareAssets();
+
+        BuildPlayerOptions options = new BuildPlayerOptions
+        {
+            scenes = new[] { "Assets/Scenes/BattleScene.unity", "Assets/Scenes/MainMenu.unity", "Assets/Scenes/GalacticMap.unity" },
+            locationPathName = location,
+            target = BuildTarget.StandaloneWindows64,
+            options = buildOptions,
+        };
+        BuildReport report = BuildPipeline.BuildPlayer(options);
+        Debug.Log($"SiegeRecorderBuild: {report.summary.result} ({report.summary.totalErrors} errors) -> {options.locationPathName}");
+        if (Application.isBatchMode) EditorApplication.Exit(report.summary.result == BuildResult.Succeeded ? 0 : 1);
+    }
+
+    // The factions and ship prefabs a standalone build needs (Resources/Dev/SiegeRecordingAssets). Also
+    // used by SelfPlayBuild.
+    public static void PrepareAssets()
+    {
         SiegeRecordingAssets assets = AssetDatabase.LoadAssetAtPath<SiegeRecordingAssets>(AssetPath);
         if (assets == null)
         {
@@ -44,16 +62,5 @@ public static class SiegeRecorderBuild
         EditorUtility.SetDirty(assets);
         AssetDatabase.SaveAssets();
         Debug.Log($"SiegeRecorderBuild: {assets.ships.Count} ship prefabs, titans={assets.titans != null}, avanti={assets.avanti != null}");
-
-        BuildPlayerOptions options = new BuildPlayerOptions
-        {
-            scenes = new[] { "Assets/Scenes/BattleScene.unity", "Assets/Scenes/MainMenu.unity", "Assets/Scenes/GalacticMap.unity" },
-            locationPathName = location,
-            target = BuildTarget.StandaloneWindows64,
-            options = buildOptions,
-        };
-        BuildReport report = BuildPipeline.BuildPlayer(options);
-        Debug.Log($"SiegeRecorderBuild: {report.summary.result} ({report.summary.totalErrors} errors) -> {options.locationPathName}");
-        if (Application.isBatchMode) EditorApplication.Exit(report.summary.result == BuildResult.Succeeded ? 0 : 1);
     }
 }

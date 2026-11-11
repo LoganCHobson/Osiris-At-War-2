@@ -100,6 +100,11 @@ public partial class AIBattleCommander : MonoBehaviour
         spawnPoint = spawn;
         populationCap = population;
         Difficulty = useDifficultyOverride && difficultyOverride != null ? difficultyOverride : global::Difficulty.Profile;
+        // Grand Admiral commands Avanti only. Every other faction in a Grand Admiral game fights as Admiral.
+        if (Difficulty.level == DifficultyLevel.GrandAdmiral && (faction == null || !faction.CanBeGrandAdmiral))
+        {
+            Difficulty = DifficultyProfile.For(DifficultyLevel.Admiral);
+        }
         personality = Difficulty.Apply(ResolvePersonality(faction));
         decisionInterval = Difficulty.decisionInterval;
         Patient = Random.value < personality.patience;
@@ -226,7 +231,8 @@ public partial class AIBattleCommander : MonoBehaviour
         {
             if (unit.spaceUnit != null) spaceUnits.Add(unit.spaceUnit);
         }
-        return spaceUnits.Count > 0 ? Mathf.Max(formationSpacing, FleetFormation.Spacing(spaceUnits)) : formationSpacing;
+        float spacing = spaceUnits.Count > 0 ? Mathf.Max(formationSpacing, FleetFormation.Spacing(spaceUnits)) : formationSpacing;
+        return spacing * GrandAdmiralSpacingScale(); // Grand Admiral's formation order (1 otherwise).
     }
 
     private static AIPersonality ResolvePersonality(Faction faction)
@@ -911,6 +917,8 @@ public partial class AIBattleCommander : MonoBehaviour
         }
 
         float spacing = FieldSpacing();
+        front = GrandAdmiralFront(front);                  // Grand Admiral's tempo order: pulse back.
+        line = GrandAdmiralDetach(line, front, spacing);   // ...and its rotate, escort and manoeuvre orders.
         PlaceRow(line, front, spacing, closing);
         ChooseAltitudes();
 

@@ -6,3 +6,6 @@ metadata:
   name: grand-admiral-config
 data:
   selfplay-installs: ""
+  # Rebalance guard: the trainer ignores battles from game versions below this. After a release that
+  # changes ship stats or combat rules, bump the game version (Player Settings) and set it here.
+  min-client-version: ""

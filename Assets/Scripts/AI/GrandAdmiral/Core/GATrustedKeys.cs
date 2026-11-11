@@ -12,7 +12,7 @@ namespace Osiris.GrandAdmiral
         private static readonly Dictionary<ushort, (string modulus, string exponent)> Keys =
             new Dictionary<ushort, (string, string)>
             {
-                // { 1, ("<base64 modulus>", "AQAB") },
+                { 1, ("q/Ro2LpaTq9w6Y4tjrK+8J6uNDgEVQp8CfQH1KOUPMglMyUkaPVbdIv3ujT4g1ecqMTTl8igkzuUcFrdApxEfy6JdkMu1SYXQ9x2Zd571zcjKMeiZuQDMhf+r2BwyDiaSoe0x/4muu2JY7yBP3T4SUmZeUnB525C/ggrJW7y6JFkAEgqhyX7oTHISCX/QPNFxIXdutsrwgLoh0RsXpbmS9LZJYFytqo4dwJIDzDtcmywmj3XZSWRyziuWKu+kWIXpAND31gF3B19+SfNMqykc3y6zoQDNFh+OBTtHFs/j+UACaHmrVDPrP8cKyumExeAE8uGNroMTWrwcV5QwvuSrFxMIheesTre/6Qva9+X4KcVRijYvZwPqKLJ6rcozCwm7bEZBPdPm3K7DkCkZdRWi2pUDrHATUKYN3PbJDWDfyT4IHEb0t93LnTmx/VSU4tQVFB+yU5xSX4dpfyznhIrbp6/x6IxbIC6sJqKGqc3Iqa/ijz8vZy6pYgReWTIBc0D", "AQAB") },
             };
 
         private static Dictionary<ushort, RSAParameters> parsed;

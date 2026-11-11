@@ -6,9 +6,11 @@ truths the Admiral heuristics get wrong, so there is something to learn:
 
 * carriers' listed DPS hides the strike craft they launch: killing them early pays off;
 * retreating a little earlier than the Admiral's 0.35 keeps more of the fleet alive;
-* surging reserves into an already-winning fight finishes it faster.
+* surging reserves into an already-winning fight finishes it faster;
+* (schema 2) enveloping pays off from a smaller edge (1.6:1) than the playbook's 2:1, and pulsing
+  shields back is worth it a little earlier than the playbook thinks.
 
-Records come out in exactly the format the game uploads, so they also exercise the API and the
+Formation, escort, manoeuvre and tempo orders each change damage dealt and taken a little. Records come out in exactly the format the game uploads, so they also exercise the API and the
 trainer's deep checks.
 """
 
@@ -25,6 +27,36 @@ KINDS = ("capital", "screen", "carrier", "strike")
 TICK = 3.0
 LIMIT = 600.0
 STANCE_EFFECT = {0: (1.0, 1.0), 1: (1.35, 1.2), 2: (0.6, 0.55)}
+ORDERS = ("formation", "escort", "maneuver", "tempo")
+ORDER_FEATURES = {"formation": ("formation_tight", "formation_loose"), "escort": ("escort_screen", "escort_hunt"),
+                  "maneuver": ("maneuver_flank", "maneuver_envelop"), "tempo": ("tempo_rotate", "tempo_pulse")}
+ENVELOP_PAYS_AT = 1.6
+PULSE_PAYS_BELOW = 0.4
+
+
+def order_effect(name, order, field_ratio, shield, enemy_strike):
+    """(damage dealt multiplier, damage taken multiplier) for one of the schema 2 orders."""
+    if name == "formation":
+        if order == 1:
+            return (1.0, 0.85) if enemy_strike > 0.2 else (0.97, 1.03)
+        if order == 2:
+            return (1.06, 1.02)
+    elif name == "escort":
+        if order == 1:
+            return (0.97, 0.85 if enemy_strike > 0.2 else 1.0)
+        if order == 2:
+            return (1.05 if enemy_strike > 0.2 else 0.95, 1.0)
+    elif name == "maneuver":
+        if order == 1:
+            return (1.15, 1.0) if field_ratio >= 1.3 else (1.0, 1.15)
+        if order == 2:
+            return (1.3, 1.0) if field_ratio >= ENVELOP_PAYS_AT else (1.0, 1.3)
+    elif name == "tempo":
+        if order == 1:
+            return (0.95, 0.9)
+        if order == 2:
+            return (0.65, 0.6) if shield < PULSE_PAYS_BELOW else (0.6, 0.8)
+    return (1.0, 1.0)
 
 
 @dataclass
@@ -89,6 +121,9 @@ class ToyBattle:
         self.stance = 0
         self.commit = 1
         self.focus = None
+        self.orders = {name: 0 for name in ORDERS}
+        self.shielded = bool(rng.random() < 0.7)
+        self.last_shield = None
         self.last_ratio = None
         self.won = self.retreated = self.enemy_retreated = False
 
@@ -130,7 +165,33 @@ class ToyBattle:
         x[F["stance_press"]] = self.stance == 1
         x[F["stance_fallback"]] = self.stance == 2
         x[F["vs_player"]] = self.vs_player
+
+        shield = self.shield()
+        x[F["our_shield"]] = shield
+        x[F["shield_trend"]] = 0.0 if self.last_shield is None else np.clip(shield - self.last_shield, -1, 1)
+        self.last_shield = shield
+        x[F["low_shield_share"]] = np.mean([s.health < 0.35 for s in alive]) if alive and self.shielded else 0.0
+        enemy_strike = x[F["enemy_strike_share"]]
+        x[F["missile_pressure"]] = min(3.0, enemy_strike * 3)
+        x[F["enemy_craft_ratio"]] = min(3.0, sum(s.kind == "strike" for s in enemies) / max(1, len(alive)))
+        x[F["bombers_on_capitals"]] = enemy_strike * 0.6
+        x[F["bow_alignment"]] = 0.7
+        x[F["los_blocked_share"]] = 0.2
+        x[F["enemy_waves"]] = 0.2
+        x[F["since_enemy_wave"]] = min(2.0, self.t / 120.0)
+        capitals = [s for s in alive if s.kind == "capital"]
+        x[F["flagship_health"]] = max(capitals, key=lambda s: s.power).health if capitals else 0.0
+        x[F["our_spread"]] = 0.6
+        x[F["enemy_spread"]] = 0.6
+        x[F["damage_exchange"]] = np.clip(x[F["log_dps_ratio"]], -3, 3)
+        for name, (middle, last) in ORDER_FEATURES.items():
+            x[F[middle]] = self.orders[name] == 1
+            x[F[last]] = self.orders[name] == 2
         return np.round(x, 4)
+
+    def shield(self):
+        alive = [s for s in self.field if s.alive]
+        return float(np.mean([s.health for s in alive]) * 0.9 + 0.05) if alive and self.shielded else 0.0
 
     def contacts(self):
         enemies = [s for s in self.enemy if s.alive]
@@ -166,6 +227,12 @@ class ToyBattle:
         out_mult, in_mult = STANCE_EFFECT[self.stance]
         enemies = [s for s in self.enemy if s.alive]
         alive = [s for s in self.field if s.alive]
+        ratio = _power(alive) / max(_power(enemies), 1.0)
+        enemy_strike = sum(s.live_power for s in enemies if s.kind == "strike") / max(_power(enemies), 1.0)
+        for name in ORDERS:
+            dealt, taken = order_effect(name, self.orders[name], ratio, self.shield(), enemy_strike)
+            out_mult *= dealt
+            in_mult *= taken
         damage = sum(s.true_dps for s in alive) * out_mult * TICK * 10
         order = sorted(enemies, key=_priority, reverse=True)
         if self.focus is not None and self.focus.alive:
@@ -253,6 +320,22 @@ def play(model, rng, vs_player=False, heuristic=False, greedy=False):
                 a = int(np.argmax(probs)) if greedy else _sample(probs, rng)
                 battle.commit = a
                 decision["c"] = {"a": a, "p": float(probs[a]), "m": [True, True, True]}
+
+        if not battle.retreated:
+            for name in ORDERS:
+                rule, mask_rule = distill.PLAYBOOK[name]
+                mask = mask_rule(x[None])[0]
+                if mask.sum() < 2:
+                    battle.orders[name] = 0
+                    continue
+                if heuristic:
+                    battle.orders[name] = int(rule(x[None])[0])
+                    continue
+                outputs, key = spec.CATEGORICAL[name]
+                probs = policy.masked_softmax(out[outputs], mask, temperature, epsilon)[0]
+                a = int(np.argmax(probs)) if greedy else _sample(probs, rng)
+                battle.orders[name] = a
+                decision[key] = {"a": a, "p": float(probs[a]), "m": mask.tolist()}
 
         enemies, contacts = battle.contacts()
         if len(enemies) >= 2 and not battle.retreated:

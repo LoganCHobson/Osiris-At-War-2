@@ -3,17 +3,22 @@
     1. Load every released model, checking each bundle's signature (the DB is not trusted either).
     2. Deep-check new uploads against the model version they claim; accept or reject each one.
        Installs whose uploads keep failing are blocked, and the API stops taking their data.
-    3. Build the training pool (recent accepted battles), split train / held-out by battle id.
+    3. Build the training pool (recent accepted battles from games at or above the balance floor),
+       split train / held-out by battle id.
     4. Weight records so no install or network dominates; self-play installs are trusted.
     5. Train a candidate one conservative step on from the current release.
-    6. Gate it (gate.py). Pass: sign and release. Fail: keep it, with the report, for a human to read.
+    6. Gate it (gate.py). Fail: keep it, with the report, for a human to read. Pass: sign and release
+       it, or (require_arena) sign it as a *trial*: self-play plays trials, and a later round promotes
+       the trial once it wins at least as often against Admiral as the release does, or fails it.
     7. Delete battle data older than the retention window.
 """
 
+import dataclasses
 import datetime as dt
 import hashlib
 import json
 import logging
+import re
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -32,6 +37,9 @@ class RoundConfig:
     max_pool: int = 60000
     holdout_share: float = 0.2
     retention_days: int = 90
+    # Rebalance guard: battles from game versions below this are never trained on (or gated against).
+    # Raise it to the new game version whenever a release changes ship stats or combat rules.
+    min_client_version: str = ""
     max_install_share: float = 0.02
     max_per_install: int = 40
     block_after: int = 10              # judge an install once it has this many checked uploads...
@@ -48,8 +56,13 @@ def _holdout(battle_id, share):
     return digest[0] / 256.0 < share
 
 
-def load_released(conn, public_keys, statuses=("released", "revoked")):
-    """Every model players may have run (revoked ones too: their records are still honest)."""
+# Every signed model anyone may have played: players run releases (and once ran revoked ones), self-play
+# also runs trials and the trials that failed. Their battle records are all honest data.
+PLAYED = ("released", "revoked", "trial", "failed")
+
+
+def load_released(conn, public_keys, statuses=PLAYED):
+    """Every signed model some game may have played, by version (the DB is not trusted: each is verified)."""
     models = {}
     rows = conn.execute(select(storage.models.c.version, storage.models.c.bundle)
                         .where(storage.models.c.status.in_(statuses))).all()
@@ -116,8 +129,34 @@ def training_pool(conn, cfg: RoundConfig):
                         .where(and_(b.status == "accepted", b.received_at >= since))
                         .order_by(b.id.desc()).limit(cfg.max_pool)).all()
     rows.reverse()
-    records = [BattleRecord.model_validate_json(payload) for payload, _, _ in rows]
-    return records, [i for _, i, _ in rows], [n for _, _, n in rows]
+    records, installs_, networks = [], [], []
+    floor = version_key(cfg.min_client_version) if cfg.min_client_version else None
+    stale = 0
+    for payload, install, network in rows:
+        record = BattleRecord.model_validate_json(payload)
+        if floor is not None and version_key(record.client_version) < floor:
+            stale += 1  # Fought under an older balance: what worked then may not work now.
+            continue
+        records.append(record)
+        installs_.append(install)
+        networks.append(network)
+    if stale:
+        log.info("skipped %d battles from game versions below %s", stale, cfg.min_client_version)
+    return records, installs_, networks
+
+
+def version_key(version):
+    """Orders game versions numerically: 0.10.0 > 0.9.2 > 0.9. A non-numeric piece (a suffix like
+    '-beta') counts as 0, and a version that doesn't start with a number ('toy-1') sorts below every
+    real version, so odd versions never sneak above the floor."""
+    if not version[:1].isdigit():
+        return (-1,)
+    parts = []
+    for piece in re.split(r"[.\-+]", version):
+        parts.append(int(piece) if piece.isdigit() else 0)
+    while len(parts) > 1 and parts[-1] == 0:
+        parts.pop()
+    return tuple(parts)
 
 
 def weigh(installs_, networks, cfg: RoundConfig):
@@ -143,6 +182,30 @@ def arena_for(conn, version):
     if not games:
         return None
     return (wins + 0.5 * (draws or 0)) / games
+
+
+def arena_games(conn, version):
+    a = storage.arena.c
+    return conn.execute(select(func.sum(a.games)).where(and_(a.version == version, a.opponent == "admiral"))).scalar() or 0
+
+
+def resolve_trial(conn, current, cfg: RoundConfig):
+    """The pending trial's fate. Returns (still pending: bool, what happened) once self-play has played
+    it enough: promoted to released if it wins at least as often against Admiral as the current
+    release (within the arena tolerance), failed otherwise."""
+    m = storage.models.c
+    trial = conn.execute(select(m.version).where(m.status == "trial").order_by(m.version.desc()).limit(1)).scalar()
+    if trial is None:
+        return False, None
+    games = arena_games(conn, trial)
+    if games < cfg.min_arena_games:
+        return True, f"trial v{trial} awaiting self-play ({games}/{cfg.min_arena_games} games)"
+    trial_score, current_score = arena_for(conn, trial), arena_for(conn, current.version)
+    if current_score is None or trial_score >= current_score - cfg.gating.arena_tolerance:
+        conn.execute(update(storage.models).where(m.version == trial).values(status="released"))
+        return False, f"promoted trial v{trial} (self-play {trial_score:.2f} vs v{current.version} {current_score if current_score is not None else 'n/a'})"
+    conn.execute(update(storage.models).where(m.version == trial).values(status="failed"))
+    return False, f"failed trial v{trial} (self-play {trial_score:.2f} vs v{current.version} {current_score:.2f})"
 
 
 def publish(conn, model, status, report, private_key=None, key_id=None):
@@ -190,8 +253,26 @@ def run_round(engine, private_key, key_id, public_keys, cfg: RoundConfig = Round
         if reverted:
             summary["reverted"] = reverted
         current = models[max(current_versions(conn))]
-        summary["current"] = current.version
         summary["accepted"], summary["rejected"] = check_new(conn, models, cfg)
+        pending, trial = resolve_trial(conn, current, cfg)
+        if trial:
+            summary["trial"] = trial
+        current = models[max(current_versions(conn))]  # A promoted trial is now the release to train from.
+        summary["current"] = current.version
+
+    if pending:
+        summary["result"] = "waiting for self-play"
+        log.info("round: %s", summary)
+        with engine.begin() as conn:
+            _retention(conn, cfg)
+        return summary
+    if cfg.gating.require_arena and arena_games_for(engine, current.version) < cfg.min_arena_games:
+        # A trial is judged against the release's own self-play record, so that has to exist first.
+        summary["result"] = f"waiting for self-play on v{current.version}"
+        log.info("round: %s", summary)
+        with engine.begin() as conn:
+            _retention(conn, cfg)
+        return summary
 
     with engine.begin() as conn:
         records, install_ids, networks = training_pool(conn, cfg)
@@ -213,10 +294,14 @@ def run_round(engine, private_key, key_id, public_keys, cfg: RoundConfig = Round
         latest = conn.execute(select(func.max(storage.models.c.version))).scalar() or 0
         candidate.version = max(candidate.version, latest + 1)
 
+        offline = dataclasses.replace(cfg.gating, require_arena=False)  # Self-play judges trials later.
         report = gate.evaluate(current, candidate, dataset.build(hold_records, weights[held]),
-                               installs=summary["installs"], cfg=cfg.gating)
+                               installs=summary["installs"], cfg=offline)
         summary["gate"] = report.to_dict()
-        if report.passed:
+        if report.passed and cfg.gating.require_arena:
+            publish(conn, candidate, "trial", report.to_dict(), private_key, key_id)
+            summary["result"] = f"trial v{candidate.version} sent to self-play"
+        elif report.passed:
             publish(conn, candidate, "released", report.to_dict(), private_key, key_id)
             summary["result"] = f"released v{candidate.version}"
         else:
@@ -225,6 +310,11 @@ def run_round(engine, private_key, key_id, public_keys, cfg: RoundConfig = Round
         _retention(conn, cfg)
     log.info("round: %s", summary)
     return summary
+
+
+def arena_games_for(engine, version):
+    with engine.connect() as conn:
+        return arena_games(conn, version)
 
 
 def _retention(conn, cfg: RoundConfig):

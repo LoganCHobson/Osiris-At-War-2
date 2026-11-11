@@ -67,12 +67,10 @@ def head_terms(out, ds: Dataset, name):
         return rows, np.zeros(0), np.zeros((0, spec.N_OUT)), np.zeros((0, 2))
     t, eps = ds.temperature[rows], ds.epsilon[rows]
     grad_out = np.zeros((len(rows), spec.N_OUT))
-    if name == "stance":
-        pa, g, mixed = categorical_terms(out[rows, spec.OUT_STANCE], h["mask"], h["a"], t, eps)
-        grad_out[:, spec.OUT_STANCE] = g
-    elif name == "commit":
-        pa, g, mixed = categorical_terms(out[rows, spec.OUT_COMMIT], h["mask"], h["a"], t, eps)
-        grad_out[:, spec.OUT_COMMIT] = g
+    if name in spec.CATEGORICAL:
+        outputs = spec.CATEGORICAL[name][0]
+        pa, g, mixed = categorical_terms(out[rows, outputs], h["mask"], h["a"], t, eps)
+        grad_out[:, outputs] = g
     elif name == "retreat":
         pa, g, mixed = binary_terms(out[rows, spec.OUT_RETREAT], h["a"], t, eps)
         grad_out[:, spec.OUT_RETREAT] = g

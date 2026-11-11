@@ -11,6 +11,7 @@ spec:
       labels: { app: grand-admiral-api }
     spec:
       automountServiceAccountToken: false   # the API never talks to Kubernetes
+      imagePullSecrets: [{ name: ghcr-pull-secret }]
       securityContext:
         runAsNonRoot: true
         runAsUser: 10001

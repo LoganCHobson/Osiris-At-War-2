@@ -1,0 +1,14 @@
+# Public entry point: https://ga.solarnebulae.com, through the homelab's shared Gateway (nginx-gateway/home).
+# TLS is terminated there with the *.solarnebulae.com wildcard certificate. Only /v1/ is routed;
+# the API enforces its own size and rate limits and sends HSTS itself.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: grand-admiral-api
+spec:
+  parentRefs:
+    - { group: gateway.networking.k8s.io, kind: Gateway, name: home, namespace: nginx-gateway, sectionName: https }
+  hostnames: [ga.solarnebulae.com]
+  rules:
+    - matches: [{ path: { type: PathPrefix, value: /v1/ } }]
+      backendRefs: [{ kind: Service, name: grand-admiral-api, port: 8080 }]
