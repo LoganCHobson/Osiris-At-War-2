@@ -186,7 +186,7 @@ kubectl -n oawga-machine-learning apply -f GrandAdmiral/k8s/bootstrap-job.yaml  
 
 The API is routed by `k8s/httproute.yaml` through the homelab's shared Gateway (`nginx-gateway/home`),
 which terminates TLS with the `*.solarnebulae.com` wildcard certificate. `ga.solarnebulae.com` needs a DNS
-record pointing at the gateway: AdGuard for the LAN, plus a public route (for example a Cloudflare
+record pointing at the gateway: an OPNsense Unbound host override (ga → 192.168.10.241) for the LAN, plus a public route (for example a Cloudflare
 Tunnel) before players outside the LAN can reach it.
 
 ### 6. Self-play
