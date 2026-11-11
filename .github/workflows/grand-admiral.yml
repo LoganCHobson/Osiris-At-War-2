@@ -78,6 +78,10 @@ jobs:
 
   deploy:
     needs: images
+    # Off until a homelab-k8s runner can serve this repository (the cluster's runners belong to the
+    # LogansOrganization org). Without one the job waits forever and blocks every later run in the
+    # concurrency group. Set the repository variable HOMELAB_DEPLOY=true once a runner is available.
+    if: vars.HOMELAB_DEPLOY == 'true'
     # The homelab runner: only ever runs code that is already on main.
     runs-on: [self-hosted, homelab-k8s]
     environment: grand-admiral   # add required reviewers in repo settings to gate deploys by hand
