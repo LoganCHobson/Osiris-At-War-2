@@ -13,7 +13,7 @@ spec:
   jobTemplate:
     spec:
       backoffLimit: 1
-      activeDeadlineSeconds: 3600
+      activeDeadlineSeconds: 14400   # a real round (60 epochs over ~350k decisions + 400 bootstraps) runs past an hour
       ttlSecondsAfterFinished: 604800
       template:
         metadata:

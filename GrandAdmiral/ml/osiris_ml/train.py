@@ -12,12 +12,16 @@ not, from rewriting the AI overnight.
 Gradients are written out by hand (the network is tiny), so the trainer needs only numpy.
 """
 
+import logging
+import time
 from dataclasses import dataclass
 
 import numpy as np
 
 from . import spec
 from .dataset import Dataset
+
+log = logging.getLogger("grand-admiral.trainer")
 
 
 @dataclass
@@ -191,7 +195,10 @@ def train(previous, ds: Dataset, cfg: TrainConfig = TrainConfig()):
     optimiser = Adam(model.params(), cfg.learning_rate)
     rng = np.random.default_rng(cfg.seed)
     n = len(ds.x)
-    for _ in range(cfg.epochs):
+    started = time.monotonic()
+    for epoch in range(cfg.epochs):
+        if epoch % 10 == 0:
+            log.info("training: epoch %d/%d over %d decisions (%.0fs)", epoch, cfg.epochs, n, time.monotonic() - started)
         order = rng.permutation(n)
         for start in range(0, n, cfg.batch_size):
             batch = order[start:start + cfg.batch_size]
