@@ -75,7 +75,7 @@ data:
        "targets": [
         {
          "refId": "A",
-         "expr": "sum(ga_battles_received{window=\"1h\"})",
+         "expr": "sum(max without (pod, instance) (ga_battles_received{window=\"1h\"}))",
          "datasource": {
           "type": "prometheus",
           "uid": "prometheus"
@@ -123,7 +123,7 @@ data:
        "targets": [
         {
          "refId": "A",
-         "expr": "sum(ga_battles_received{window=\"24h\"})",
+         "expr": "sum(max without (pod, instance) (ga_battles_received{window=\"24h\"}))",
          "datasource": {
           "type": "prometheus",
           "uid": "prometheus"
@@ -171,7 +171,7 @@ data:
        "targets": [
         {
          "refId": "A",
-         "expr": "sum(ga_battles)",
+         "expr": "sum(max without (pod, instance) (ga_battles))",
          "datasource": {
           "type": "prometheus",
           "uid": "prometheus"
@@ -220,7 +220,7 @@ data:
        "targets": [
         {
          "refId": "A",
-         "expr": "ga_model_latest_version{status=\"released\"}",
+         "expr": "max without (pod, instance) (ga_model_latest_version{status=\"released\"})",
          "datasource": {
           "type": "prometheus",
           "uid": "prometheus"
@@ -250,7 +250,8 @@ data:
           "mode": "fixed",
           "fixedColor": "blue"
          },
-         "decimals": 0
+         "decimals": 0,
+         "noValue": "none"
         },
         "overrides": []
        },
@@ -269,7 +270,7 @@ data:
        "targets": [
         {
          "refId": "A",
-         "expr": "ga_model_latest_version{status=\"trial\"}",
+         "expr": "max without (pod, instance) (ga_model_latest_version{status=\"trial\"})",
          "datasource": {
           "type": "prometheus",
           "uid": "prometheus"
@@ -739,7 +740,7 @@ data:
        "targets": [
         {
          "refId": "A",
-         "expr": "(ga_arena{result=\"wins\"} + 0.5 * ga_arena{result=\"draws\"}) / ignoring(result) ga_arena{result=\"games\"}",
+         "expr": "(max without (pod, instance) (ga_arena{result=\"wins\"}) + ignoring(result) 0.5 * max without (pod, instance) (ga_arena{result=\"draws\"})) / ignoring(result) max without (pod, instance) (ga_arena{result=\"games\"})",
          "legendFormat": "v{{version}}",
          "datasource": {
           "type": "prometheus",
@@ -791,7 +792,7 @@ data:
        "targets": [
         {
          "refId": "A",
-         "expr": "ga_arena{result=\"games\"}",
+         "expr": "max without (pod, instance) (ga_arena{result=\"games\"})",
          "legendFormat": "v{{version}}",
          "datasource": {
           "type": "prometheus",
@@ -843,7 +844,7 @@ data:
        "targets": [
         {
          "refId": "A",
-         "expr": "ga_gate{metric=\"improvement_lower\"}",
+         "expr": "max without (pod, instance) (ga_gate{metric=\"improvement_lower\"})",
          "legendFormat": "lower bound",
          "datasource": {
           "type": "prometheus",
@@ -852,7 +853,7 @@ data:
         },
         {
          "refId": "B",
-         "expr": "ga_gate{metric=\"improvement\"}",
+         "expr": "max without (pod, instance) (ga_gate{metric=\"improvement\"})",
          "legendFormat": "estimate",
          "datasource": {
           "type": "prometheus",
@@ -904,7 +905,7 @@ data:
        "targets": [
         {
          "refId": "A",
-         "expr": "ga_gate_kl",
+         "expr": "max without (pod, instance) (ga_gate_kl)",
          "legendFormat": "{{head}}",
          "datasource": {
           "type": "prometheus",
@@ -956,7 +957,7 @@ data:
        "targets": [
         {
          "refId": "A",
-         "expr": "ga_models",
+         "expr": "max without (pod, instance) (ga_models)",
          "legendFormat": "{{status}}",
          "datasource": {
           "type": "prometheus",
@@ -1008,7 +1009,7 @@ data:
        "targets": [
         {
          "refId": "A",
-         "expr": "sum by (status) (ga_battles)",
+         "expr": "sum by (status) (max without (pod, instance) (ga_battles))",
          "legendFormat": "{{status}}",
          "datasource": {
           "type": "prometheus",
@@ -1067,7 +1068,7 @@ data:
        "targets": [
         {
          "refId": "A",
-         "expr": "ga_recent_order_share{head=\"stance\"}",
+         "expr": "max without (pod, instance) (ga_recent_order_share{head=\"stance\"})",
          "legendFormat": "{{action}}",
          "datasource": {
           "type": "prometheus",
@@ -1115,7 +1116,7 @@ data:
        "targets": [
         {
          "refId": "A",
-         "expr": "ga_recent_order_share{head=\"formation\"}",
+         "expr": "max without (pod, instance) (ga_recent_order_share{head=\"formation\"})",
          "legendFormat": "{{action}}",
          "datasource": {
           "type": "prometheus",
@@ -1163,7 +1164,7 @@ data:
        "targets": [
         {
          "refId": "A",
-         "expr": "ga_recent_order_share{head=\"escort\"}",
+         "expr": "max without (pod, instance) (ga_recent_order_share{head=\"escort\"})",
          "legendFormat": "{{action}}",
          "datasource": {
           "type": "prometheus",
@@ -1211,7 +1212,7 @@ data:
        "targets": [
         {
          "refId": "A",
-         "expr": "ga_recent_order_share{head=\"maneuver\"}",
+         "expr": "max without (pod, instance) (ga_recent_order_share{head=\"maneuver\"})",
          "legendFormat": "{{action}}",
          "datasource": {
           "type": "prometheus",
@@ -1259,7 +1260,7 @@ data:
        "targets": [
         {
          "refId": "A",
-         "expr": "ga_recent_order_share{head=\"tempo\"}",
+         "expr": "max without (pod, instance) (ga_recent_order_share{head=\"tempo\"})",
          "legendFormat": "{{action}}",
          "datasource": {
           "type": "prometheus",
@@ -1307,7 +1308,7 @@ data:
        "targets": [
         {
          "refId": "A",
-         "expr": "ga_recent_order_share{head=\"commit\"}",
+         "expr": "max without (pod, instance) (ga_recent_order_share{head=\"commit\"})",
          "legendFormat": "{{action}}",
          "datasource": {
           "type": "prometheus",
@@ -1360,7 +1361,7 @@ data:
        "targets": [
         {
          "refId": "A",
-         "expr": "ga_recent_decisions_per_battle",
+         "expr": "max without (pod, instance) (ga_recent_decisions_per_battle)",
          "legendFormat": "{{source}}",
          "datasource": {
           "type": "prometheus",
@@ -1412,7 +1413,7 @@ data:
        "targets": [
         {
          "refId": "A",
-         "expr": "ga_recent_battle_duration_seconds{stat=\"mean\"}",
+         "expr": "max without (pod, instance) (ga_recent_battle_duration_seconds{stat=\"mean\"})",
          "legendFormat": "{{source}} mean",
          "datasource": {
           "type": "prometheus",
@@ -1421,7 +1422,7 @@ data:
         },
         {
          "refId": "B",
-         "expr": "ga_recent_battle_duration_seconds{stat=\"p90\"}",
+         "expr": "max without (pod, instance) (ga_recent_battle_duration_seconds{stat=\"p90\"})",
          "legendFormat": "{{source}} p90",
          "datasource": {
           "type": "prometheus",
@@ -1482,7 +1483,7 @@ data:
        "targets": [
         {
          "refId": "A",
-         "expr": "sum(ga_installs{blocked=\"false\"})",
+         "expr": "sum(max without (pod, instance) (ga_installs{blocked=\"false\"}))",
          "datasource": {
           "type": "prometheus",
           "uid": "prometheus"
@@ -1542,7 +1543,7 @@ data:
        "targets": [
         {
          "refId": "A",
-         "expr": "sum(ga_installs{blocked=\"true\"})",
+         "expr": "sum(max without (pod, instance) (ga_installs{blocked=\"true\"}))",
          "datasource": {
           "type": "prometheus",
           "uid": "prometheus"
@@ -1593,7 +1594,7 @@ data:
        "targets": [
         {
          "refId": "A",
-         "expr": "ga_battles_received{source=\"player\", window=\"24h\"}",
+         "expr": "max without (pod, instance) (ga_battles_received{source=\"player\", window=\"24h\"})",
          "legendFormat": "last 24h",
          "datasource": {
           "type": "prometheus",
@@ -1645,7 +1646,7 @@ data:
        "targets": [
         {
          "refId": "A",
-         "expr": "ga_recent_outcomes{source=\"player\"}",
+         "expr": "max without (pod, instance) (ga_recent_outcomes{source=\"player\"})",
          "legendFormat": "{{outcome}}",
          "datasource": {
           "type": "prometheus",

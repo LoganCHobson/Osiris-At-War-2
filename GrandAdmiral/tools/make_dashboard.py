@@ -9,6 +9,7 @@ the self-play farm's per-battle GASTAT log lines (Assets/Scripts/Dev/DifficultyS
 
 import json
 import pathlib
+import re
 
 NS = "oawga-machine-learning"
 PROM = {"type": "prometheus", "uid": "prometheus"}
@@ -24,12 +25,25 @@ def _next():
     return _id[0]
 
 
+_GA_SELECTOR = re.compile(r"\b(ga_[a-z_]+)(\{[^}]*\})?")
+
+
+def one_series(expr, source=PROM):
+    """Prometheus tags every exporter series with pod/instance, so each time the metrics pod is replaced
+    a raw ga_* query starts a new line (and a duplicate legend entry). Every ga_* selector is wrapped to
+    drop those labels; max, not sum, so two pods overlapping during a rollout don't double count."""
+    if source is not PROM:
+        return expr
+    return _GA_SELECTOR.sub(lambda m: f"max without (pod, instance) ({m.group(0)})", expr)
+
+
 def row(title, y):
     panels.append({"type": "row", "title": title, "id": _next(), "collapsed": False,
                    "gridPos": {"h": 1, "w": 24, "x": 0, "y": y}})
 
 
-def stat(title, expr, x, y, w=4, h=4, unit="short", source=PROM, decimals=None, description="", alert_above=None):
+def stat(title, expr, x, y, w=4, h=4, unit="short", source=PROM, decimals=None, description="", alert_above=None,
+         no_value=None):
     """A single number. Plain counts and versions are blue (no good or bad value); alert_above makes it
     green up to that value and red above it."""
     if alert_above is None:
@@ -40,11 +54,12 @@ def stat(title, expr, x, y, w=4, h=4, unit="short", source=PROM, decimals=None, 
                                                               {"color": "red", "value": alert_above}]}}
     p = {"type": "stat", "title": title, "id": _next(), "datasource": source, "description": description,
          "gridPos": {"h": h, "w": w, "x": x, "y": y},
-         "fieldConfig": {"defaults": {"unit": unit, **color, **({"decimals": decimals} if decimals is not None else {})},
+         "fieldConfig": {"defaults": {"unit": unit, **color, **({"decimals": decimals} if decimals is not None else {}),
+                                      **({"noValue": no_value} if no_value is not None else {})},
                          "overrides": []},
          "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": False},
                      "colorMode": "value", "graphMode": "area", "textMode": "auto"},
-         "targets": [{"refId": "A", "expr": expr, "datasource": source, **({"queryType": "range"} if source is LOKI else {})}]}
+         "targets": [{"refId": "A", "expr": one_series(expr, source), "datasource": source, **({"queryType": "range"} if source is LOKI else {})}]}
     panels.append(p)
 
 
@@ -55,7 +70,7 @@ def series(title, targets, x, y, w=12, h=8, unit="short", source=PROM, stack=Fal
              "drawStyle": "bars" if bars else "line", "fillOpacity": 25 if stack or bars else 8, "lineWidth": 2,
              "stacking": {"mode": "normal" if stack else "none", "group": "A"}, "showPoints": "never"}}, "overrides": []},
          "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "multi"}},
-         "targets": [{"refId": chr(65 + i), "expr": expr, "legendFormat": legend, "datasource": source,
+         "targets": [{"refId": chr(65 + i), "expr": one_series(expr, source), "legendFormat": legend, "datasource": source,
                       **({"queryType": "range"} if source is LOKI else {})}
                      for i, (expr, legend) in enumerate(targets)]}
     panels.append(p)
@@ -67,7 +82,7 @@ def bars(title, expr, legend, x, y, w=6, h=8, unit="percentunit", description=""
                    "fieldConfig": {"defaults": {"unit": unit, "min": 0, "max": 1}, "overrides": []},
                    "options": {"orientation": "horizontal", "displayMode": "gradient", "showUnfilled": True,
                                "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": False}},
-                   "targets": [{"refId": "A", "expr": expr, "legendFormat": legend, "datasource": PROM, "instant": True}]})
+                   "targets": [{"refId": "A", "expr": one_series(expr), "legendFormat": legend, "datasource": PROM, "instant": True}]})
 
 
 # ---- overview ----
@@ -76,7 +91,7 @@ stat("Battles, last hour", 'sum(ga_battles_received{window="1h"})', 0, 1)
 stat("Battles, last 24h", 'sum(ga_battles_received{window="24h"})', 4, 1)
 stat("Battles stored", "sum(ga_battles)", 8, 1)
 stat("Released model", 'ga_model_latest_version{status="released"}', 12, 1, decimals=0)
-stat("Trial in self-play", 'ga_model_latest_version{status="trial"}', 16, 1, decimals=0,
+stat("Trial in self-play", 'ga_model_latest_version{status="trial"}', 16, 1, decimals=0, no_value="none",
      description="A candidate that passed the offline checks and is being played by self-play before release.")
 stat("Self-play pods", f'kube_deployment_status_replicas_available{{namespace="{NS}", deployment="grand-admiral-selfplay"}}', 20, 1,
      decimals=0)
@@ -102,7 +117,7 @@ series("Farm CPU and memory", [
 # ---- learning ----
 row("Learning", 22)
 series("Self-play win rate per model", [
-    ('(ga_arena{result="wins"} + 0.5 * ga_arena{result="draws"}) / ignoring(result) ga_arena{result="games"}', "v{{version}}")],
+    ('(ga_arena{result="wins"} + ignoring(result) 0.5 * ga_arena{result="draws"}) / ignoring(result) ga_arena{result="games"}', "v{{version}}")],
     0, 23, w=8, unit="percentunit", description="What the trainer compares: wins + half the draws, per model version.")
 series("Self-play games per model", [('ga_arena{result="games"}', "v{{version}}")], 8, 23, w=8)
 series("Gate: estimated improvement (lower bound)", [('ga_gate{metric="improvement_lower"}', "lower bound"),
