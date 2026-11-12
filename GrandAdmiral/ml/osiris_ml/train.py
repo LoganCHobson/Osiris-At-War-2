@@ -44,6 +44,11 @@ class TrainConfig:
     kl_check_every: int = 20
     kl_sample_rows: int = 20000
     kl_bisect: int = 10             # on overshoot, bisection steps toward the limit (1/1024 resolution)
+    # A head decided in fewer battles than this isn't trained this round: it keeps the released
+    # behaviour until there's evidence. (Commit only comes up when the AI holds reserves, which self-play
+    # fleets rarely do: 21 of 3,925 battles. Fit to those, it swung far past the gate's limit.)
+    min_head_battles: int = 100
+    kl_min_head_rows: int = 500     # the KL sample always holds at least this many of each head's decisions
 
 
 def categorical_terms(logits, mask, actions, temperature, epsilon):
@@ -171,7 +176,8 @@ class Adam:
             p -= self.lr * m_hat / (np.sqrt(v_hat) + self.eps)
 
 
-def loss_and_grads(model, anchor_params, ds: Dataset, adv, rows_subset, cfg: TrainConfig):
+def loss_and_grads(model, anchor_params, ds: Dataset, adv, rows_subset, cfg: TrainConfig, frozen=()):
+    """frozen: heads left out of the loss (their output weights then get no gradient at all)."""
     # Only the batch's rows go through the network. (It used to run the whole dataset forward and back
     # for every batch and mask the rest out: quadratic, so a round over the live pool ran for hours.)
     batch = np.unique(np.asarray(rows_subset, dtype=np.int64))
@@ -182,7 +188,7 @@ def loss_and_grads(model, anchor_params, ds: Dataset, adv, rows_subset, cfg: Tra
 
     for name in spec.HEADS:
         h = ds.heads[name]
-        if len(h["rows"]) == 0:
+        if len(h["rows"]) == 0 or name in frozen:
             continue
         found = maps[name][batch]
         local = np.flatnonzero(found >= 0)  # positions in the batch; ascending row order, as before
@@ -228,6 +234,10 @@ def train(previous, ds: Dataset, cfg: TrainConfig = TrainConfig()):
     optimiser = Adam(model.params(), cfg.learning_rate)
     rng = np.random.default_rng(cfg.seed)
     n = len(ds.x)
+    frozen = {name for name, h in ds.heads.items()
+              if 0 < len(np.unique(ds.battle[h["rows"]])) < cfg.min_head_battles}
+    if frozen:
+        log.info("training: not training %s (decided in fewer than %d battles)", sorted(frozen), cfg.min_head_battles)
     check = _kl_sample(ds, cfg) if cfg.max_kl else None
     check_old = previous.forward(check.x)[0] if check is not None else None
     inside = [p.copy() for p in model.params()]  # the last weights known to be within max_kl
@@ -245,7 +255,7 @@ def train(previous, ds: Dataset, cfg: TrainConfig = TrainConfig()):
         order = rng.permutation(n)
         for start in range(0, n, cfg.batch_size):
             batch = order[start:start + cfg.batch_size]
-            _, grads = loss_and_grads(model, anchor_params, ds, adv, batch, cfg)
+            _, grads = loss_and_grads(model, anchor_params, ds, adv, batch, cfg, frozen)
             grads[2][spec.OUT_VALUE] = 0.0  # The critic is refit exactly below.
             grads[3][spec.OUT_VALUE] = 0.0
             optimiser.step(model.params(), grads)
@@ -293,8 +303,22 @@ def _kl_sample(ds: Dataset, cfg: TrainConfig):
     rng = np.random.default_rng(cfg.seed + 1)
     battles, sizes = np.unique(ds.battle, return_counts=True)
     order = rng.permutation(len(battles))
-    keep = order[:max(1, int(np.searchsorted(np.cumsum(sizes[order]), cfg.kl_sample_rows)))]
-    return ds.subset(battles[keep])
+    keep = set(battles[order[:max(1, int(np.searchsorted(np.cumsum(sizes[order]), cfg.kl_sample_rows)))]].tolist())
+    # Rare heads (commit: a few dozen battles) would barely appear in a random sample, and their KL
+    # would be noise. Top each up with its own battles until it has kl_min_head_rows decisions.
+    for name, h in ds.heads.items():
+        owners = ds.battle[h["rows"]]
+        have = int(np.isin(owners, list(keep)).sum())
+        if have >= cfg.kl_min_head_rows:
+            continue
+        candidates, counts = np.unique(owners, return_counts=True)
+        for i in rng.permutation(len(candidates)):
+            if have >= cfg.kl_min_head_rows:
+                break
+            if candidates[i] not in keep:
+                keep.add(int(candidates[i]))
+                have += int(counts[i])
+    return ds.subset(sorted(keep))
 
 
 def head_kls(out_old, out_new, ds: Dataset):
