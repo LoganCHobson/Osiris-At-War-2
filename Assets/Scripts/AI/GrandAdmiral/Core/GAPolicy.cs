@@ -79,10 +79,12 @@ namespace Osiris.GrandAdmiral
             return p;
         }
 
+        // No exploration on retreat: it can't be undone and is decided every tick, so even 2.5% a tick made
+        // the AI bail out of most battles at random. epsilon is unused, kept so every head is called alike.
+        // Matches osiris_ml/policy.py retreat_probability.
         public static double RetreatProbability(double logit, double temperature, double epsilon)
         {
-            double p = 1.0 / (1.0 + Math.Exp(-logit / temperature));
-            return (1 - epsilon) * p + epsilon * 0.5;
+            return 1.0 / (1.0 + Math.Exp(-logit / temperature));
         }
 
         private int Sample(double[] distribution)

@@ -25,9 +25,11 @@ def masked_softmax(logits, mask, temperature, epsilon):
 
 
 def retreat_probability(logit, temperature, epsilon):
-    """Probability of retreating (action 1)."""
+    """Probability of retreating (action 1). Exploration (epsilon) is not mixed in: retreat can't be undone,
+    and it is decided every tick, so even 2.5% a tick added up to a random retreat in most battles.
+    epsilon stays in the signature so every head is called alike. GAPolicy.RetreatProbability matches."""
     p = 1.0 / (1.0 + np.exp(-np.asarray(logit, dtype=np.float64) / temperature))
-    return (1.0 - epsilon) * p + epsilon * 0.5, p
+    return p, p
 
 
 def target_scores(out, contacts):

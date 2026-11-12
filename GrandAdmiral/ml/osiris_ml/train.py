@@ -71,11 +71,12 @@ def categorical_terms(logits, mask, actions, temperature, epsilon):
 
 
 def binary_terms(logit, actions, temperature, epsilon):
+    """Retreat: no exploration mixed in (policy.retreat_probability). epsilon is unused, kept for symmetry.
+    Older records logged retreat with exploration; their logged probability is still the right mu."""
     p1 = 1.0 / (1.0 + np.exp(-logit / temperature))
-    m1 = (1 - epsilon) * p1 + epsilon * 0.5
-    pa = np.where(actions == 1, m1, 1.0 - m1)
-    grad = (1 - epsilon) * p1 * (1 - p1) / temperature * np.where(actions == 1, 1.0, -1.0)
-    return pa, grad, np.stack([1.0 - m1, m1], axis=1)
+    pa = np.where(actions == 1, p1, 1.0 - p1)
+    grad = p1 * (1 - p1) / temperature * np.where(actions == 1, 1.0, -1.0)
+    return pa, grad, np.stack([1.0 - p1, p1], axis=1)
 
 
 def head_terms(out, ds: Dataset, name):
