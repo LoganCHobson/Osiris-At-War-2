@@ -30,7 +30,25 @@ public class RetreatManager : MonoBehaviour
     private bool defenderSpooled;
     private bool finished;
 
-    private static bool BattleActive => BattleContext.Instance != null && BattleContext.Instance.hasPendingBattle;
+    private static bool BattleActive => Simulated || (BattleContext.Instance != null && BattleContext.Instance.hasPendingBattle);
+
+    // Self-play (DifficultySim) has no campaign battle behind it. It turns retreats on for its campaign-style
+    // battles; a finished jump-out is then reported in Retreated instead of ending the scene.
+    public static bool Simulated { get; set; }
+    public bool? Retreated { get; private set; } // which side jumped out (true = attacker), simulated battles only
+
+    // Simulated battles run back to back in one scene: start each from a clean slate.
+    public void ResetForBattle()
+    {
+        StopAllCoroutines();
+        BattleTime = 0f;
+        JumpingOut = false;
+        attackerRetreating = defenderRetreating = false;
+        attackerRemaining = defenderRemaining = 0f;
+        attackerSpooled = defenderSpooled = false;
+        finished = false;
+        Retreated = null;
+    }
 
     private void Awake()
     {
@@ -180,7 +198,8 @@ public class RetreatManager : MonoBehaviour
         for (float t = 0f; t < wait; t += PresentationClock.Delta) yield return null;
 
         JumpingOut = false;
-        GameManager.Instance?.ConcludeBattle(attackerSide, true);
+        if (Simulated) Retreated = attackerSide; // DifficultySim ends the battle itself.
+        else GameManager.Instance?.ConcludeBattle(attackerSide, true);
     }
 
     // Ships that can still jump start gathering energy for the departure.

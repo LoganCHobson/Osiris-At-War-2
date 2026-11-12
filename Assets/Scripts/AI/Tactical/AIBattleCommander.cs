@@ -160,11 +160,15 @@ public partial class AIBattleCommander : MonoBehaviour
         return chosen;
     }
 
+    // What the enemy brings, when there's no campaign battle to read it from (self-play's campaign-style battles
+    // set it, so the AI holds reserves as it would in a real one). Set before Initialize.
+    public float? KnownEnemyPower { get; set; }
+
     // What the other side can put on the field: its best ships up to the population cap, plus planet defenses.
     private float ExpectedEnemyPower()
     {
         BattleContext context = BattleContext.Instance;
-        if (context == null || !context.hasPendingBattle) return float.PositiveInfinity; // Unknown: field everything.
+        if (context == null || !context.hasPendingBattle) return KnownEnemyPower ?? float.PositiveInfinity; // Unknown: field everything.
 
         List<ShipEntry> enemy = IsAttackerSide ? context.defenderRoster : context.attackerRoster;
         float power = 0f;

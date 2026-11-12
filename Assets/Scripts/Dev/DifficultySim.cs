@@ -97,9 +97,16 @@ public class DifficultySim : MonoBehaviour
                     strongFaction = gaIsStronger ? avanti : other;
                     weakFaction = gaIsStronger ? other : avanti;
                 }
-                if (variant % 2 == 0) battleBudget = Random.Range(MinBudget, MaxBudget + 1); // Side-swapped pairs share one.
-                AIBattleCommander strong = Deploy(stronger, strongFaction, strongerAttacks);
-                AIBattleCommander weak = Deploy(weaker, weakFaction, !strongerAttacks);
+                if (variant % 2 == 0) // Side-swapped pairs share one budget, and one kind of battle.
+                {
+                    battleBudget = Random.Range(MinBudget, MaxBudget + 1);
+                    campaignStyle = selfPlay && Random.value < CampaignStyleShare;
+                }
+                List<ShipEntry> strongFleet = FleetFor(strongFaction), weakFleet = FleetFor(weakFaction);
+                RetreatManager.Simulated = campaignStyle;
+                RetreatManager.Instance?.ResetForBattle();
+                AIBattleCommander strong = Deploy(stronger, strongFaction, strongerAttacks, strongFleet, weakFleet);
+                AIBattleCommander weak = Deploy(weaker, weakFaction, !strongerAttacks, weakFleet, strongFleet);
 
                 yield return new WaitForSeconds(3f); // Let ships finish setting up their health first.
                 float started = Time.time;
@@ -108,14 +115,20 @@ public class DifficultySim : MonoBehaviour
                 while (Time.time - started < battleTimeLimit)
                 {
                     if (!SideAlive(strongerAttacks, strong) || !SideAlive(!strongerAttacks, weak)) break;
+                    if (RetreatManager.Instance != null && RetreatManager.Instance.Retreated.HasValue) break;
                     Heartbeat = Time.realtimeSinceStartup;
                     yield return new WaitForSeconds(1f);
                 }
 
+                // A fleet that jumped out has left the field (its escaped ships still count in its own
+                // Grand Admiral record): the battle is the other side's, as in the campaign.
+                bool? retreated = Retreated(strongerAttacks, strong, weak);
                 float strongLeft = Power(strongerAttacks, strong) / Mathf.Max(1f, strongStart);
                 float weakLeft = Power(!strongerAttacks, weak) / Mathf.Max(1f, weakStart);
                 string outcome;
-                if (strongLeft > weakLeft + 0.05f) { strongerWins++; outcome = stronger.ToString(); }
+                if (retreated.HasValue && retreated.Value != strongerAttacks) { strongerWins++; outcome = stronger.ToString(); }
+                else if (retreated.HasValue) { weakerWins++; outcome = weaker.ToString(); }
+                else if (strongLeft > weakLeft + 0.05f) { strongerWins++; outcome = stronger.ToString(); }
                 else if (weakLeft > strongLeft + 0.05f) { weakerWins++; outcome = weaker.ToString(); }
                 else { draws++; outcome = "draw"; }
                 marginTotal += strongLeft - weakLeft;
@@ -125,9 +138,14 @@ public class DifficultySim : MonoBehaviour
                 weak.NotifyBattleEnded(weakWon, weak.Retreating, strong.Retreating);
                 if (stronger == DifficultyLevel.GrandAdmiral && weaker == DifficultyLevel.Admiral && strong.GrandAdmiralActive)
                 {
-                    gaGames++; roundGames++;
-                    if (strongWon) { gaWins++; roundWins++; }
-                    else if (!weakWon) { gaDraws++; roundDraws++; }
+                    // Campaign-style battles train the model but stay out of the arena: a trial is judged
+                    // against the release's record, which was played without reserves or retreats.
+                    if (!campaignStyle)
+                    {
+                        gaGames++; roundGames++;
+                        if (strongWon) { gaWins++; roundWins++; }
+                        else if (!weakWon) { gaDraws++; roundDraws++; }
+                    }
                     // One machine-readable line per battle for the self-play dashboard (Loki parses it as JSON).
                     Debug.Log("GASTAT " + JsonUtility.ToJson(new BattleStat
                     {
@@ -142,6 +160,9 @@ public class DifficultySim : MonoBehaviour
                         terrain = terrainSeed,
                         budget = selfPlay ? battleBudget : 0,
                         self_play = selfPlay,
+                        campaign_style = campaignStyle,
+                        reserves = strong.GrandAdmiralRecord != null && strong.GrandAdmiralRecord.Decisions.Exists(d => d.Commit != null),
+                        retreated = retreated.HasValue ? (retreated.Value == strongerAttacks ? "grand_admiral" : "admiral") : "",
                     }));
                 }
 
@@ -159,6 +180,7 @@ public class DifficultySim : MonoBehaviour
         }
 
         Clear();
+        RetreatManager.Simulated = false;
         GameSpeed.Reset();
         if (gaGames > 0 && GrandAdmiral.Model != null)
         {
@@ -183,7 +205,8 @@ public class DifficultySim : MonoBehaviour
         public string result, side;
         public float game_seconds, wall_seconds, ga_left, admiral_left;
         public int decisions, terrain, budget;
-        public bool self_play;
+        public bool self_play, campaign_style, reserves;
+        public string retreated; // "grand_admiral", "admiral", or "" if nobody jumped out
     }
 
     // ---- command line (shared by the editor runner and the standalone self-play player) ----
@@ -259,7 +282,56 @@ public class DifficultySim : MonoBehaviour
         watchdog.Start();
     }
 
-    private AIBattleCommander Deploy(DifficultyLevel level, Faction faction, bool attackerSide)
+    // Campaign-style self-play battles: the share of side-swapped pairs fought the way campaign battles are,
+    // with the game's population cap, each side knowing what the other brings (so the AI holds reserves and
+    // brings them in), and retreat allowed. Without them self-play never decides when to commit reserves or
+    // whether to retreat: 21 and 7 of 4,040 battles had those decisions, too few to train either.
+    private const float CampaignStyleShare = 1f / 3f;
+    private bool campaignStyle;
+    private readonly List<GameObject> departed = new List<GameObject>();
+
+    private void OnEnable() { RetreatManager.ShipDeparted += OnShipDeparted; }
+    private void OnDisable() { RetreatManager.ShipDeparted -= OnShipDeparted; }
+    private void OnShipDeparted(UnitHealthManager unit) { if (unit != null) departed.Add(unit.gameObject); }
+
+    private List<ShipEntry> FleetFor(Faction faction)
+    {
+        List<Ship> fleet = selfPlay ? EqualCostFleet(faction, battleBudget) : Fleet(faction);
+        return fleet.ConvertAll(ship => ShipEntry.New(ship, faction));
+    }
+
+    // Which side retreated (true = attacker), if one did. Its ships vanish one by one as they jump, so the
+    // loop can see that side gone before RetreatManager reports the finished jump-out.
+    private static bool? Retreated(bool strongerAttacks, AIBattleCommander strong, AIBattleCommander weak)
+    {
+        RetreatManager retreat = RetreatManager.Instance;
+        if (retreat == null) return null;
+        if (retreat.Retreated.HasValue) return retreat.Retreated;
+        foreach (bool attackerSide in new[] { true, false })
+        {
+            AIBattleCommander side = attackerSide == strongerAttacks ? strong : weak;
+            if (retreat.IsRetreating(attackerSide) && !SideAlive(attackerSide, side)) return attackerSide;
+        }
+        return null;
+    }
+
+    private int PopulationCap => selfPlay && !campaignStyle ? 999 : GameManager.Instance.populationCap; // Equal cost, not equal population.
+
+    // What the enemy can put on the field: its best ships up to the population cap (as a campaign battle tells the AI).
+    private float FieldablePower(List<ShipEntry> fleet)
+    {
+        float power = 0f;
+        int room = PopulationCap;
+        foreach (ShipEntry ship in fleet.Where(s => s != null).OrderByDescending(s => s.combatPower))
+        {
+            if (ship.populationCost > room) continue;
+            room -= ship.populationCost;
+            power += ship.combatPower;
+        }
+        return power;
+    }
+
+    private AIBattleCommander Deploy(DifficultyLevel level, Faction faction, bool attackerSide, List<ShipEntry> fleet, List<ShipEntry> enemyFleet)
     {
         GameObject go = new GameObject($"Sim_{level}_{(attackerSide ? "Attacker" : "Defender")}");
         AIBattleCommander commander = go.AddComponent<AIBattleCommander>();
@@ -267,11 +339,10 @@ public class DifficultySim : MonoBehaviour
         commander.useDifficultyOverride = true;
         commander.difficultyOverride = DifficultyProfile.For(level);
         commander.SelfPlay = selfPlay && level == DifficultyLevel.GrandAdmiral;
+        if (campaignStyle) commander.KnownEnemyPower = FieldablePower(enemyFleet);
 
         Transform spawn = attackerSide ? GameManager.Instance.attackerShipSpawnPoint : GameManager.Instance.defenderShipSpawnPoint;
-        List<Ship> fleet = selfPlay ? EqualCostFleet(faction, battleBudget) : Fleet(faction);
-        int population = selfPlay ? 999 : GameManager.Instance.populationCap; // Equal cost, not equal population.
-        commander.Initialize(faction, attackerSide, fleet.ConvertAll(ship => ShipEntry.New(ship, faction)), spawn, population);
+        commander.Initialize(faction, attackerSide, fleet, spawn, PopulationCap);
         commanders.Add(commander);
         return commander;
     }
@@ -372,5 +443,11 @@ public class DifficultySim : MonoBehaviour
         {
             if (wreck != null) Destroy(wreck.gameObject);
         }
+        // Ships that jumped out are only deactivated, so they've left UnitHealthManager.Active.
+        foreach (GameObject ship in departed)
+        {
+            if (ship != null) Destroy(ship);
+        }
+        departed.Clear();
     }
 }
