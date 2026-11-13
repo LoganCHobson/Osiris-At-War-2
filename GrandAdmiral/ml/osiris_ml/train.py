@@ -26,7 +26,13 @@ log = logging.getLogger("grand-admiral.trainer")
 
 @dataclass
 class TrainConfig:
-    epochs: int = 60
+    # A ceiling: the KL early stop below ends a round once the model has moved as far as a round may.
+    # 60 wasn't enough once batches grew with the pool: the 13 Nov round ran all 60 passes over 816k
+    # decisions in 14 minutes and used only an eighth of the allowed change (largest head KL 0.005 of
+    # 0.04), so its candidate was too close to the release to prove better. Time is cheap on the cluster.
+    epochs: int = 300
+    # ...but a round always ends within this (the trainer Job is killed at 4 h). 0 = no limit.
+    max_seconds: float = 7200
     batch_size: int = 1024
     # The batch grows with the pool so one epoch is always about this many steps. The KL early stop
     # ends a round after a few dozen steps; with fixed 1,024-row batches that meant a round learned from
@@ -279,6 +285,11 @@ def train(previous, ds: Dataset, cfg: TrainConfig = TrainConfig()):
                 inside = [p.copy() for p in model.params()]
         if stopped:
             break
+        if cfg.max_seconds and time.monotonic() - started > cfg.max_seconds:
+            log.info("training: time budget (%.0fs) reached after epoch %d", cfg.max_seconds, epoch)
+            break
+    log.info("training: %d steps, %d passes over the pool (%.0fs)", steps, steps * batch_size // max(n, 1),
+             time.monotonic() - started)
     if check is not None and not stopped and steps % check_every:
         ok, kl = within()
         if not ok:
