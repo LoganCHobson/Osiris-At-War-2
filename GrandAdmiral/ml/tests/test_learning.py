@@ -172,3 +172,38 @@ def test_training_stops_before_moving_too_far(baseline):
     assert max(gate.mean_kl(baseline, free, ds).values()) > 0.01  # the run really would overshoot
     moved = max(gate.mean_kl(baseline, kept, ds).values())
     assert 0.005 < moved <= 0.01  # inside the limit, and up near it: an overshoot still makes progress
+
+
+def _assert_same_dataset(a, b):
+    for field in ("x", "returns", "weights", "battle", "temperature", "epsilon"):
+        np.testing.assert_array_equal(getattr(a, field), getattr(b, field))
+    assert a.n_battles == b.n_battles and a.heads.keys() == b.heads.keys()
+    for name in a.heads:
+        assert a.heads[name].keys() == b.heads[name].keys()
+        for key in a.heads[name]:
+            np.testing.assert_array_equal(a.heads[name][key], b.heads[name][key])
+
+
+def test_consuming_merge_matches_building_from_records(baseline):
+    # The trainer merges the pool battle by battle and drops each one as it goes (so it's held once,
+    # not twice); the result has to be exactly what building from the records gives.
+    rng = np.random.default_rng(11)
+    records = [parse(toyenv.play(_explore(baseline), rng)) for _ in range(12)]
+    weights = rng.uniform(0.5, 2.0, len(records))
+    battles = [dataset.compact(r) for r in records]
+    merged = dataset.merge(battles, weights, consume=True)
+    _assert_same_dataset(merged, dataset.build(records, weights))
+    assert all(b.data is None for b in battles)  # each battle's own arrays were released
+
+
+def test_batch_grows_with_the_pool(baseline, caplog):
+    # Each step averages over 1/steps_per_epoch of the pool, so a round's few dozen steps learn from most
+    # of the farm's games instead of a fixed 1,024-row sample.
+    rng = np.random.default_rng(5)
+    ds = dataset.build([parse(toyenv.play(_explore(baseline), rng)) for _ in range(40)])
+    cfg = train.TrainConfig(epochs=1, batch_size=8, steps_per_epoch=4, max_kl=0.0)
+    with caplog.at_level("INFO", logger="grand-admiral.trainer"):
+        train.train(baseline, ds, cfg)
+    expected = -(-len(ds.x) // 4)
+    assert expected > 8
+    assert f"{expected} per step" in caplog.text

@@ -1,12 +1,14 @@
-# Nightly training round: check new uploads, train, gate, and (only if every check passes) sign
-# and release a new model. The signing key exists only in this pod. It accepts no connections and
+# Training round: check new uploads, train, gate, and (only if every check passes) sign
+# and release a new model. Suspended: conductor.yaml runs it every 6 hours as a Job made from this
+# CronJob, after draining the self-play farm so the round has the farm's memory. The signing key exists only in this pod. It accepts no connections and
 # can reach nothing but the database (networkpolicy.yaml).
 apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: grand-admiral-trainer
 spec:
-  schedule: "17 */6 * * *"         # every 6 hours (00:17, 06:17, 12:17, 18:17 UTC)
+  schedule: "17 */6 * * *"         # unused while suspended: the conductor starts each round
+  suspend: true
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
@@ -50,8 +52,10 @@ spec:
                 readOnlyRootFilesystem: true
                 capabilities: { drop: [ALL] }
               resources:
-                requests: { cpu: 500m, memory: 512Mi }
-                limits: { cpu: "2", memory: 3Gi }
+                # The whole 30-day pool is held in memory (575k decisions ran out of 3Gi). It runs with the
+                # farm drained, and the request reserves the room, which only node-02 has.
+                requests: { cpu: 500m, memory: 8Gi }
+                limits: { cpu: "2", memory: 14Gi }
               volumeMounts:
                 - { name: signing-key, mountPath: /secrets, readOnly: true }
                 - { name: tmp, mountPath: /tmp }

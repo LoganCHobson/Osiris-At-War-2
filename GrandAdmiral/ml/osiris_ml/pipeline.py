@@ -298,13 +298,18 @@ def run_round(engine, private_key, key_id, public_keys, cfg: RoundConfig = Round
             _retention(conn, cfg)
             return summary
 
-        candidate = train.train(current, dataset.merge(train_records, weights[~held]), cfg.training).rounded()
+        # Each battle's arrays are dropped as they're merged, so the pool is held once, not twice.
+        train_ds = dataset.merge(train_records, weights[~held], consume=True)
+        hold_ds = dataset.merge(hold_records, weights[held], consume=True)
+        del records, train_records, hold_records
+        candidate = train.train(current, train_ds, cfg.training).rounded()
+        del train_ds
         candidate.version = max(models) + 1
         latest = conn.execute(select(func.max(storage.models.c.version))).scalar() or 0
         candidate.version = max(candidate.version, latest + 1)
 
         offline = dataclasses.replace(cfg.gating, require_arena=False)  # Self-play judges trials later.
-        report = gate.evaluate(current, candidate, dataset.merge(hold_records, weights[held]),
+        report = gate.evaluate(current, candidate, hold_ds,
                                installs=summary["installs"], cfg=offline,
                                trusted_battles=summary["selfplay_battles"])
         summary["gate"] = report.to_dict()

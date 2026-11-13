@@ -28,6 +28,12 @@ log = logging.getLogger("grand-admiral.trainer")
 class TrainConfig:
     epochs: int = 60
     batch_size: int = 1024
+    # The batch grows with the pool so one epoch is always about this many steps. The KL early stop
+    # ends a round after a few dozen steps; with fixed 1,024-row batches that meant a round learned from
+    # ~20,000 of 575,000 decisions (3%) and the rest of the farm's games only fed the critic. With the
+    # batch scaled, each step averages over 1/steps_per_epoch of the whole pool, so the steps a round
+    # can afford cover most of it. 0 keeps the fixed batch_size.
+    steps_per_epoch: int = 32
     learning_rate: float = 5e-3
     clip: float = 0.2
     anchor: float = 5e-4        # L2 pull back toward the previous model's weights
@@ -235,6 +241,9 @@ def train(previous, ds: Dataset, cfg: TrainConfig = TrainConfig()):
     optimiser = Adam(model.params(), cfg.learning_rate)
     rng = np.random.default_rng(cfg.seed)
     n = len(ds.x)
+    batch_size = max(cfg.batch_size, -(-n // cfg.steps_per_epoch)) if cfg.steps_per_epoch else cfg.batch_size
+    # Bigger steps, so check the KL more often (in steps) to stop close to the limit.
+    check_every = max(1, cfg.steps_per_epoch // 8) if batch_size > cfg.batch_size else cfg.kl_check_every
     frozen = {name for name, h in ds.heads.items()
               if 0 < len(np.unique(ds.battle[h["rows"]])) < cfg.min_head_battles}
     if frozen:
@@ -252,16 +261,17 @@ def train(previous, ds: Dataset, cfg: TrainConfig = TrainConfig()):
     stopped = None
     for epoch in range(cfg.epochs):
         if epoch % 10 == 0:
-            log.info("training: epoch %d/%d over %d decisions (%.0fs)", epoch, cfg.epochs, n, time.monotonic() - started)
+            log.info("training: epoch %d/%d over %d decisions, %d per step (%.0fs)", epoch, cfg.epochs, n, batch_size,
+                     time.monotonic() - started)
         order = rng.permutation(n)
-        for start in range(0, n, cfg.batch_size):
-            batch = order[start:start + cfg.batch_size]
+        for start in range(0, n, batch_size):
+            batch = order[start:start + batch_size]
             _, grads = loss_and_grads(model, anchor_params, ds, adv, batch, cfg, frozen)
             grads[2][spec.OUT_VALUE] = 0.0  # The critic is refit exactly below.
             grads[3][spec.OUT_VALUE] = 0.0
             optimiser.step(model.params(), grads)
             steps += 1
-            if check is not None and steps % cfg.kl_check_every == 0:
+            if check is not None and steps % check_every == 0:
                 ok, kl = within()
                 if not ok:
                     stopped = (epoch, steps, kl)
@@ -269,7 +279,7 @@ def train(previous, ds: Dataset, cfg: TrainConfig = TrainConfig()):
                 inside = [p.copy() for p in model.params()]
         if stopped:
             break
-    if check is not None and not stopped and steps % cfg.kl_check_every:
+    if check is not None and not stopped and steps % check_every:
         ok, kl = within()
         if not ok:
             stopped = (cfg.epochs - 1, steps, kl)
@@ -291,8 +301,9 @@ def train(previous, ds: Dataset, cfg: TrainConfig = TrainConfig()):
             p[...] = a + lo * (b - a)
         _, now = within()
         log.info("training: stopped at epoch %d (step %d): %s reached %.4f > %.4f; kept %.0f%% of the last "
-                 "interval (largest head now %.4f)", epoch, steps, worst, kl[worst], cfg.max_kl, 100 * lo,
-                 max(now.values(), default=0.0))
+                 "interval (largest head now %.4f); learned from %d decisions (%.0f%% of the pool)", epoch, steps,
+                 worst, kl[worst], cfg.max_kl, 100 * lo, max(now.values(), default=0.0),
+                 min(n * (epoch + 1), steps * batch_size), 100 * min(1.0, steps * batch_size / n))
     return fit_critic(model, ds)
 
 

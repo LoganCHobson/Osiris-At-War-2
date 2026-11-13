@@ -214,7 +214,11 @@ farm's per-battle `GASTAT` log lines come from Loki.
 ## Operating it
 
 The trainer's environment (database role, signing key) exists only in the trainer pod, so admin
-commands run as one-off Jobs from the trainer CronJob's template:
+commands run as one-off Jobs from the trainer CronJob's template. (That CronJob is suspended: every
+6 hours `k8s/conductor.yaml` drains the self-play farm, letting each pod finish and upload its run,
+runs a round from this template with the farm's memory free, and starts the farm again. A round
+started by hand runs alongside the farm; for a full cycle, start the conductor instead:
+`kubectl -n oawga-machine-learning create job --from=cronjob/grand-admiral-conductor cycle-now`.)
 
 ```bash
 kubectl -n oawga-machine-learning create job --from=cronjob/grand-admiral-trainer round-now   # a training round, now

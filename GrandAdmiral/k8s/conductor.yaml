@@ -1,0 +1,181 @@
+# Conductor: farm, then train, then farm again, so every game the farm plays is trained on.
+#
+# Every 6 hours it drains the self-play farm, runs a training round on the whole pool with the farm's
+# memory free, and starts the farm again. Draining wastes no games: each farm pod plays a run of 16
+# battles, uploads them and exits (then the Deployment restarts it). The conductor waits for each pod to
+# finish its run, marks that pod first in line to go (pod-deletion-cost) and drops the farm by one, so
+# no pod is ever stopped mid-battle. A pod still mid-run after DRAIN_MAX is stopped then (logged).
+#
+# The trainer itself keeps no Kubernetes access (it holds the signing key): the conductor starts it as a
+# Job from the suspended grand-admiral-trainer CronJob, which the updater keeps on the newest image.
+# The farm always comes back: on success, on a failed or out-of-memory round, and on the conductor being
+# stopped (trap). If the conductor pod dies outright, the updater (every 10 minutes) puts it back.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: grand-admiral-conductor
+automountServiceAccountToken: false
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: grand-admiral-conductor
+rules:
+  - apiGroups: [apps]
+    resources: [deployments, deployments/scale]
+    resourceNames: [grand-admiral-selfplay]
+    verbs: [get, patch, update]
+  - apiGroups: [""]
+    resources: [pods]
+    verbs: [get, list, watch, patch]   # patch: the pod-deletion-cost annotation on a finished farm pod
+  - apiGroups: [""]
+    resources: [pods/log]
+    verbs: [get]
+  - apiGroups: [batch]
+    resources: [cronjobs]
+    resourceNames: [grand-admiral-trainer]
+    verbs: [get]
+  - apiGroups: [batch]
+    resources: [jobs]
+    verbs: [create, get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: grand-admiral-conductor
+subjects: [{ kind: ServiceAccount, name: grand-admiral-conductor }]
+roleRef: { apiGroup: rbac.authorization.k8s.io, kind: Role, name: grand-admiral-conductor }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grand-admiral-conductor
+data:
+  conduct.sh: |
+    set -eu
+    D=deploy/grand-admiral-selfplay
+    KEY=osiris.dev/farm-replicas
+    DRAIN_MAX=${DRAIN_MAX:-2400}   # seconds; a farm run is 16 battles, ~25 minutes
+    log() { echo "$(date -u +%H:%M:%S) $*"; }
+
+    # The farm's size before the pause, kept on the Deployment so a restart of this job (or the updater's
+    # safety net) restores the right number even after the farm is already at 0.
+    saved=$(kubectl get $D -o jsonpath='{.metadata.annotations.osiris\.dev/farm-replicas}')
+    if [ -n "$saved" ]; then N=$saved; else
+      N=$(kubectl get $D -o jsonpath='{.spec.replicas}')
+      kubectl annotate $D "$KEY=$N" --overwrite >/dev/null
+    fi
+    restore() {
+      kubectl scale $D --replicas="$N" >/dev/null && kubectl annotate $D "$KEY-" >/dev/null && log "farm back to $N pods"
+    }
+    trap restore EXIT
+    trap 'exit 143' TERM INT
+
+    # --- drain: let every farm pod finish its run (its games are uploaded when it exits) before it goes
+    # Polls tolerate a failed API call (|| ...): under set -e one blip would end the job, and the trap
+    # would bring the farm back in the middle of a training round.
+    pods() { kubectl get pods -l app=grand-admiral-selfplay -o json 2>/dev/null || echo '{"items":[]}'; }
+    base=$(pods | jq -c '[.items[] | {(.metadata.name): (.status.containerStatuses[0].restartCount // 0)}] | add // {}')
+    left=$(kubectl get $D -o jsonpath='{.spec.replicas}')
+    handled=" "
+    deadline=$(( $(date +%s) + DRAIN_MAX ))
+    log "draining $left farm pods"
+    while [ "$left" -gt 0 ]; do
+      finished=$(pods | jq -r --argjson base "$base" '.items[]
+        | select(.metadata.deletionTimestamp == null)
+        | select(.status.phase != "Running"
+                 or ($base[.metadata.name] == null)
+                 or ((.status.containerStatuses[0].restartCount // 0) > $base[.metadata.name]))
+        | .metadata.name')
+      for p in $finished; do
+        case "$handled" in *" $p "*) continue ;; esac
+        handled="$handled$p "
+        kubectl annotate pod "$p" controller.kubernetes.io/pod-deletion-cost=-1000 --overwrite >/dev/null || true
+        left=$((left - 1))
+        kubectl scale $D --replicas="$left" >/dev/null || { left=$((left + 1)); handled=${handled% $p }" "; continue; }
+        log "$p finished its run; farm down to $left"
+        [ "$left" -gt 0 ] || break
+      done
+      [ "$left" -gt 0 ] || break
+      if [ "$(date +%s)" -ge "$deadline" ]; then
+        log "drain timed out: stopping $left pods mid-run"
+        kubectl scale $D --replicas=0 >/dev/null
+        break
+      fi
+      sleep 15
+    done
+    kubectl wait --for=delete pod -l app=grand-admiral-selfplay --timeout=180s >/dev/null 2>&1 || true
+    log "farm drained"
+
+    # --- train on everything, with the farm's memory free
+    job=grand-admiral-trainer-$(date -u +%Y%m%d-%H%M)
+    kubectl create job "$job" --from=cronjob/grand-admiral-trainer >/dev/null
+    log "training: $job"
+    while :; do
+      state=$(kubectl get job "$job" -o jsonpath='{.status.conditions[?(@.status=="True")].type}' 2>/dev/null || true)
+      case "$state" in *Complete*|*Failed*) break ;; esac
+      sleep 30
+    done
+    kubectl logs "job/$job" --tail=60 2>/dev/null | grep -E "training:|round:|\"result\"" || true
+    log "training $state"
+    case "$state" in *Complete*) exit 0 ;; *) exit 1 ;; esac
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: grand-admiral-conductor
+spec:
+  schedule: "17 */6 * * *"         # every 6 hours (00:17, 06:17, 12:17, 18:17 UTC)
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels: { app: grand-admiral-conductor }
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 18000   # 40 min drain + the trainer's own 4 h limit + slack
+      ttlSecondsAfterFinished: 604800
+      template:
+        metadata:
+          labels: { app: grand-admiral-conductor }
+        spec:
+          restartPolicy: Never
+          serviceAccountName: grand-admiral-conductor
+          automountServiceAccountToken: true
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            seccompProfile: { type: RuntimeDefault }
+          containers:
+            - name: conductor
+              image: alpine/k8s:1.36.5
+              command: [sh, /scripts/conduct.sh]
+              env:
+                - { name: HOME, value: /tmp }
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: { drop: [ALL] }
+              resources:
+                requests: { cpu: 10m, memory: 32Mi }
+                limits: { memory: 128Mi }
+              volumeMounts:
+                - { name: scripts, mountPath: /scripts, readOnly: true }
+                - { name: tmp, mountPath: /tmp }
+          volumes:
+            - name: scripts
+              configMap: { name: grand-admiral-conductor }
+            - { name: tmp, emptyDir: { sizeLimit: 64Mi } }
+---
+# Conductor: no ingress; out to the Kubernetes API only.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: conductor
+spec:
+  podSelector: { matchLabels: { app: grand-admiral-conductor } }
+  policyTypes: [Ingress, Egress]
+  egress:
+    - ports: [{ port: 443, protocol: TCP }, { port: 6443, protocol: TCP }]

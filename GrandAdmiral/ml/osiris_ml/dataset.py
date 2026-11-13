@@ -145,25 +145,41 @@ def compact(record: BattleRecord) -> Battle:
     return Battle(record.battle_id, record.client_version, _build([record]))
 
 
-def merge(battles, record_weights=None):
-    """battles: list of Battle (from compact). The same Dataset build() makes from their records."""
+def merge(battles, record_weights=None, consume=False):
+    """battles: list of Battle (from compact). The same Dataset build() makes from their records.
+    consume=True drops each battle's own arrays as soon as they're copied, so the pool is only ever held
+    about once (np.concatenate held every battle's arrays plus the merged copy: twice the pool)."""
     if not battles:
         return _build([])
     parts = [b.data for b in battles]
     sizes = np.array([len(p.x) for p in parts], dtype=np.int64)
     offsets = np.concatenate([[0], np.cumsum(sizes)[:-1]])
     weights = np.ones(len(parts)) if record_weights is None else np.asarray(record_weights, dtype=np.float64)
-    heads = {}
-    for name in parts[0].heads:
-        keys = parts[0].heads[name].keys()
-        heads[name] = {key: np.concatenate([p.heads[name][key] + o if key == "rows" else p.heads[name][key]
-                                            for p, o in zip(parts, offsets)])
-                       for key in keys}
-    return Dataset(np.concatenate([p.x for p in parts]).reshape(-1, spec.N_FEATURES),
-                   np.concatenate([p.returns for p in parts]), np.repeat(weights, sizes),
-                   np.repeat(np.arange(len(parts), dtype=np.int64), sizes), heads,
-                   np.concatenate([p.temperature for p in parts]), np.concatenate([p.epsilon for p in parts]),
-                   len(parts))
+    total = int(sizes.sum())
+    first = parts[0]
+
+    def alloc(example, n):
+        return np.empty((n,) + example.shape[1:], dtype=example.dtype)
+
+    x = alloc(first.x.reshape(-1, spec.N_FEATURES), total)
+    returns, temperature, epsilon = alloc(first.returns, total), alloc(first.temperature, total), alloc(first.epsilon, total)
+    head_sizes = {name: sum(len(p.heads[name]["rows"]) for p in parts) for name in first.heads}
+    heads = {name: {key: alloc(value, head_sizes[name]) for key, value in first.heads[name].items()} for name in first.heads}
+    head_at = {name: 0 for name in heads}
+    for i, (p, o, size) in enumerate(zip(parts, offsets, sizes)):
+        x[o:o + size] = p.x.reshape(-1, spec.N_FEATURES)
+        returns[o:o + size], temperature[o:o + size], epsilon[o:o + size] = p.returns, p.temperature, p.epsilon
+        for name, arrays in p.heads.items():
+            k = len(arrays["rows"])
+            at = head_at[name]
+            for key, value in arrays.items():
+                heads[name][key][at:at + k] = value + o if key == "rows" else value
+            head_at[name] = at + k
+        if consume:
+            battles[i].data = None
+            parts[i] = None
+    return Dataset(x, returns, np.repeat(weights, sizes), np.repeat(np.arange(len(sizes), dtype=np.int64), sizes), heads,
+                   temperature, epsilon, len(sizes))
 
 
 def build(records, record_weights=None):

@@ -14,6 +14,7 @@ resources:
   - metrics.yaml
   - grafana-dashboard.yaml
   - updater.yaml
+  - conductor.yaml
 configMapGenerator:
   - name: grand-admiral-db-init
     files: [postgres-init.sql, postgres-init.sh]
