@@ -25,3 +25,68 @@ images:
     newTag: 5d0a67b31ef1   # first deploy only: updater.yaml moves the live images to each new CI build
   - name: ghcr.io/loganchobson/grand-admiral-trainer
     newTag: 5d0a67b31ef1   # first deploy only: updater.yaml moves the live images to each new CI build
+# Nothing of Grand Admiral's on the control node (k8s-control-01): a trainer run there (3.5 GB)
+# made the API server time out. Every workload kind, merged into what each manifest already has.
+patches:
+  - target: { kind: Deployment }
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: any
+      spec:
+        template:
+          spec:
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                    - matchExpressions:
+                        - { key: node-role.kubernetes.io/control-plane, operator: DoesNotExist }
+  - target: { kind: StatefulSet }
+    patch: |-
+      apiVersion: apps/v1
+      kind: StatefulSet
+      metadata:
+        name: any
+      spec:
+        template:
+          spec:
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                    - matchExpressions:
+                        - { key: node-role.kubernetes.io/control-plane, operator: DoesNotExist }
+  - target: { kind: Job }
+    patch: |-
+      apiVersion: batch/v1
+      kind: Job
+      metadata:
+        name: any
+      spec:
+        template:
+          spec:
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                    - matchExpressions:
+                        - { key: node-role.kubernetes.io/control-plane, operator: DoesNotExist }
+  - target: { kind: CronJob }
+    patch: |-
+      apiVersion: batch/v1
+      kind: CronJob
+      metadata:
+        name: any
+      spec:
+        jobTemplate:
+          spec:
+            template:
+              spec:
+                affinity:
+                  nodeAffinity:
+                    requiredDuringSchedulingIgnoredDuringExecution:
+                      nodeSelectorTerms:
+                        - matchExpressions:
+                            - { key: node-role.kubernetes.io/control-plane, operator: DoesNotExist }
