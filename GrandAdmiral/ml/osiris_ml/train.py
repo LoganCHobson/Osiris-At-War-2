@@ -41,7 +41,12 @@ class TrainConfig:
     # can afford cover most of it. 0 keeps the fixed batch_size.
     steps_per_epoch: int = 32
     learning_rate: float = 5e-3
-    clip: float = 0.2
+    # Per-decision ratio clip. The pool is old models' games played with 20% exploration, so most
+    # ratios start outside a tight band: at 0.2 nearly every decision was clipped and rounds moved the
+    # model by KL ~0.003. The diagnose sweep (2026-11-19, 16.5k battles) at max_kl 0.04: clip 0.5 ->
+    # KL 0.005, held-out gain +7%; 1.0 -> KL 0.032, +25% (lower bound +18%); 3.0 -> +31% (+20%);
+    # no clip -> +21% (+7%). 1.0 lets max_kl do the limiting and keeps per-decision steps sane.
+    clip: float = 1.0
     anchor: float = 5e-4        # L2 pull back toward the previous model's weights
     value_coef: float = 0.0     # the critic is fit by ridge regression instead
     gae_lambda: float = 0.9
