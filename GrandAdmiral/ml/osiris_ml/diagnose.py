@@ -87,11 +87,14 @@ def gradient_agreement(model, train_ds, cfg: train.TrainConfig, splits=3, seed=0
     return {"cosine_between_halves": cosines, "mean": round(float(np.mean(cosines)), 4)}
 
 
+# Second run (2026-11-19): the first showed the per-decision clip freezes training (KL ~0.003 with
+# both limits on, ~1.7 with no clip at all). So: widen the clip, keep the real KL stop (0.04) and the
+# anchor, and see which width lets training reach the KL cap with a held-out gain that holds up.
 VARIANTS = [
-    ("as configured, no KL stop", {}),
-    ("no anchor", {"anchor": 0.0}),
-    ("no anchor, no clip", {"anchor": 0.0, "clip": 1e6}),
-    ("no anchor, no clip, 5x learning rate", {"anchor": 0.0, "clip": 1e6, "learning_rate": 2.5e-2}),
+    ("clip 0.5, KL stop 0.04", {"clip": 0.5, "max_kl": 0.04}),
+    ("clip 1.0, KL stop 0.04", {"clip": 1.0, "max_kl": 0.04}),
+    ("clip 3.0, KL stop 0.04", {"clip": 3.0, "max_kl": 0.04}),
+    ("no clip, KL stop 0.04", {"clip": 1e6, "max_kl": 0.04}),
 ]
 
 
@@ -99,7 +102,7 @@ def training_variants(model, train_ds, hold_ds, cfg: pipeline.RoundConfig, epoch
     offline = dataclasses.replace(cfg.gating, require_arena=False, max_kl=1e9)
     results = []
     for name, changes in VARIANTS:
-        tc = dataclasses.replace(cfg.training, max_kl=0.0, epochs=epochs, max_seconds=seconds, **changes)
+        tc = dataclasses.replace(cfg.training, **{"max_kl": 0.0, "epochs": epochs, "max_seconds": seconds, **changes})
         started = time.monotonic()
         candidate = train.train(model, train_ds, tc)
         report = gate.evaluate(model, candidate, hold_ds, installs=0, cfg=offline, trusted_battles=trusted)
