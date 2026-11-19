@@ -13,6 +13,7 @@ public class ShipEntry
     public Ship type;
     public string shipName;
     public string hero; // HeroDefinition id, or empty for an ordinary ship.
+    public int xp;      // Battle experience (Battle/Veterancy.cs): ranks make the ship a little better.
 
     public static ShipEntry New(Ship type, Faction faction = null)
     {
@@ -24,8 +25,11 @@ public class ShipEntry
     public bool IsHero => !string.IsNullOrEmpty(hero);
     public HeroDefinition Hero => IsHero ? HeroDefinition.Find(hero) : null;
 
-    // The class's numbers (a hero's flagship counts for a little more).
-    public float combatPower => type == null ? 0f : type.combatPower * (IsHero && Hero != null ? Hero.powerMultiplier : 1f);
+    public Veterancy.Rank Rank => Veterancy.RankOf(xp);
+
+    // The class's numbers (a hero's flagship and a veteran crew count for a little more).
+    public float combatPower => type == null ? 0f : type.combatPower * (IsHero && Hero != null ? Hero.powerMultiplier : 1f)
+                                                    * Veterancy.PowerMultiplier(xp);
     public int populationCost => type != null ? type.populationCost : 0;
     public int cost => type != null ? type.cost : 0;
     public float buildTime => type != null ? type.buildTime : 0f;
@@ -36,7 +40,8 @@ public class ShipEntry
     public GameObject icon => type != null ? type.icon : null;
 
     // "UNS Resolute (Battleship)" style label for menus.
-    public string Label => string.IsNullOrEmpty(shipName) ? ShipInfo.Name(type) : $"{shipName}  ({ShipInfo.Name(type)})";
+    public string Label => (string.IsNullOrEmpty(shipName) ? ShipInfo.Name(type) : $"{shipName}  ({ShipInfo.Name(type)})")
+                           + (Rank > Veterancy.Rank.Green ? $"  - {Veterancy.Title(Rank)}" : "");
 
     public override string ToString() => Label;
 }

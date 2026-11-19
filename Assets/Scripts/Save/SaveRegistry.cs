@@ -21,6 +21,10 @@ public class SaveRegistry : ScriptableObject
         }
     }
 
+    // Every registered faction (the skirmish setup lists them).
+    public static IReadOnlyList<Faction> Factions =>
+        Instance != null ? (IReadOnlyList<Faction>)Instance.factions : new List<Faction>();
+
     public static string Id(Faction faction) => faction != null ? faction.name : null;
     public static string Id(Ship ship) => ship != null ? ship.name : null;
 

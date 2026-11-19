@@ -296,7 +296,7 @@ public class DifficultySim : MonoBehaviour
 
     private List<ShipEntry> FleetFor(Faction faction)
     {
-        List<Ship> fleet = selfPlay ? EqualCostFleet(faction, battleBudget) : Fleet(faction);
+        List<Ship> fleet = selfPlay ? FleetBuilder.EqualCost(faction, battleBudget) : FleetBuilder.Standard(faction);
         return fleet.ConvertAll(ship => ShipEntry.New(ship, faction));
     }
 
@@ -353,55 +353,6 @@ public class DifficultySim : MonoBehaviour
     // the pricier Avanti ships an edge so large that every model wins and self-play can't tell them apart.
     private int battleBudget;
     private const int MinBudget = 1500, MaxBudget = 3500;
-
-    private static List<Ship> EqualCostFleet(Faction faction, int budget)
-    {
-        List<Ship> fleet = new List<Ship>();
-        if (faction == null) return fleet;
-        List<(Ship ship, float weight)> options = new List<(Ship, float)>();
-        foreach (Ship ship in faction.roster)
-        {
-            if (ship == null || ship.cost <= 0) continue;
-            float weight = ship.fleetRole switch { FleetRole.Line => 3f, FleetRole.Screen => 4f, FleetRole.Carrier => 1f, _ => 2f };
-            options.Add((ship, weight));
-        }
-        if (options.Count == 0) return Fleet(faction);
-        int spent = 0, cheapest = options.Min(o => o.ship.cost);
-        while (budget - spent >= cheapest)
-        {
-            List<(Ship ship, float weight)> affordable = options.FindAll(o => o.ship.cost <= budget - spent);
-            float roll = Random.value * affordable.Sum(o => o.weight);
-            foreach ((Ship ship, float weight) in affordable)
-            {
-                roll -= weight;
-                if (roll > 0f) continue;
-                fleet.Add(ship);
-                spent += ship.cost;
-                break;
-            }
-        }
-        return fleet;
-    }
-
-    private static List<Ship> Fleet(Faction faction)
-    {
-        List<Ship> fleet = new List<Ship>();
-        if (faction == null) return fleet;
-
-        foreach (Ship ship in faction.roster)
-        {
-            if (ship == null) continue;
-            int count = ship.fleetRole switch
-            {
-                FleetRole.Line => 3,
-                FleetRole.Screen => 4,
-                FleetRole.Carrier => 1,
-                _ => 2
-            };
-            for (int i = 0; i < count; i++) fleet.Add(ship);
-        }
-        return fleet;
-    }
 
     private static bool SideAlive(bool attackerSide, AIBattleCommander commander)
     {

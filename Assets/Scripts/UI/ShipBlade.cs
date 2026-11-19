@@ -97,6 +97,10 @@ public class ShipBlade : MonoBehaviour
         HeroDefinition hero = entry != null ? entry.Hero : null;
         bool named = entry != null && !string.IsNullOrEmpty(entry.shipName);
         title.text = named ? entry.shipName : ShipInfo.Name(ship);
+        if (entry != null && entry.Rank > Veterancy.Rank.Green)
+        {
+            title.text += $"  <size=60%><color=#{ColorUtility.ToHtmlStringRGB(UIKit.Accent)}>{Veterancy.Title(entry.Rank).ToUpperInvariant()}</color></size>";
+        }
 
         heroRow.gameObject.SetActive(hero != null);
         if (hero != null)

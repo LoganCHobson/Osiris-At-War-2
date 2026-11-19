@@ -99,6 +99,7 @@ public class GalacticMapManager : MonoBehaviour
         SaveSystem.PrepareLoad(GalacticState.Instance); // Loading a save: hand over the saved galaxy first.
         GalacticState.Instance?.ApplyToScene();
         ApplyPendingBattleResult();
+        foreach (string promotion in Veterancy.TakePromotions()) Toast.Show(promotion);
         SaveSystem.FinishLoad(); // ...then the AI empires, clock and economy.
     }
 

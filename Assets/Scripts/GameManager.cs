@@ -56,6 +56,7 @@ public class GameManager : MonoBehaviour
             return;
         }
 
+        Veterancy.BattleStarted();
         SkyPlanet.Create(); // The planet being fought over, below the fleets.
         CreateTerrain();
 
@@ -178,6 +179,7 @@ public class GameManager : MonoBehaviour
                 if (context.defenderHasBattleStation) context.ReportBattleStationDestroyed();
             }
 
+            Veterancy.Award(context, attackerLost); // Survivors' experience, now losses and retreats are settled.
             context.Lock();
         }
 
@@ -210,6 +212,13 @@ public class GameManager : MonoBehaviour
         yield return new WaitForSecondsRealtime(battleEndDelay);
 
         GameSpeed.Reset();
+        BattleContext context = BattleContext.Instance;
+        if (context != null && context.isSkirmish)
+        {
+            context.Clear(); // A skirmish leaves nothing behind for the galactic map.
+            SceneManager.LoadScene("MainMenu");
+            yield break;
+        }
         SceneManager.LoadScene("GalacticMap");
     }
 
@@ -268,6 +277,12 @@ public class GameManager : MonoBehaviour
     {
         AIBattleCommander commander = gameObject.AddComponent<AIBattleCommander>();
         BattleContext context = BattleContext.Instance;
+        if (context != null && context.isSkirmish)
+        {
+            // Skirmish picks its own opponent; the campaign's difficulty setting is left alone.
+            commander.useDifficultyOverride = true;
+            commander.difficultyOverride = DifficultyProfile.For(context.skirmishDifficulty);
+        }
         commander.OpponentIsPlayer = context == null || !context.hasPendingBattle
             || Strength.IsPlayer(attackerSide ? context.defenderFaction : context.attackerFaction);
         commander.Initialize(faction, attackerSide, roster, attackerSide ? attackerShipSpawnPoint : defenderShipSpawnPoint, populationCap);

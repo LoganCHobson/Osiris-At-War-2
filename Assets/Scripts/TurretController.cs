@@ -27,8 +27,20 @@ public class TurretController : MonoBehaviour
 
     // Range after hero buffs (see HeroForces). Use this, not `range`, for anything to do with reach.
     public float Range => range * (1f + Hero(HeroBuff.Range)) * (Ability != null ? Ability.RangeMultiplier : 1f);
-    private float HeroSpread => (1f - Hero(HeroBuff.Accuracy)) * (Ability != null ? Ability.SpreadMultiplier : 1f);
-    private float HeroDamage => (1f + Hero(HeroBuff.Damage)) * (Ability != null ? Ability.DamageMultiplier : 1f);
+    private float HeroSpread => (1f - Hero(HeroBuff.Accuracy)) * (Ability != null ? Ability.SpreadMultiplier : 1f) * VeteranSpread;
+    private float HeroDamage => (1f + Hero(HeroBuff.Damage)) * (Ability != null ? Ability.DamageMultiplier : 1f) * VeteranDamage;
+
+    // A seasoned crew shoots a little straighter and harder (Battle/Veterancy.cs).
+    private ShipEntry Crew
+    {
+        get
+        {
+            if (owner == null) owner = GetComponentInParent<UnitHealthManager>();
+            return owner != null ? owner.entry : null;
+        }
+    }
+    private float VeteranSpread => Crew != null ? Veterancy.SpreadMultiplier(Crew) : 1f;
+    private float VeteranDamage => Crew != null ? Veterancy.DamageMultiplier(Crew) : 1f;
     private UnitHealthManager owner;
     private ShipAbility ability;
     private bool abilityLooked;

@@ -48,6 +48,13 @@ public class BattleContext : MonoBehaviour
 
     public bool IsLocked { get; private set; }
 
+    // Skirmish: a one-off battle from the main menu (Scripts/UI/SkirmishSetup.cs). The player flies
+    // skirmishPlayer whatever the faction asset says, the AI side plays at skirmishDifficulty, and the
+    // battle returns to the main menu. Nothing from it reaches a campaign.
+    public bool isSkirmish;
+    public Faction skirmishPlayer;
+    public DifficultyLevel skirmishDifficulty;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -100,6 +107,38 @@ public class BattleContext : MonoBehaviour
 
         attackerStartRoster = new List<ShipEntry>(attackerRoster);
         defenderStartRoster = new List<ShipEntry>(defenderRoster);
+    }
+
+    public void BeginSkirmish(Faction player, Faction enemy, bool playerAttacks, DifficultyLevel difficulty,
+                              List<Ship> playerFleet, List<Ship> enemyFleet)
+    {
+        Clear();
+        hasPendingBattle = true;
+        isSkirmish = true;
+        skirmishPlayer = player;
+        skirmishDifficulty = difficulty;
+
+        attackerFaction = playerAttacks ? player : enemy;
+        defenderFaction = playerAttacks ? enemy : player;
+        AddShips(playerAttacks ? playerFleet : enemyFleet, attackerFaction, attackerFleetNames, attackerTokens);
+        AddShips(playerAttacks ? enemyFleet : playerFleet, defenderFaction, defenderFleetNames, defenderTokens);
+        hasDefender = defenderTokens.Count > 0;
+        attackerRoster = RosterOf(attackerTokens);
+        defenderRoster = RosterOf(defenderTokens);
+
+        attackerStartPower = Strength.Of(attackerRoster);
+        defenderStartPower = Strength.Of(defenderRoster);
+        attackerStartRoster = new List<ShipEntry>(attackerRoster);
+        defenderStartRoster = new List<ShipEntry>(defenderRoster);
+    }
+
+    private static void AddShips(List<Ship> ships, Faction faction, List<string> names, List<ShipToken> tokens)
+    {
+        names.Add(faction != null ? faction.factionName : "Fleet");
+        foreach (Ship ship in ships)
+        {
+            if (ship != null) tokens.Add(new ShipToken { ship = ShipEntry.New(ship, faction), fleet = 0 });
+        }
     }
 
     private static List<GalacticFleet> FleetsAt(Planet planet)
@@ -215,5 +254,8 @@ public class BattleContext : MonoBehaviour
         attackerRetreated = false;
         defenderRetreated = false;
         IsLocked = false;
+        isSkirmish = false;
+        skirmishPlayer = null;
+        skirmishDifficulty = DifficultyLevel.Captain;
     }
 }

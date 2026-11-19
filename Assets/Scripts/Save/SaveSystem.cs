@@ -223,6 +223,7 @@ public static class SaveSystem
                 string hero = fleet.heroes != null && i < fleet.heroes.Count ? fleet.heroes[i] : null;
                 ShipEntry entry = string.IsNullOrEmpty(savedName) ? ShipEntry.New(type, owner) : new ShipEntry { type = type, shipName = savedName };
                 entry.hero = string.IsNullOrEmpty(hero) ? null : hero;
+                entry.xp = fleet.xp != null && i < fleet.xp.Count ? Mathf.Max(0, fleet.xp[i]) : 0;
                 ShipNames.Reserve(entry.shipName);
                 roster.Add(entry);
             }
@@ -341,6 +342,7 @@ public static class SaveSystem
                 roster = kept.Select(ship => SaveRegistry.Id(ship.type)).ToList(),
                 names = kept.Select(ship => ship.shipName ?? "").ToList(),
                 heroes = kept.Select(ship => ship.hero ?? "").ToList(),
+                xp = kept.Select(ship => ship.xp).ToList(),
                 travel = fleet.travel
             });
             if (fleet.faction == player && player != null) data.playerShips += fleet.roster.Count;

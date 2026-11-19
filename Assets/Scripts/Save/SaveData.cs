@@ -61,6 +61,7 @@ public class FleetSave
     // Parallel to roster: each ship's own name and hero id (older saves have neither - names are generated).
     public List<string> names = new List<string>();
     public List<string> heroes = new List<string>();
+    public List<int> xp = new List<int>(); // Parallel to roster: veterancy (older saves have none = green).
     public GalacticFleet.TravelState travel;
 }
 

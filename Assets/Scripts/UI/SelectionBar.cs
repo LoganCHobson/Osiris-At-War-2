@@ -208,7 +208,8 @@ public class SelectionBar : MonoBehaviour
     {
         UnitHealthManager health = unit != null ? unit.GetComponent<UnitHealthManager>() : null;
         ShipEntry entry = health != null ? health.entry : null;
-        return entry != null && !string.IsNullOrEmpty(entry.shipName) ? $"{entry.shipName}  ·  {ClassName(unit)}" : ClassName(unit);
+        string rank = entry != null && entry.Rank > Veterancy.Rank.Green ? $"  ·  {Veterancy.Title(entry.Rank)}" : "";
+        return entry != null && !string.IsNullOrEmpty(entry.shipName) ? $"{entry.shipName}  ·  {ClassName(unit)}{rank}" : ClassName(unit);
     }
 
     private static string ClassName(SpaceUnit unit)

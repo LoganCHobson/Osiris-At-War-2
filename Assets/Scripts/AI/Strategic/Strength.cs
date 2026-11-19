@@ -46,6 +46,9 @@ public static class Strength
 
     public static bool IsPlayer(Faction faction)
     {
+        // In a skirmish the player flies whichever faction they picked.
+        BattleContext context = BattleContext.Instance;
+        if (context != null && context.isSkirmish) return faction != null && faction == context.skirmishPlayer;
         return faction != null && faction.isPlayerFaction;
     }
 }

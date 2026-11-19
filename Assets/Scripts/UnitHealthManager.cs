@@ -90,6 +90,7 @@ public class UnitHealthManager : MonoBehaviour
     }
     public void SubtractHealth(float value, HardpointHealth hardpoint)
     {
+        Veterancy.HullDamage(this, value); // Credit the shooter before the health goes.
         hardpoint.currentHealth -= value;
         currentHealth -= value;
         if (healthSlider != null) healthSlider.value = currentHealth;

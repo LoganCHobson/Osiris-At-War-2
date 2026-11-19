@@ -77,6 +77,9 @@ public static class DamageLedger
 
     public static void End() { sourceSet = false; source = null; weapon = Weapon.None; }
 
+    // Whose shot is landing right now (null for hazards, or outside a hit). Veterancy credits it.
+    public static UnitHealthManager CurrentSource => sourceSet ? source : null;
+
     public static void Fired(UnitHealthManager from, Weapon kind, int count = 1)
     {
         if (!Enabled) return;
