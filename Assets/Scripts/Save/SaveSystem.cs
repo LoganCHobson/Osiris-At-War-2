@@ -165,6 +165,7 @@ public static class SaveSystem
         StandingOrders.orders.Clear();
         HeroRoster.Clear();
         HeroForces.Clear();
+        Rivals.Clear();
         ShipNames.ResetForNewCampaign();
     }
 
@@ -191,6 +192,7 @@ public static class SaveSystem
         DefensePlans.Restore(data.defensePlans);
         StandingOrders.Restore(data.standingOrders);
         HeroRoster.Restore(data.heroesJoined, data.heroesFallen);
+        Rivals.Restore(data.rivals);
 
         state.planetSnapshots.Clear();
         foreach (PlanetSave planet in data.planets)
@@ -306,6 +308,7 @@ public static class SaveSystem
             standingOrders = StandingOrders.Capture(),
             heroesJoined = HeroRoster.Capture().joined,
             heroesFallen = HeroRoster.Capture().fallen,
+            rivals = Rivals.Capture(),
             galacticTime = AIDirector.Instance != null ? AIDirector.Instance.GalacticTime : 0f,
             taxTimer = EconomyManager.Instance != null ? EconomyManager.Instance.TaxTimer : 0f,
             playerCredits = state.GetCurrency(player)

@@ -100,6 +100,13 @@ public class GameManager : MonoBehaviour
         {
             SpawnPlanetDefense(DefensePrefab(context.defenderFaction, shipyard: false), battleStationLocalOffset, isShipyardBonus: false, isBattleStation: true);
         }
+
+        // The warlord admiral opposite opens a channel (campaign battles; skirmish has no rivals).
+        if (!context.isSkirmish)
+        {
+            RivalAdmiral rival = RivalAdmiral.For(attackerIsPlayer ? context.defenderFaction : defenderIsPlayer ? context.attackerFaction : null);
+            if (rival != null) TransmissionPanel.Show(rival, Rivals.OpeningLine(rival), delay: 2.5f);
+        }
     }
 
     private void Update()

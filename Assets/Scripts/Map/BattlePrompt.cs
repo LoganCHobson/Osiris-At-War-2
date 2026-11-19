@@ -114,13 +114,21 @@ public class BattlePrompt : MonoBehaviour
             GalacticFleet defender = attacker.FindOpposingFleet(planet);
             Faction enemy = defender != null ? defender.faction : planet.owner;
             titleText.text = $"Your fleet engages {Colored(enemy)} at {planet.planetName}";
-            detailText.text = $"Your strength: {attackerPower:0}     Enemy strength: {defenderPower:0}{odds}";
+            detailText.text = $"Your strength: {attackerPower:0}     Enemy strength: {defenderPower:0}{odds}{RivalNote(enemy)}";
         }
         else
         {
             titleText.text = $"{Colored(attacker.faction)} is attacking {planet.planetName}!";
-            detailText.text = $"Your strength: {defenderPower:0}     Enemy strength: {attackerPower:0}{odds}";
+            detailText.text = $"Your strength: {defenderPower:0}     Enemy strength: {attackerPower:0}{odds}{RivalNote(attacker.faction)}";
         }
+    }
+
+    // "Commanded by Fleet Commander Varis Dral - 2 wins, 1 loss against you."
+    private static string RivalNote(Faction enemy)
+    {
+        RivalAdmiral rival = RivalAdmiral.For(enemy);
+        if (rival == null) return "";
+        return $"\n<size=85%>Commanded by <b>{rival.FullName}</b> - {Rivals.Record(Rivals.Of(rival)).ToLowerInvariant()}</size>";
     }
 
     // "If you autoresolve: 82% to win, you'd likely lose 3 Corvettes, 1 Cruiser."
@@ -198,6 +206,8 @@ public class BattlePrompt : MonoBehaviour
 
         bool attackerWon = battle.attacker.ResolveAutomatically(planet);
         bool playerWon = playerAttacking == attackerWon;
+        (RivalAdmiral rival, string parting) = Rivals.RecordAutoresolve(enemy, playerWon, playerAttacking);
+        TransmissionPanel.Show(rival, parting, delay: 0.5f);
 
         BattleResult result = new BattleResult
         {

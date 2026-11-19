@@ -96,10 +96,18 @@ public class GalacticMapManager : MonoBehaviour
             new GameObject("ResourceBar").AddComponent<ResourceBar>();
         }
 
+        if (FindFirstObjectByType<RivalsPanel>() == null)
+        {
+            new GameObject("RivalsPanel").AddComponent<RivalsPanel>();
+        }
+
         SaveSystem.PrepareLoad(GalacticState.Instance); // Loading a save: hand over the saved galaxy first.
         GalacticState.Instance?.ApplyToScene();
         ApplyPendingBattleResult();
-        foreach (string promotion in Veterancy.TakePromotions()) Toast.Show(promotion);
+        // One message for all of them: a toast shows one at a time.
+        List<string> promotions = Veterancy.TakePromotions();
+        if (promotions.Count == 1) Toast.Show(promotions[0]);
+        else if (promotions.Count > 1) Toast.Show($"{promotions[0]}  (+{promotions.Count - 1} more promoted)");
         SaveSystem.FinishLoad(); // ...then the AI empires, clock and economy.
     }
 
@@ -109,6 +117,10 @@ public class GalacticMapManager : MonoBehaviour
 
         BattleContext context = BattleContext.Instance;
         Planet destinationPlanet = FindPlanetByName(context.destinationPlanetName);
+
+        // The warlord admiral remembers how it went (before the autosave below), and has a parting word.
+        (RivalAdmiral rival, string parting) = Rivals.RecordBattle(context);
+        TransmissionPanel.Show(rival, parting, delay: 1.5f);
 
         List<GalacticFleet> attackerFleets = ApplySideResult(context, true, destinationPlanet);
         List<GalacticFleet> defenderFleets = ApplySideResult(context, false, null);

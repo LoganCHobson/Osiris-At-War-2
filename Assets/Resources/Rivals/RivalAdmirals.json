@@ -1,0 +1,340 @@
+{
+  "admirals": [
+    {
+      "faction": "Avanti Empire",
+      "title": "Grand Marshal",
+      "name": "Ithren Vaal",
+      "epithet": "The last loyal sword of a broken throne. Believes the Empire never fell - only stumbled.",
+      "firstMeeting": [
+        "You stand in the light of the true Empire, outsider. Kneel, and it may yet be merciful.",
+        "The warlords are a fever. You are an infection. Both will be cured."
+      ],
+      "leading": [
+        "Again you come. Again the Empire will instruct you.",
+        "Each defeat should have taught you humility. It seems you are a slow student."
+      ],
+      "trailing": [
+        "Fortune has favoured you. The Empire is older than fortune.",
+        "You have bloodied the throne's guard. You will not do so twice."
+      ],
+      "even": [
+        "The scales are level, outsider. The Empire will tip them.",
+        "We have measured each other long enough."
+      ],
+      "wonBattle": [
+        "Order is restored. Remember the shape of it.",
+        "Carry word to your masters: the Empire endures."
+      ],
+      "lostBattle": [
+        "A setback. The Empire has survived a thousand of them.",
+        "Savour it. The throne keeps a long ledger."
+      ],
+      "playerFled": [
+        "Run, then. The stars all belong to the Empire in the end.",
+        "Even your retreat bows to us."
+      ],
+      "theyFled": [
+        "A tactical withdrawal. Mark it well - the Empire always returns.",
+        "We yield the field, not the war."
+      ],
+      "onCarriers": [
+        "You hide behind swarms of little ships. The Empire's guns were made for swarms."
+      ],
+      "onHeavyLine": [
+        "Heavy hulls and heavy hearts. We have broken battle lines older than your species."
+      ],
+      "onScreens": [
+        "So many small ships. Do your people breed them?"
+      ],
+      "onRetreats": [
+        "You flee whenever the battle turns. This time there will be nowhere to flee to."
+      ],
+      "onAggressive": [
+        "Always the attacker. Today you will learn what it is to break against a wall."
+      ],
+      "onOutnumbers": [
+        "You come with more ships than courage. Numbers do not make a navy."
+      ]
+    },
+    {
+      "faction": "Ashcrown Legion",
+      "title": "Pyre-Admiral",
+      "name": "Cael Ashvar",
+      "epithet": "Would rather cinder a world than lose it. Measures victory in ash.",
+      "firstMeeting": [
+        "Another world to burn. Another fleet to burn with it.",
+        "You came to save Osiris? Then watch it smoulder."
+      ],
+      "leading": [
+        "Your fleets make fine kindling. Send more.",
+        "I have burned you before. The fire remembers."
+      ],
+      "trailing": [
+        "You have doused my flames. Ash still blinds.",
+        "You win battles. I am burning the war."
+      ],
+      "even": [
+        "Fire or ash. Choose.",
+        "Let us see which of us burns brighter."
+      ],
+      "wonBattle": [
+        "Ash and silence. As it should be.",
+        "Burn the wrecks. Leave nothing they can salvage."
+      ],
+      "lostBattle": [
+        "Take the field. It is already ash.",
+        "You have won a graveyard. Enjoy it."
+      ],
+      "playerFled": [
+        "Run from the fire. It will follow.",
+        "The cowards leave. The pyre waits for them."
+      ],
+      "theyFled": [
+        "Withdraw - and leave them a world worth nothing.",
+        "We fall back. The flames stay behind."
+      ],
+      "onCarriers": [
+        "Your carriers vomit fighters across the sky. Fighters burn so quickly."
+      ],
+      "onHeavyLine": [
+        "Big ships make big fires."
+      ],
+      "onScreens": [
+        "A cloud of gnats. Smoke clears gnats."
+      ],
+      "onRetreats": [
+        "You always run when the heat rises. I will make it rise faster."
+      ],
+      "onAggressive": [
+        "You come to me every time. Good. Saves me the hunt."
+      ],
+      "onOutnumbers": [
+        "More ships, more fuel."
+      ]
+    },
+    {
+      "faction": "Kesh Dominion",
+      "title": "Hierarch",
+      "name": "Oduun Kesh-Varr",
+      "epithet": "Warlord-priest of the old Avanti gods. Every battle is a rite; every captive, a tithe.",
+      "firstMeeting": [
+        "The gods have shown me your coming, unbeliever. They did not show me your victory.",
+        "Kneel, and be tithed. Resist, and be offered."
+      ],
+      "leading": [
+        "The gods have judged you twice. Shall I read the verdict again?",
+        "Your defeats are written in the temple stones."
+      ],
+      "trailing": [
+        "The gods test their faithful. I will not fail the test again.",
+        "You have been permitted victories. Permission can be withdrawn."
+      ],
+      "even": [
+        "The omens are unclear. Steel will clarify them.",
+        "Let the gods weigh us both."
+      ],
+      "wonBattle": [
+        "The tithe is paid in your ships. The gods are pleased.",
+        "Heresy, corrected."
+      ],
+      "lostBattle": [
+        "A penance. I will return purified.",
+        "The gods hid their faces today. They will not hide forever."
+      ],
+      "playerFled": [
+        "Flee the judgement of the gods. It is patient.",
+        "Even the unbeliever knows when the gods are near."
+      ],
+      "theyFled": [
+        "The faithful withdraw to pray. We will return with the gods' answer.",
+        "This is not defeat. It is a pilgrimage."
+      ],
+      "onCarriers": [
+        "You send swarms of small sinners ahead of you. The temple guns absolve them."
+      ],
+      "onHeavyLine": [
+        "You trust in great hulls. The gods humble the proud."
+      ],
+      "onScreens": [
+        "So many little vessels. So many little offerings."
+      ],
+      "onRetreats": [
+        "You always flee the rite before it ends. The gods have noticed."
+      ],
+      "onAggressive": [
+        "You come to the temple uninvited, again and again."
+      ],
+      "onOutnumbers": [
+        "You bring a multitude. Multitudes have knelt before."
+      ]
+    },
+    {
+      "faction": "Severed Hand",
+      "title": "Fleet Commander",
+      "name": "Varis Dral",
+      "epithet": "Mutinied Imperial Guard officer. Cold, disciplined, and the most dangerous mind among the warlords.",
+      "firstMeeting": [
+        "Unknown commander. Unknown doctrine. That will not last.",
+        "I read every report on you. Now I will write my own."
+      ],
+      "leading": [
+        "Your doctrine has not changed. Mine has.",
+        "You are predictable. That is the worst thing a commander can be."
+      ],
+      "trailing": [
+        "You have taught me a great deal. I have been an attentive student.",
+        "Your victories were instructive. I have adjusted."
+      ],
+      "even": [
+        "Our record is even. Let us correct that.",
+        "We are well matched. Which means the details decide it."
+      ],
+      "wonBattle": [
+        "As modelled. Dismissed.",
+        "Efficient. Log their losses and move on."
+      ],
+      "lostBattle": [
+        "Noted. It will not happen the same way twice.",
+        "A good engagement. I have learned more than you have."
+      ],
+      "playerFled": [
+        "A sensible withdrawal. You recognise a lost position.",
+        "Retreat logged. Pursue at our discretion."
+      ],
+      "theyFled": [
+        "The position was untenable. Preserving the fleet.",
+        "We disengage. Losses acceptable. Lessons recorded."
+      ],
+      "onCarriers": [
+        "Your fleets are carrier-heavy. My screens have been reassigned to interceptor duty."
+      ],
+      "onHeavyLine": [
+        "You favour a heavy battle line. Heavy lines turn slowly."
+      ],
+      "onScreens": [
+        "You lead with light ships. Light ships do not survive a disciplined broadside."
+      ],
+      "onRetreats": [
+        "You withdraw early when losses mount. I have planned for that withdrawal."
+      ],
+      "onAggressive": [
+        "You always strike first. I have stopped being where you strike."
+      ],
+      "onOutnumbers": [
+        "You rely on numbers. Numbers are a supply problem, not a strategy."
+      ]
+    },
+    {
+      "faction": "Thessary Concord",
+      "title": "Factor-Admiral",
+      "name": "Lysse Thane",
+      "epithet": "Commands for the merchant-warlord. Sees every battle as a ledger to balance - in their favour.",
+      "firstMeeting": [
+        "A new client. Let us discuss the price of your survival.",
+        "Everything in Osiris has a price. Today, so do you."
+      ],
+      "leading": [
+        "Your account is deep in arrears.",
+        "Another payment due. I do so enjoy repeat business."
+      ],
+      "trailing": [
+        "You have been expensive. I intend to recover my costs.",
+        "A poor quarter. Markets recover."
+      ],
+      "even": [
+        "The books balance. For now.",
+        "Shall we renegotiate?"
+      ],
+      "wonBattle": [
+        "A profitable afternoon. Salvage crews, go.",
+        "The ledger closes in our favour."
+      ],
+      "lostBattle": [
+        "A loss, written off. The Concord can afford it. Can you afford the next one?",
+        "Expensive. I will be sending you the bill."
+      ],
+      "playerFled": [
+        "Leaving without paying? How rude.",
+        "Run. Your debts will find you."
+      ],
+      "theyFled": [
+        "Cutting our losses. Sound business.",
+        "No sense throwing good ships after bad."
+      ],
+      "onCarriers": [
+        "All those carriers. Such an expensive way to lose fighters."
+      ],
+      "onHeavyLine": [
+        "Your battleships are worth a fortune. In salvage."
+      ],
+      "onScreens": [
+        "Cheap ships, bought in bulk. I know a discount fleet when I see one."
+      ],
+      "onRetreats": [
+        "You always sell at the bottom of the market. Retreating again?"
+      ],
+      "onAggressive": [
+        "Always coming to collect. Have you checked whether we owe you?"
+      ],
+      "onOutnumbers": [
+        "You overspend on hulls. I can price that in."
+      ]
+    },
+    {
+      "faction": "Vorrak Clans",
+      "title": "Warchief",
+      "name": "Kragg Vorrun",
+      "epithet": "First among the raider clans. Fights for plunder, glory and the story told afterwards.",
+      "firstMeeting": [
+        "Fresh meat! The clans have been bored.",
+        "You look rich. Let's fix that."
+      ],
+      "leading": [
+        "Back for another beating? The clans love you!",
+        "I've got your old hull plating on my wall. Want to see it?"
+      ],
+      "trailing": [
+        "You've got teeth. I like teeth. I'm still taking them.",
+        "The clans are laughing at me. That stops today."
+      ],
+      "even": [
+        "One each. Tiebreaker!",
+        "Good fight last time. Better one now."
+      ],
+      "wonBattle": [
+        "HA! Strip the wrecks, lads!",
+        "That one's going in the song."
+      ],
+      "lostBattle": [
+        "Lucky. Next time I bring the big guns.",
+        "Fine fight! Rematch, and soon."
+      ],
+      "playerFled": [
+        "Running already? I was just warming up!",
+        "Chase them! Their engines are worth something too!"
+      ],
+      "theyFled": [
+        "Scatter, lads! Live to raid tomorrow!",
+        "Not today. Today you get to tell the story."
+      ],
+      "onCarriers": [
+        "All those little fighters buzzing about. We swat them for sport."
+      ],
+      "onHeavyLine": [
+        "Big slow ships! Easy to catch, lots to loot."
+      ],
+      "onScreens": [
+        "You fly like a raider. Thought you lot were proper navy."
+      ],
+      "onRetreats": [
+        "You always run when it gets fun. Don't run today."
+      ],
+      "onAggressive": [
+        "You keep coming for me. I'm flattered."
+      ],
+      "onOutnumbers": [
+        "More ships than me again? More loot then!"
+      ]
+    }
+  ]
+}

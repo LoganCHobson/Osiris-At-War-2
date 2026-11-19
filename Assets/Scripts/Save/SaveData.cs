@@ -19,6 +19,7 @@ public class SaveData
     public List<StandingOrders.Order> standingOrders = new List<StandingOrders.Order>();
     public List<string> heroesJoined = new List<string>();
     public List<string> heroesFallen = new List<string>();
+    public List<Rivals.Dossier> rivals = new List<Rivals.Dossier>(); // what each warlord admiral remembers
 
     // Shown in the save list.
     public int playerPlanets;
