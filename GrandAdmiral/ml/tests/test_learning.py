@@ -207,3 +207,22 @@ def test_batch_grows_with_the_pool(baseline, caplog):
     expected = -(-len(ds.x) // 4)
     assert expected > 8
     assert f"{expected} per step" in caplog.text
+
+
+def test_diagnose_finds_the_toy_signal(baseline):
+    # The diagnostic's three checks on the toy, where there is something to learn: the critic predicts
+    # outcomes, gradients from disjoint halves agree, and training without the KL stop moves the model.
+    # (The same numbers from the live pool are read against these.)
+    from osiris_ml import diagnose, pipeline
+    rng = np.random.default_rng(2)
+    records = [parse(toyenv.play(_explore(baseline), rng)) for _ in range(4000)]
+    train_ds, hold_ds = dataset.build(records[:3200]), dataset.build(records[3200:])
+    p = diagnose.predictability(baseline, train_ds, hold_ds)
+    assert p["r2_all_decisions"] > 0.05, p
+    g = diagnose.gradient_agreement(baseline, train_ds, train.TrainConfig())
+    assert g["mean"] > 0.3, g   # toy reference: ~0.4 at 1k battles, ~0.5 at 4k, ~0.8 at 13k
+    cfg = pipeline.RoundConfig()
+    rows = diagnose.training_variants(baseline, train_ds, hold_ds, cfg, epochs=3, seconds=60, trusted=4000)
+    assert [r["variant"] for r in rows] == [name for name, _ in diagnose.VARIANTS]
+    assert all(r["largest_kl"] > 0 for r in rows), rows
+    print("TOY", p, g, [(r["variant"], r["largest_kl"], r["held_out_gain"]) for r in rows])

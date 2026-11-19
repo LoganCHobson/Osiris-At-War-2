@@ -100,6 +100,17 @@ def cmd_round(args):
     print(json.dumps(summary, indent=2, default=str))
 
 
+def cmd_diagnose(args):
+    """Read-only: why training does or doesn't move the model (osiris_ml/diagnose.py). Publishes nothing."""
+    from . import diagnose
+    _, _, public = _signing()
+    selfplay = tuple(i for i in (_env("GA_SELFPLAY_INSTALLS", "") or "").split(",") if i)
+    cfg = pipeline.RoundConfig(selfplay_installs=selfplay,
+                               min_client_version=(_env("GA_MIN_CLIENT_VERSION", "") or "").strip())
+    summary = diagnose.run(_engine(args), public, cfg, epochs=args.epochs, seconds=args.seconds)
+    print("DIAGNOSE " + json.dumps(summary, indent=2, default=str))
+
+
 def cmd_set_knob(args):
     key, key_id, public = _signing()
     engine = _engine(args)
@@ -166,6 +177,11 @@ def main(argv=None):
     p.set_defaults(func=cmd_bootstrap)
 
     sub.add_parser("round").set_defaults(func=cmd_round)
+
+    p = sub.add_parser("diagnose", help="read-only: why training does or doesn't move the model")
+    p.add_argument("--epochs", type=int, default=40, help="passes per training variant")
+    p.add_argument("--seconds", type=float, default=600, help="time limit per training variant")
+    p.set_defaults(func=cmd_diagnose)
 
     p = sub.add_parser("set-knob")
     p.add_argument("knobs", nargs="+", metavar="name=value")
