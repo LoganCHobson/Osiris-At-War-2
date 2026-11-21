@@ -226,3 +226,17 @@ def test_diagnose_finds_the_toy_signal(baseline):
     assert [r["variant"] for r in rows] == [name for name, _ in diagnose.VARIANTS]
     assert all(r["largest_kl"] > 0 for r in rows), rows
     print("TOY", p, g, [(r["variant"], r["largest_kl"], r["held_out_gain"]) for r in rows])
+
+
+
+def test_estimator_check_on_the_toy(baseline):
+    # Same model on both sides of the pair: every estimator must say "no change".
+    from osiris_ml import diagnose
+    rng = np.random.default_rng(5)
+    records = [parse(toyenv.play(_explore(baseline), rng)) for _ in range(600)]
+    train_ds, hold_ds = dataset.build(records[:400]), dataset.build(records[400:])
+    rows = diagnose.estimator_check({1: baseline, 2: baseline.copy()}, train_ds, hold_ds, [(1, 2)])
+    assert len(rows) == 1
+    for key, value in rows[0].items():
+        if isinstance(value, dict):
+            assert value["estimate"] == 0.0, (key, value)

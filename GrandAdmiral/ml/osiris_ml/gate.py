@@ -55,11 +55,11 @@ def changed_heads(old, new):
                          and np.array_equal(old.b2[spec.HEAD_OUTPUTS[name]], new.b2[spec.HEAD_OUTPUTS[name]])))
 
 
-def _per_battle_improvement(old, new, ds: Dataset):
+def _per_battle_improvement(old, new, ds: Dataset, adv=None):
     """Each held-out battle's estimated advantage gain: sum over its decisions of
     (pi_new - pi_old)/mu * A, with importance ratios capped to keep the variance sane. Advantages
     use the candidate's critic, which was fit on the training split only."""
-    adv = advantages(new, ds)
+    adv = advantages(new, ds) if adv is None else adv
     out_old, _ = old.forward(ds.x)
     out_new, _ = new.forward(ds.x)
     battles = np.unique(ds.battle)

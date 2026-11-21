@@ -147,3 +147,96 @@ def run(engine, public_keys, cfg: pipeline.RoundConfig, epochs=40, seconds=600):
     log.info("diagnose: gradient agreement %s", json.dumps(summary["2_gradient_agreement"]))
     summary["3_training_variants"] = training_variants(current, train_ds, hold_ds, cfg, epochs, seconds, trusted)
     return summary
+
+
+# ---- does the gate's estimate of a gain match what actually happened? ----
+# The features include the AI's own standing orders (stance, formation, escort, manoeuvre, tempo). A
+# critic that sees them can learn "pressing goes with winning" only because the AI presses when it is
+# already winning; GAE then credits each order with the jump in V it causes by showing up in the next
+# state, and the trainer and the gate both chase that. lam=1 (R - V(s_t)) has no such bootstrap.
+ORDER_FEATURES = ("stance_press", "stance_fallback", "formation_tight", "formation_loose", "escort_screen",
+                  "escort_hunt", "maneuver_flank", "maneuver_envelop", "tempo_rotate", "tempo_pulse")
+
+
+def _values(model, ds, fit_ds, drop_orders):
+    """V(s) for ds from a ridge critic on `model`'s hidden layer, fit on fit_ds."""
+    cols = [spec.FEATURES.index(f) for f in ORDER_FEATURES] if drop_orders else []
+
+    def hidden(x):
+        x = x.copy()
+        x[:, cols] = 0.0
+        _, (_, h) = model.forward(x)
+        return np.hstack([h, np.ones((len(h), 1))])
+
+    d = hidden(fit_ds.x)
+    w = fit_ds.weights[:, None]
+    coef = np.linalg.solve(d.T @ (d * w) + 1e-2 * np.eye(d.shape[1]), d.T @ (fit_ds.returns * fit_ds.weights))
+    pred = hidden(ds.x) @ coef
+    resid = ds.returns - pred
+    r2 = 1 - np.average(resid ** 2, weights=ds.weights) / np.average(
+        (ds.returns - np.average(ds.returns, weights=ds.weights)) ** 2, weights=ds.weights)
+    return pred, float(r2)
+
+
+def _gae(v, ds, lam, normalise=True):
+    a = np.zeros_like(v)
+    running = 0.0
+    for i in range(len(v) - 1, -1, -1):
+        last = i == len(v) - 1 or ds.battle[i + 1] != ds.battle[i]
+        delta = (ds.returns[i] - v[i]) if last else (v[i + 1] - v[i])
+        running = delta + (0.0 if last else lam * running)
+        a[i] = running
+    if not normalise:
+        return a
+    mean = np.average(a, weights=ds.weights)
+    return (a - mean) / (np.sqrt(np.average((a - mean) ** 2, weights=ds.weights)) + 1e-6)
+
+
+def _estimate(old, new, ds, adv, seed=0, boot=400):
+    gain, weight = gate._per_battle_improvement(old, new, ds, adv)
+    rng = np.random.default_rng(seed)
+    n = len(gain)
+    samples = []
+    for _ in range(boot):
+        pick = rng.integers(0, n, n)
+        samples.append(gain[pick].sum() / max(weight[pick].sum(), 1e-9))
+    return {"estimate": round(float(gain.sum() / max(weight.sum(), 1e-9)), 4),
+            "lower": round(float(np.quantile(samples, 0.05)), 4),
+            "upper": round(float(np.quantile(samples, 0.95)), 4)}
+
+
+def estimator_check(models, train_ds, hold_ds, pairs):
+    rows = []
+    for old_v, new_v in pairs:
+        if old_v not in models or new_v not in models:
+            continue
+        old, new = models[old_v], models[new_v]
+        row = {"pair": f"v{old_v} -> v{new_v}"}
+        row["as the gate does it (stored critic, lam 0.9)"] = _estimate(old, new, hold_ds, None)
+        for drop in (False, True):
+            v, r2 = _values(new, hold_ds, train_ds, drop)
+            tag = "critic without own orders" if drop else "critic with own orders"
+            row[f"{tag}: held-out R2"] = round(r2, 4)
+            for lam in (0.9, 0.5, 1.0):
+                row[f"{tag}, lam {lam}"] = _estimate(old, new, hold_ds, _gae(v, hold_ds, lam))
+            # In return units (no normalising), comparable with the actual change in mean return.
+            row[f"{tag}, lam 1.0, return units"] = _estimate(old, new, hold_ds, _gae(v, hold_ds, 1.0, False))
+        log.info("estimator: %s", json.dumps(row))
+        rows.append(row)
+    return rows
+
+
+def run_estimator(engine, public_keys, cfg: pipeline.RoundConfig, pairs=((12, 33), (33, 34), (12, 34))):
+    with engine.begin() as conn:
+        models = pipeline.load_released(conn, public_keys)
+        records, install_ids, networks = pipeline.training_pool(conn, cfg)
+    weights = pipeline.weigh(install_ids, networks, cfg)
+    held = np.array([pipeline._holdout(r.battle_id, cfg.holdout_share) for r in records], dtype=bool)
+    train_records = [r for r, h in zip(records, held) if not h]
+    hold_records = [r for r, h in zip(records, held) if h]
+    del records
+    train_ds = dataset.merge(train_records, weights[~held], consume=True)
+    hold_ds = dataset.merge(hold_records, weights[held], consume=True)
+    del train_records, hold_records
+    log.info("estimator: %d held-out battles", hold_ds.n_battles)
+    return {"held_out_battles": int(hold_ds.n_battles), "pairs": estimator_check(models, train_ds, hold_ds, pairs)}
