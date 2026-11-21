@@ -350,3 +350,68 @@ def test_self_play_alone_is_enough_evidence_but_one_player_is_not(baseline):
     assert any("not enough evidence" in r for r in one_player.reasons)
     farm = gate.evaluate(baseline, baseline.copy(), holdout, installs=0, cfg=cfg, trusted_battles=500)
     assert not any("not enough evidence" in r for r in farm.reasons)  # (It still fails on improvement.)
+
+
+# ---- head to head: fresh games only, and a trial must beat the release in a match ----
+
+def _h2h_cfg(**kw):
+    cfg = _trial_cfg(**kw)
+    cfg.head_to_head = True
+    cfg.h2h_min_games = 400
+    cfg.h2h_max_games = 1000
+    return cfg
+
+
+def test_head_to_head_verdicts():
+    cfg = _h2h_cfg()
+    assert pipeline.head_to_head(300, 0.70, 300, 0.40, cfg) is None          # not enough games yet
+    assert pipeline.head_to_head(500, 0.56, 500, 0.50, cfg) == "promote"      # +6 points over 500 each
+    assert pipeline.head_to_head(500, 0.52, 500, 0.50, cfg) is None           # +2: keep playing
+    assert pipeline.head_to_head(500, 0.45, 500, 0.50, cfg) == "fail"         # clearly worse
+    assert pipeline.head_to_head(1000, 0.51, 1000, 0.50, cfg) == "fail"      # never showed it was better
+
+
+def test_head_to_head_trial_is_judged_on_games_since_it_started(db, signing_key, baseline):
+    with db.begin() as conn:  # The release's old record (an earlier build) must not count.
+        conn.execute(storage.arena.insert().values(received_at=storage.now() - dt.timedelta(days=3), install_id="sp",
+                                                   version=1, opponent="admiral", games=5000, wins=1000, draws=0))
+    _trial(db, signing_key, baseline)
+    _arena(db, 1, wins=250, games=500)   # 0.50
+    _arena(db, 2, wins=290, games=500)   # 0.58
+    summary = pipeline.run_round(db, signing_key, 1, _keys(signing_key), _h2h_cfg())
+    assert summary["trial"].startswith("promoted trial v2"), summary
+    assert _status(db, 2) == "released" and summary["current"] == 2
+
+
+def test_head_to_head_keeps_playing_an_open_match(db, signing_key, baseline):
+    _trial(db, signing_key, baseline)
+    _arena(db, 1, wins=250, games=500)
+    _arena(db, 2, wins=255, games=500)
+    summary = pipeline.run_round(db, signing_key, 1, _keys(signing_key), _h2h_cfg())
+    assert summary["result"] == "waiting for self-play" and "still playing" in summary["trial"], summary
+    assert _status(db, 2) == "trial"
+
+
+def test_head_to_head_waits_for_the_release_own_fresh_games(db, signing_key, baseline):
+    installs = _honest_population(db, baseline, installs=25, per_install=12)  # all played by v1
+    cfg = _h2h_cfg(selfplay_installs=installs, min_fresh_battles=1000)
+    summary = pipeline.run_round(db, signing_key, 1, _keys(signing_key), cfg)
+    assert summary["result"] == "waiting for fresh games on v1 (300/1000)", summary
+
+
+def test_head_to_head_trains_only_on_the_release_own_games(db, signing_key, baseline):
+    installs = _honest_population(db, baseline, installs=25, per_install=12)
+    old = baseline.copy()
+    old.version = 7  # Pretend some battles came from another model: they must stay out of the pool.
+    record = toyenv.play(baseline, np.random.default_rng(3))
+    record["model_version"] = 7
+    _insert(db, record, installs[0], status="accepted")
+    with db.connect() as conn:
+        pool, _, _ = pipeline.training_pool(conn, _h2h_cfg(), version=1)
+    assert len(pool) == 0  # Nothing accepted yet from v1 (all 'new'); the v7 battle is excluded too.
+    with db.begin() as conn:
+        conn.execute(update(storage.battles).where(storage.battles.c.model_version == 1).values(status="accepted"))
+    with db.connect() as conn:
+        pool, _, _ = pipeline.training_pool(conn, _h2h_cfg(), version=1)
+        everything, _, _ = pipeline.training_pool(conn, _h2h_cfg())
+    assert len(pool) == 300 and len(everything) == 301

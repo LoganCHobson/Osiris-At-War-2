@@ -17,6 +17,7 @@ import datetime as dt
 import json
 import logging
 import os
+import secrets
 import time
 from collections import OrderedDict
 from dataclasses import dataclass, field
@@ -262,8 +263,9 @@ def create_app(settings: Settings = None):
 
     @app.post("/v1/selfplay/model")
     async def selfplay_model(request: Request):
-        """The model self-play should play: the newest trial (a candidate that passed the offline checks
-        and is waiting for self-play to prove it), else the newest release. Players never get trials."""
+        """The model self-play should play. While a trial (a candidate that passed the offline checks) is
+        pending: the trial or the newest release, 50/50, so the two play a match over the same period on
+        the same game build. Otherwise the newest release. Players never get trials."""
         body = await read_body(request)
         if body is None:
             return _error(413, "too large")
@@ -274,12 +276,12 @@ def create_app(settings: Settings = None):
             if install_id not in settings.selfplay_installs:
                 return _error(403, "self-play only")
             m = storage.models.c
-            row = None
-            for status in ("trial", "released"):
-                row = conn.execute(select(m.version, m.bundle, m.sha256).where(m.status == status)
-                                   .order_by(m.version.desc()).limit(1)).first()
-                if row is not None:
-                    break
+            rows = {status: conn.execute(select(m.version, m.bundle, m.sha256).where(m.status == status)
+                                         .order_by(m.version.desc()).limit(1)).first()
+                    for status in ("trial", "released")}
+            row = rows["released"]
+            if rows["trial"] is not None and (row is None or secrets.randbelow(2) == 0):
+                row = rows["trial"]
         if row is None:
             return Response(status_code=204)
         return Response(content=bytes(row.bundle), media_type="application/octet-stream",

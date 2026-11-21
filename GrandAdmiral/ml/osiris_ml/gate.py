@@ -35,6 +35,9 @@ class GateConfig:
     min_canary: float = 0.95
     arena_tolerance: float = 0.05
     require_arena: bool = False
+    # False (head to head): the estimated gain need not be significant, only not significantly negative;
+    # the trial's match against the release decides.
+    require_gain: bool = True
     seed: int = 0
 
 
@@ -127,10 +130,14 @@ def evaluate(old, new, holdout: Dataset, installs: int, cfg: GateConfig = GateCo
             w = weight[pick].sum()
             samples.append(gain[pick].sum() / w if w > 0 else 0.0)
         lower = float(np.quantile(samples, 1 - cfg.confidence))
+        upper = float(np.quantile(samples, cfg.confidence))
         m["improvement"] = float(gain.sum() / max(weight.sum(), 1e-9))
         m["improvement_lower"] = lower
-        if lower <= cfg.min_improvement:
+        m["improvement_upper"] = upper
+        if cfg.require_gain and lower <= cfg.min_improvement:
             report.reasons.append(f"improvement not significant (lower bound {lower:.4f})")
+        elif not cfg.require_gain and upper < 0:
+            report.reasons.append(f"clearly worse offline (upper bound {upper:.4f})")
 
         kl = mean_kl(old, new, holdout)
         m["kl"] = kl

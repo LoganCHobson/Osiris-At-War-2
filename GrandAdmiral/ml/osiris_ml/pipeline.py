@@ -49,6 +49,15 @@ class RoundConfig:
     selfplay_installs: tuple = ()
     selfplay_exploration: float = 0.2
     min_arena_games: int = 40
+    # Head to head (the default from the CLI): train only on battles the current release played (fresh,
+    # on-policy games, not an archive of older models with 20% random moves), and judge a trial by a
+    # match against the release played over the same period on the same game build - self-play plays
+    # them 50/50 while a trial is pending. Released only if it wins clearly more often.
+    head_to_head: bool = False
+    min_fresh_battles: int = 3000       # the release's own battles needed before training from it
+    h2h_min_games: int = 1500           # arena games each, trial and release, before judging...
+    h2h_max_games: int = 4000           # ...and after this many each, a trial that hasn't shown it is better fails
+    h2h_z: float = 1.2816               # one-sided 90%: the trial's lead must clear zero at this confidence
     training: train.TrainConfig = field(default_factory=train.TrainConfig)
     gating: gate.GateConfig = field(default_factory=gate.GateConfig)
 
@@ -124,16 +133,18 @@ def block_bad_installs(conn, cfg: RoundConfig):
     return blocked
 
 
-def training_pool(conn, cfg: RoundConfig):
+def training_pool(conn, cfg: RoundConfig, version=None):
+    """version: only battles that model played (head to head: the current release's own games)."""
     b = storage.battles.c
     since = storage.now() - dt.timedelta(days=cfg.window_days)
+    played = b.model_version == version if version is not None else True
     # Streamed, and each record turned into arrays as it arrives: holding every payload and parsed
     # record at once ran the trainer out of its 3Gi at 3,500 battles.
     # Options on the statement, not the connection: Connection.execution_options() would make every
     # later statement on it (retention's DELETE) a server-side cursor too, which Postgres rejects.
     rows = conn.execute(
         select(b.payload, b.install_id, b.network)
-        .where(and_(b.status == "accepted", b.received_at >= since))
+        .where(and_(b.status == "accepted", b.received_at >= since, played))
         .order_by(b.id.desc()).limit(cfg.max_pool)
         .execution_options(stream_results=True, yield_per=POOL_BATCH))
     battles, installs_, networks = [], [], []
@@ -197,6 +208,46 @@ def arena_games(conn, version):
     return conn.execute(select(func.sum(a.games)).where(and_(a.version == version, a.opponent == "admiral"))).scalar() or 0
 
 
+def arena_since(conn, version, since):
+    """(games, score) against Admiral from `since` on; a draw counts half."""
+    a = storage.arena.c
+    games, wins, draws = conn.execute(select(func.sum(a.games), func.sum(a.wins), func.sum(a.draws))
+                                      .where(and_(a.version == version, a.opponent == "admiral",
+                                                  a.received_at >= since))).one()
+    if not games:
+        return 0, None
+    return int(games), (wins + 0.5 * (draws or 0)) / games
+
+
+def head_to_head(trial_games, trial_score, release_games, release_score, cfg: RoundConfig):
+    """'promote', 'fail' or None (keep playing). The trial must beat the release: the lower end of a
+    one-sided interval on the difference in win rate has to clear zero."""
+    if min(trial_games, release_games) < cfg.h2h_min_games:
+        return None
+    diff = trial_score - release_score
+    se = np.sqrt(max(trial_score * (1 - trial_score), 0.01) / trial_games
+                 + max(release_score * (1 - release_score), 0.01) / release_games)
+    if diff - cfg.h2h_z * se > 0:
+        return "promote"
+    if diff + cfg.h2h_z * se < 0 or min(trial_games, release_games) >= cfg.h2h_max_games:
+        return "fail"
+    return None
+
+
+def _resolve_head_to_head(conn, current, trial, cfg: RoundConfig):
+    m = storage.models.c
+    started = conn.execute(select(m.created_at).where(m.version == trial)).scalar()
+    tg, ts = arena_since(conn, trial, started)
+    rg, rs = arena_since(conn, current.version, started)
+    verdict = head_to_head(tg, ts or 0.0, rg, rs or 0.0, cfg)
+    match = f"v{trial} {ts or 0:.3f} over {tg} games vs v{current.version} {rs or 0:.3f} over {rg}"
+    if verdict is None:
+        return True, f"trial {match}: still playing (need {cfg.h2h_min_games} each and a clear result)"
+    conn.execute(update(storage.models).where(m.version == trial)
+                 .values(status="released" if verdict == "promote" else "failed"))
+    return False, f"{'promoted' if verdict == 'promote' else 'failed'} trial {match}"
+
+
 def resolve_trial(conn, current, cfg: RoundConfig):
     """The pending trial's fate. Returns (still pending: bool, what happened) once self-play has played
     it enough: promoted to released if it wins at least as often against Admiral as the current
@@ -205,6 +256,8 @@ def resolve_trial(conn, current, cfg: RoundConfig):
     trial = conn.execute(select(m.version).where(m.status == "trial").order_by(m.version.desc()).limit(1)).scalar()
     if trial is None:
         return False, None
+    if cfg.head_to_head:
+        return _resolve_head_to_head(conn, current, trial, cfg)
     games = arena_games(conn, trial)
     if games < cfg.min_arena_games:
         return True, f"trial v{trial} awaiting self-play ({games}/{cfg.min_arena_games} games)"
@@ -228,6 +281,8 @@ def revert_if_regressed(conn, models, private_key, key_id, cfg: RoundConfig):
     """Self-play safety net. If the newest release wins fewer Unity AI-vs-AI battles against
     Admiral than the release before it, re-release the previous weights under a new version
     number (clients never accept an older version, so a rollback has to move forward)."""
+    if cfg.head_to_head:
+        return None  # Every release already beat its predecessor head to head, on the same build.
     released = sorted(current_versions(conn))
     if len(released) < 2:
         return None
@@ -274,7 +329,18 @@ def run_round(engine, private_key, key_id, public_keys, cfg: RoundConfig = Round
         with engine.begin() as conn:
             _retention(conn, cfg)
         return summary
-    if cfg.gating.require_arena and arena_games_for(engine, current.version) < cfg.min_arena_games:
+    if cfg.head_to_head:
+        with engine.connect() as conn:
+            fresh = conn.execute(select(func.count()).select_from(storage.battles).where(and_(
+                storage.battles.c.status == "accepted", storage.battles.c.model_version == current.version))).scalar()
+        summary["fresh_battles"] = int(fresh)
+        if fresh < cfg.min_fresh_battles:
+            summary["result"] = f"waiting for fresh games on v{current.version} ({fresh}/{cfg.min_fresh_battles})"
+            log.info("round: %s", summary)
+            with engine.begin() as conn:
+                _retention(conn, cfg)
+            return summary
+    elif cfg.gating.require_arena and arena_games_for(engine, current.version) < cfg.min_arena_games:
         # A trial is judged against the release's own self-play record, so that has to exist first.
         summary["result"] = f"waiting for self-play on v{current.version}"
         log.info("round: %s", summary)
@@ -283,7 +349,7 @@ def run_round(engine, private_key, key_id, public_keys, cfg: RoundConfig = Round
         return summary
 
     with engine.begin() as conn:
-        records, install_ids, networks = training_pool(conn, cfg)
+        records, install_ids, networks = training_pool(conn, cfg, current.version if cfg.head_to_head else None)
         weights = weigh(install_ids, networks, cfg)
         held = np.array([_holdout(r.battle_id, cfg.holdout_share) for r in records], dtype=bool)
         train_records = [r for r, h in zip(records, held) if not h]
@@ -309,6 +375,9 @@ def run_round(engine, private_key, key_id, public_keys, cfg: RoundConfig = Round
         candidate.version = max(candidate.version, latest + 1)
 
         offline = dataclasses.replace(cfg.gating, require_arena=False)  # Self-play judges trials later.
+        if cfg.head_to_head:
+            # The match decides; offline, only refuse a candidate that is clearly worse (or unsafe).
+            offline = dataclasses.replace(offline, require_gain=False)
         report = gate.evaluate(current, candidate, hold_ds,
                                installs=summary["installs"], cfg=offline,
                                trusted_battles=summary["selfplay_battles"])

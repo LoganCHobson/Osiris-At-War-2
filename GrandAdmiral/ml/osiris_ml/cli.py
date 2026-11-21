@@ -14,6 +14,7 @@ Configuration comes from the environment (set by k8s/trainer.yaml):
     GA_KEY_ID             which of the game's trusted keys this is
     GA_SELFPLAY_INSTALLS  comma-separated install ids of the in-cluster self-play runner
     GA_REQUIRE_ARENA      reserved; see gate.GateConfig.require_arena
+    GA_HEAD_TO_HEAD       true (default): fresh games only, trials must beat the release head to head
 """
 
 import argparse
@@ -96,6 +97,8 @@ def cmd_round(args):
     cfg = pipeline.RoundConfig(selfplay_installs=selfplay,
                                min_client_version=(_env("GA_MIN_CLIENT_VERSION", "") or "").strip())
     cfg.gating.require_arena = _env("GA_REQUIRE_ARENA", "false").lower() == "true"
+    # Head to head needs self-play's matches, so it follows require_arena unless switched off.
+    cfg.head_to_head = cfg.gating.require_arena and _env("GA_HEAD_TO_HEAD", "true").lower() == "true"
     summary = pipeline.run_round(_engine(args), key, key_id, public, cfg)
     print(json.dumps(summary, indent=2, default=str))
 

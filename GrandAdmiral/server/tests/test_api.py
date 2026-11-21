@@ -286,9 +286,14 @@ def test_trials_go_to_self_play_only(tmp_path, model, signing_key):
     assert client.get("/v1/model/latest?have=1").status_code == 204          # Players never see a trial.
     assert signed_post(client, "/v1/selfplay/model", creds, {}).status_code == 403  # Nor does a non-self-play install.
     app.state.settings.selfplay_installs = (creds["install_id"],)
-    r = signed_post(client, "/v1/selfplay/model", creds, {})
-    assert r.status_code == 200 and r.headers["x-ga-model-version"] == "2"
-    assert bundle.verify(r.content, {1: signing_key.public_key()}) == trial.to_bytes()
+    # While a trial is pending, self-play plays it and the release 50/50: a match on the same build.
+    seen = {}
+    for _ in range(40):
+        r = signed_post(client, "/v1/selfplay/model", creds, {})
+        assert r.status_code == 200
+        seen[r.headers["x-ga-model-version"]] = r.content
+    assert set(seen) == {"1", "2"}
+    assert bundle.verify(seen["2"], {1: signing_key.public_key()}) == trial.to_bytes()
     with app.state.engine.begin() as conn:  # Trial failed: self-play goes back to the release.
         conn.execute(update(storage.models).where(storage.models.c.version == 2).values(status="failed"))
     assert signed_post(client, "/v1/selfplay/model", creds, {}).headers["x-ga-model-version"] == "1"
