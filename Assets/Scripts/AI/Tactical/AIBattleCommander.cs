@@ -664,6 +664,13 @@ public partial class AIBattleCommander : MonoBehaviour
                 // Strike craft are tasked by role, not thrown at the fleet's focus target.
                 bool antiAir = false;
                 if (unit.squadron.CraftRole == Squadron.Role.Fighter && fightersOnAir > 0) { antiAir = true; fightersOnAir--; }
+                // Some fighters and interceptors fly cover for our bombers instead (Squadron.ConsiderEscort).
+                if (unit.squadron.ConsiderEscort(true))
+                {
+                    unit.target = null;
+                    unit.aimPoint = null;
+                    continue;
+                }
                 Contact craftTarget = CraftTarget(unit, antiAir);
                 if (craftTarget != null) AimAt(unit, craftTarget);
                 continue; // Nothing for its role: it screens the fleet (DirectCraft) and fights what it meets.
@@ -1202,6 +1209,11 @@ public partial class AIBattleCommander : MonoBehaviour
     private void DirectCraft(Unit unit, Vector3 front)
     {
         Squadron squadron = unit.squadron;
+        if (squadron.Escorting != null)
+        {
+            MoveTo(unit, SnapToNavMesh(squadron.Escorting.transform.position)); // Keep the squadron with its bombers.
+            return;
+        }
         if (squadron.CurrentTarget != null && !squadron.CurrentTarget.IsDead
             && Vector3.Distance(squadron.transform.position, squadron.CurrentTarget.transform.position) <= squadron.engageRadius)
         {

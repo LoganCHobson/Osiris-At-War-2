@@ -92,6 +92,53 @@ public class Fighter : MonoBehaviour
     // this so a fighter's damage per second is what it always was.
     private const float BurstDuty = 0.4f;
 
+    // Flight feel. Craft used to snap onto a new heading at their full turn rate in a single frame and reverse
+    // in a second; now they roll into a turn, the turn builds up and eases off, and speed changes take a
+    // moment. Every craft turns at TurnScale of its authored turnRate (fighters 150 -> 108 deg/s, interceptors
+    // 200 -> 144, bombers 95 -> 68; missile chases are flown at the old full rate), and attack runs are longer to suit the wider turns.
+    private const float TurnScale = 0.72f;
+    private const float TurnBuildUp = 2.6f;   // Full turn rate reached in ~0.4s.
+    private const float TurnGain = 2.4f;      // Turn rate eases off over the last ~40 degrees.
+    private const float BankRate = 150f;      // Degrees of roll per second.
+    private const float Acceleration = 0.75f; // Share of cruise speed gained or shed per second.
+    private const float RunLength = 1.25f;     // Strafing passes: break further out and extend further.
+    private float turnSpeed;
+
+    // Two-ship elements (Human fighters and interceptors, some of the time; see Squadron.FormElements): a
+    // lead and a wingman flying fighting wing off the lead's quarter, covering his six.
+    public Fighter Lead { get; private set; }
+    public Fighter Wingman { get; private set; }
+    public bool IsWingman => Lead != null && Lead.Alive;
+    public bool IsElementLead => Wingman != null && Wingman.Alive;
+    public Fighter Partner => Lead != null ? Lead : Wingman;
+    public Fighter Tail => tail != null && tail.Alive ? tail : null; // A bandit on my six right now.
+    private Fighter tail;
+    private float wingSide = 1f;
+    private float supportUntil;
+    private float nextRetargetAt;
+    private float evadeReadyAt;
+    private float fightThrottle = 1f;
+    private const float WingTrail = 9f;
+    private const float WingSpread = 8f;
+
+    public static void Pair(Fighter lead, Fighter wingman)
+    {
+        lead.Lead = null;
+        lead.Wingman = wingman;
+        wingman.Wingman = null;
+        wingman.Lead = lead;
+        wingman.wingSide = Random.value < 0.5f ? -1f : 1f;
+    }
+
+    public void LeaveElement()
+    {
+        Lead = null;
+        Wingman = null;
+    }
+
+    public Transform AimPoint => aim;
+    public float CurrentSpeed => currentSpeed;
+
     private void Awake()
     {
         health = GetComponent<HardpointHealth>();
@@ -115,8 +162,20 @@ public class Fighter : MonoBehaviour
     public Transform ShipAim => squadron != null && squadron.EnemySquadron == null ? aim : null;
     public bool IsDying => dying;
     public bool IsFiring => Time.time < burstEndsAt;
-    public float Interest => (dying ? 3f : 0f) + (phase == Phase.Evade ? 2f : 0f) + (IsFiring ? 1.5f : 0f) + (prey != null || aim != null ? 1f : 0f);
+    public float Interest => (dying ? 3f : 0f) + (phase == Phase.Evade ? 2f : 0f) + (IsFiring ? 1.5f : 0f) + (InCombat ? 1f : 0f) + (IsElementLead ? 0.75f : 0f);
     private Fighter pursuer;
+
+    // Actually in the thick of it: someone close in front of the guns or on the tail, or a ship run under way.
+    public bool InCombat
+    {
+        get
+        {
+            if (dying || !Alive) return false;
+            if (Tail != null) return true;
+            if (prey != null && prey.Alive && (prey.transform.position - transform.position).sqrMagnitude < 75f * 75f) return true;
+            return aim != null && squadron != null && squadron.EnemySquadron == null && (aim.position - transform.position).sqrMagnitude < 110f * 110f;
+        }
+    }
 
     private float HealthFraction => health != null && health.maxHealth > 0f ? Mathf.Clamp01(health.currentHealth / health.maxHealth) : 1f;
 
@@ -153,12 +212,22 @@ public class Fighter : MonoBehaviour
         if (squadron.Engaging && WithinLeash())
         {
             ReleaseHold();
+            fightThrottle = 1f;
             target = FightPoint();
+            throttle = fightThrottle;
+        }
+        else if (squadron.Escorting != null && EscortPoint(out target, out throttle))
+        {
+            ReleaseHold();
+            aim = null;
+            tail = null;
+            phase = Phase.Approach;
         }
         else
         {
             aim = null;
             prey = null;
+            tail = null;
             phase = Phase.Approach;
             if (HoldFormation(dt)) return;
             target = FormationPoint(out throttle);
@@ -209,7 +278,88 @@ public class Fighter : MonoBehaviour
 
     private bool WithinLeash()
     {
-        return (transform.position - squadron.transform.position).sqrMagnitude < squadron.leashRadius * squadron.leashRadius;
+        return (transform.position - squadron.LeashCentre).sqrMagnitude < squadron.leashRadius * squadron.leashRadius;
+    }
+
+    // ---- Station keeping (wingmen, escorts, bombers in formation) ----
+    // Fly to a slot that moves with someone else: aim a little ahead of it so the craft settles in flying
+    // parallel, and set the throttle from how far ahead or behind the slot is.
+    private Vector3 StationKeep(Vector3 slot, Vector3 heading, float referenceSpeed, out float throttle)
+    {
+        Vector3 to = slot - transform.position;
+        float distance = to.magnitude;
+        float along = Vector3.Dot(to, heading);
+        float wanted = distance > 45f ? speed * formationSpeedBoost : referenceSpeed + along * 0.9f;
+        throttle = Mathf.Clamp(wanted / Mathf.Max(1f, speed * speedJitter), 0.4f, formationSpeedBoost);
+        return slot + heading * Mathf.Clamp(distance * 0.8f, 8f, 28f);
+    }
+
+    // Something in gun range and near enough the nose that a wingman can swing onto it without leaving the lead.
+    private bool Bears(Vector3 point, float range)
+    {
+        return range < fireRange && Vector3.Angle(transform.forward, point - transform.position) < 30f;
+    }
+
+    private static Vector3 HeadingOf(Fighter craft)
+    {
+        Vector3 v = craft.Velocity;
+        if (v.sqrMagnitude < 1f) v = craft.transform.forward;
+        return v.normalized;
+    }
+
+    // Fighting wing: behind the lead and out to one side, a little high, keeping his tail in view.
+    private Vector3 WingPoint(out float throttle)
+    {
+        Vector3 heading = HeadingOf(Lead);
+        Vector3 right = Vector3.Cross(Vector3.up, heading);
+        if (right.sqrMagnitude < 0.01f) right = Lead.transform.right;
+        right.Normalize();
+        Vector3 slot = Lead.transform.position - heading * WingTrail + right * wingSide * WingSpread + Vector3.up * 1.5f;
+        return StationKeep(slot, heading, Lead.currentSpeed, out throttle);
+    }
+
+    // ---- Escort ----
+    // Flying cover for a bomber squadron: a loose box above and out to the sides of the bombers (Avanti
+    // escorts drift about in theirs). The squadron itself spots enemy craft coming in and turns the escort on
+    // them (Squadron.UpdateEscort); this is just station keeping.
+    private Vector3 escortJitter;
+    private float nextJitterAt;
+
+    private bool EscortPoint(out Vector3 target, out float throttle)
+    {
+        target = default;
+        throttle = 1f;
+        Fighter leadBomber = squadron.Escorting.LeadCraft();
+        if (leadBomber == null) return false;
+
+        if (IsWingman)
+        {
+            prey = null;
+            target = WingPoint(out throttle);
+            return true;
+        }
+
+        Vector3 heading = Flat(HeadingOf(leadBomber));
+        if (heading.sqrMagnitude < 0.01f) heading = Flat(squadron.Escorting.transform.forward);
+        if (heading.sqrMagnitude < 0.01f) heading = Vector3.forward;
+        heading.Normalize();
+
+        int slot = squadron.EscortSlot(this);
+        float side = slot % 2 == 0 ? 1f : -1f;
+        int row = slot / 2;
+        Vector3 offset = new Vector3(side * (22f + row * 10f), 9f + (row % 2) * 7f, 6f - row * 14f);
+        if (squadron.Avanti)
+        {
+            if (Time.time >= nextJitterAt)
+            {
+                nextJitterAt = Time.time + Random.Range(2f, 4f);
+                escortJitter = Random.insideUnitSphere * 9f;
+            }
+            offset += escortJitter;
+        }
+        Vector3 at = leadBomber.transform.position + Quaternion.LookRotation(heading) * offset;
+        target = StationKeep(at, heading, leadBomber.currentSpeed, out throttle);
+        return true;
     }
 
     private Vector3 FormationPoint(out float throttle)
@@ -235,7 +385,21 @@ public class Fighter : MonoBehaviour
         {
             return DogfightPoint();
         }
+        tail = null;
         if (squadron.FlyingBombingRuns) return BombingRunPoint();
+
+        // A wingman on a strafing pass follows his lead in, guns on the same spot, and breaks with him.
+        if (IsWingman && Lead.aim != null && Lead.aim.gameObject.activeInHierarchy)
+        {
+            aim = Lead.aim;
+            phase = Phase.Approach;
+            Vector3 onAim = aim.position;
+            float range = Vector3.Distance(transform.position, onAim);
+            TryFire(onAim, range, shipDamage, aim.GetComponentInParent<HardpointHealth>());
+            TryMissile(squadron.CurrentTarget, range);
+            Vector3 wing = WingPoint(out fightThrottle);
+            return Bears(onAim, range) ? onAim : wing; // On the firing pass, nose onto the target.
+        }
 
         if (aim == null || !aim.gameObject.activeInHierarchy)
         {
@@ -254,14 +418,15 @@ public class Fighter : MonoBehaviour
             TryFire(aimPosition, distance, shipDamage, aim.GetComponentInParent<HardpointHealth>());
             TryMissile(squadron.CurrentTarget, distance);
 
-            if (distance < breakDistance)
+            // Wider turns: pull off a little earlier, and carry on further out before coming round again.
+            if (distance < breakDistance * 1.25f)
             {
                 phase = Phase.Break;
-                phaseEndsAt = Time.time + breakTime * Random.Range(0.8f, 1.25f);
+                phaseEndsAt = Time.time + breakTime * RunLength * Random.Range(0.85f, 1.2f);
                 Vector3 away = Flat(transform.forward);
                 if (away.sqrMagnitude < 0.01f) away = Random.insideUnitSphere;
-                away = Quaternion.Euler(0f, Random.Range(-70f, 70f), 0f) * away.normalized;
-                breakPoint = aimPosition + away * breakRadius + Vector3.up * Random.Range(-0.3f, 1f) * breakClimb;
+                away = Quaternion.Euler(0f, Random.Range(-45f, 45f), 0f) * away.normalized;
+                breakPoint = aimPosition + away * breakRadius * RunLength + Vector3.up * Random.Range(-0.3f, 1f) * breakClimb;
             }
             return aimPosition;
         }
@@ -277,22 +442,27 @@ public class Fighter : MonoBehaviour
     // A dogfight, flown fighter by fighter: chase a bandit and shoot when the nose is on him; if someone
     // gets on your tail, break hard and roll (more readily the more damaged you are); after a firing pass
     // that overshoots, extend away and come back round. Some pilots peel off to clear a wingman's tail.
+    //
+    // Human two-ship elements fly it the way an air force does (loose deuce / fighting wing): the wingman holds
+    // station off the lead's quarter, watching his six, and takes shots at the lead's bandit when one crosses
+    // his nose. Whoever of the two gets a bandit on his tail breaks; the other one goes after that bandit.
     private Vector3 DogfightPoint()
     {
         if (Time.time >= nextThreatCheckAt)
         {
-            nextThreatCheckAt = Time.time + Random.Range(0.3f, 0.5f);
-            Fighter tail = Threat();
-            if (tail != null && phase != Phase.Evade)
+            nextThreatCheckAt = Time.time + Random.Range(0.45f, 0.7f);
+            tail = Threat();
+            // A break is a big, committed manoeuvre, not a twitch: not again straight after the last one.
+            if (tail != null && phase != Phase.Evade && Time.time >= evadeReadyAt)
             {
-                float chance = 0.45f + 0.5f * (1f - HealthFraction);
+                float chance = 0.4f + 0.5f * (1f - HealthFraction);
                 if (Random.value < chance) BeginEvade(tail);
             }
         }
 
         if (phase == Phase.Evade)
         {
-            if (Time.time >= phaseEndsAt) phase = Phase.Pursue;
+            if (Time.time >= phaseEndsAt) { phase = Phase.Pursue; evadeReadyAt = Time.time + Random.Range(2f, 3.5f); }
             else return breakPoint;
         }
         if (phase == Phase.Extend)
@@ -302,9 +472,49 @@ public class Fighter : MonoBehaviour
         }
         phase = Phase.Pursue;
 
-        if (prey == null || !prey.Alive || Random.value < 0.004f) prey = PickPrey();
-        if (prey == null) return squadron.transform.position;
+        if (IsWingman)
+        {
+            // Clear the lead's six first; otherwise stay on his wing.
+            Fighter onLead = Lead.Tail;
+            if (onLead != null && onLead.squadron == squadron.EnemySquadron)
+            {
+                prey = onLead;
+                supportUntil = Time.time + 5f;
+            }
+            if (prey == null || !prey.Alive || Time.time >= supportUntil)
+            {
+                prey = Lead.prey != null && Lead.prey.Alive ? Lead.prey : null;
+                Vector3 wing = WingPoint(out fightThrottle);
+                if (prey != null)
+                {
+                    float range = Vector3.Distance(transform.position, prey.transform.position);
+                    Vector3 shot = prey.transform.position + prey.Velocity * (range / Mathf.Max(1f, squadron.Avanti ? LaserBoltSpeed : TracerSpeed));
+                    TryFire(shot, range, fighterDamage, prey.health);
+                    if (Bears(shot, range)) return shot; // The lead's bandit across the nose: take the shot too.
+                }
+                return wing;
+            }
+            return AttackPoint();
+        }
 
+        // A lead (or a singleton): his wingman's attacker first, then his own pick.
+        if (IsElementLead && Wingman.Tail != null && Wingman.Tail.squadron == squadron.EnemySquadron)
+        {
+            prey = Wingman.Tail;
+            nextRetargetAt = Time.time + 4f;
+        }
+        if (prey == null || !prey.Alive || Time.time >= nextRetargetAt)
+        {
+            prey = PickPrey();
+            nextRetargetAt = Time.time + Random.Range(6f, 10f);
+        }
+        if (prey == null) return squadron.transform.position;
+        return AttackPoint();
+    }
+
+    // Chase the current prey: lead him, shoot when the nose is on him, and extend away after an overshoot.
+    private Vector3 AttackPoint()
+    {
         Vector3 preyPosition = prey.transform.position;
         float distance = Vector3.Distance(transform.position, preyPosition);
         float leadTime = distance / Mathf.Max(1f, squadron.Avanti ? LaserBoltSpeed : TracerSpeed);
@@ -317,8 +527,8 @@ public class Fighter : MonoBehaviour
         if (distance < dogfightOvershoot || (distance < dogfightOvershoot * 2.5f && Vector3.Dot(transform.forward, preyPosition - transform.position) < 0f))
         {
             phase = Phase.Extend;
-            phaseEndsAt = Time.time + Random.Range(1.2f, 2f);
-            breakPoint = transform.position + transform.forward * 45f + Random.insideUnitSphere * 12f;
+            phaseEndsAt = Time.time + Random.Range(1.8f, 2.8f);
+            breakPoint = transform.position + transform.forward * 65f + Random.insideUnitSphere * 12f;
         }
         return lead;
     }
@@ -345,12 +555,12 @@ public class Fighter : MonoBehaviour
     {
         pursuer = tail;
         phase = Phase.Evade;
-        phaseEndsAt = Time.time + Random.Range(1.2f, 2.3f);
+        phaseEndsAt = Time.time + Random.Range(1.6f, 2.8f);
         evadeSide = Random.value < 0.5f ? -1f : 1f;
         Vector3 side = Vector3.Cross(Vector3.up, transform.forward).normalized * evadeSide;
         Vector3 vertical = Vector3.up * Random.Range(-1f, 1f);
-        breakPoint = transform.position + (side * 1.2f + vertical * 0.6f + transform.forward * 0.4f).normalized * 40f;
-        rollSpin = Random.value < 0.7f ? 360f * evadeSide : 0f; // Usually a barrel roll into the break.
+        breakPoint = transform.position + (side * 1.2f + vertical * 0.6f + transform.forward * 0.5f).normalized * 55f;
+        rollSpin = Random.value < 0.45f ? 360f * evadeSide : 0f; // Often a barrel roll into the break.
     }
 
     // Someone chasing a squadron-mate gets attention first (clearing a wingman's tail); otherwise the
@@ -367,6 +577,7 @@ public class Fighter : MonoBehaviour
             Vector3 to = enemy.transform.position - transform.position;
             float score = to.magnitude * (Vector3.Dot(transform.forward, to) > 0f ? 1f : 1.8f);
             if (enemy.prey != null && enemy.prey.squadron == squadron && Random.value < 0.6f) score *= 0.4f; // He's on a friend.
+            if (enemy.prey != null && squadron.Escorting != null && enemy.prey.squadron == squadron.Escorting) score *= 0.3f; // He's on our bombers.
             if (score < bestScore)
             {
                 bestScore = score;
@@ -390,15 +601,43 @@ public class Fighter : MonoBehaviour
         Vector3 heading = squadron.RunDirection;
         UnitHealthManager target = squadron.CurrentTarget;
         Vector3 targetPoint = target.transform.position;
+        Fighter leadBomber = squadron.LeadCraft();
+        bool leading = leadBomber == null || leadBomber == this;
+
+        // The rest of the formation keeps station on the lead bomber (a V for the Humans, line astern for the
+        // Avanti); the lead flies the run itself.
+        if (!leading)
+        {
+            if (run == Squadron.RunPhase.Run)
+            {
+                if (aim == null || !aim.gameObject.activeInHierarchy) aim = squadron.PickAimPoint();
+                Vector3 aimAt = aim != null ? aim.position : targetPoint;
+                float range = Vector3.Distance(transform.position, aimAt);
+                if (!droppedThisRun && Vector3.Distance(transform.position, squadron.RunAimPoint()) < Squadron.RunDropDistance)
+                {
+                    droppedThisRun = true;
+                    ReleaseBombs(target, aimAt);
+                }
+                TryFire(aimAt, range, shipDamage, aim != null ? aim.GetComponentInParent<HardpointHealth>() : null);
+            }
+            Vector3 leadHeading = HeadingOf(leadBomber);
+            Vector3 slot = squadron.FormationSlot(this, leadBomber, leadHeading);
+            return StationKeep(slot, leadHeading, leadBomber.currentSpeed, out fightThrottle);
+        }
+
         switch (run)
         {
             case Squadron.RunPhase.FormUp:
-                return squadron.RunSlot(index, squadron.FormUpPoint(), heading);
+            {
+                Vector3 point = squadron.FormUpPoint();
+                // Ease off near the form-up point so the others can join up.
+                if (Vector3.Distance(transform.position, point) < 40f) fightThrottle = 0.8f;
+                return point;
+            }
             case Squadron.RunPhase.Run:
             {
                 if (aim == null || !aim.gameObject.activeInHierarchy) aim = squadron.PickAimPoint();
                 Vector3 aimPoint = aim != null ? aim.position : targetPoint;
-                Vector3 slot = squadron.RunSlot(index, aimPoint, heading);
                 float distance = Vector3.Distance(transform.position, aimPoint);
                 if (!droppedThisRun && distance < Squadron.RunDropDistance)
                 {
@@ -407,10 +646,11 @@ public class Fighter : MonoBehaviour
                 }
                 // Guns on the way in too.
                 TryFire(aimPoint, distance, shipDamage, aim != null ? aim.GetComponentInParent<HardpointHealth>() : null);
-                return slot + heading * 20f; // Aim a little past it so the run carries straight through.
+                fightThrottle = 0.9f; // A touch under full so the formation holds together.
+                return aimPoint + heading * 20f; // Aim a little past it so the run carries straight through.
             }
             default:
-                return squadron.RunSlot(index, squadron.EgressPoint(), (squadron.EgressPoint() - targetPoint).normalized);
+                return squadron.EgressPoint();
         }
     }
 
@@ -499,7 +739,7 @@ public class Fighter : MonoBehaviour
         float shotSpeed = squadron.Avanti ? LaserBoltSpeed : TracerSpeed;
         Vector3 lead = at + chasing.Velocity * (distance / shotSpeed);
         FireAtMissile(lead, distance);
-        Steer(lead, 1f, dt);
+        Steer(lead, 1f, dt, 1f / TurnScale); // Flown hard, at the old full turn rate: a missile won't wait for a lazy turn.
         return true;
     }
 
@@ -540,7 +780,7 @@ public class Fighter : MonoBehaviour
         squadron.FireMissile(MissileArsenal.Instance.MiniMissileFor(squadron.Avanti), transform.position + transform.forward * 1f - transform.up * 0.3f, transform.forward, target, MissileRange);
     }
 
-    private void Steer(Vector3 target, float throttle, float dt)
+    private void Steer(Vector3 target, float throttle, float dt, float agility = 1f)
     {
         Vector3 toTarget = target - transform.position;
 
@@ -556,20 +796,38 @@ public class Fighter : MonoBehaviour
         Vector3 forward = transform.forward;
         Vector3 desired = toTarget.normalized;
         Vector3 avoid = AvoidHulls(forward);
+        bool avoiding = avoid.sqrMagnitude > 0.0001f || agility > 1.3f; // Hull ahead, or chasing a missile: turn hard.
         if (avoid.sqrMagnitude > 0.0001f) desired = (desired + avoid).normalized;
         if (phase == Phase.Evade) throttle = Mathf.Max(throttle, 1.25f);
-        Vector3 newForward = Vector3.RotateTowards(forward, desired, turnRate * Mathf.Deg2Rad * dt, 0f);
 
-        float turn = Vector3.SignedAngle(Flat(forward), Flat(newForward), Vector3.up) / dt;
-        bank = Mathf.Lerp(bank, Mathf.Clamp(-turn * bankAmount * 0.1f, -maxBank, maxBank), dt * 4f);
+        // Turning: the turn rate builds up and eases off rather than snapping, and a level turn needs the
+        // craft rolled into it first - so it banks, then pulls round. Climbs and dives don't wait for the roll.
+        float maxTurn = turnRate * TurnScale * agility * (phase == Phase.Evade ? 1.15f : 1f);
+        float angle = Vector3.Angle(forward, desired);
+        float flatAngle = Vector3.SignedAngle(Flat(forward), Flat(desired), Vector3.up);
+        float level = angle > 0.01f ? Mathf.Clamp01(Mathf.Abs(flatAngle) / angle) : 0f;
+        float wanted = Mathf.Min(maxTurn, angle * TurnGain);
+        if (avoid.sqrMagnitude > 0.0001f) wanted = maxTurn * 1.2f; // Hull ahead: pull hard, now.
+        turnSpeed = Mathf.MoveTowards(turnSpeed, wanted, maxTurn * TurnBuildUp * (avoiding ? 3f : 1f) * dt);
+        float rolledIn = Mathf.Clamp01(Mathf.Abs(bank) / Mathf.Max(1f, maxBank * 0.55f));
+        float gate = level * Mathf.Clamp01((Mathf.Abs(flatAngle) - 8f) / 20f); // Fine aiming corrections aren't held up.
+        float allowed = avoiding ? turnSpeed : turnSpeed * Mathf.Lerp(1f, Mathf.Lerp(0.4f, 1f, rolledIn), gate);
+        Vector3 newForward = Vector3.RotateTowards(forward, desired, allowed * Mathf.Deg2Rad * dt, 0f);
 
-        currentSpeed = Mathf.Lerp(currentSpeed, speed * throttle * speedJitter, dt * 2f);
+        float bankGoal = -Mathf.Sign(flatAngle) * maxBank * Mathf.Clamp01(Mathf.Abs(flatAngle) / 45f) * Mathf.Clamp01(bankAmount / 0.7f);
+        bank = Mathf.MoveTowards(bank, Mathf.Clamp(bankGoal, -maxBank, maxBank), BankRate * dt);
+        bank = Mathf.Lerp(bank, Mathf.Clamp(bankGoal, -maxBank, maxBank), dt * 1.5f);
+
+        // A hard turn bleeds a little speed; speed itself changes over a second or so, not in a frame.
+        float turnLoad = maxTurn > 0f ? Mathf.Clamp01(allowed / maxTurn) : 0f;
+        float targetSpeed = speed * throttle * speedJitter * (1f - 0.12f * turnLoad);
+        currentSpeed = Mathf.MoveTowards(currentSpeed, targetSpeed, speed * Acceleration * dt);
         transform.position += newForward * currentSpeed * dt;
 
         float roll = 0f;
         if (Mathf.Abs(rollSpin) > 0.5f)
         {
-            float step = Mathf.Sign(rollSpin) * Mathf.Min(Mathf.Abs(rollSpin), 540f * dt);
+            float step = Mathf.Sign(rollSpin) * Mathf.Min(Mathf.Abs(rollSpin), 330f * dt);
             rollSpin -= step;
             roll = rollSpin;
         }

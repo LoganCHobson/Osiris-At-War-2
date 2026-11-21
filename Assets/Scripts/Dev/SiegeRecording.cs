@@ -233,6 +233,7 @@ public class SiegeRecording : MonoBehaviour
         if (balance != "") { yield return BalanceRun(); Finish(); yield break; }
         if (HasFlag("-gridTest")) { yield return GridTest(); Finish(); yield break; }
         if (HasFlag("-hitTest")) { yield return HitTest(); Finish(); yield break; }
+        if (HasFlag("-craftStills")) { yield return CraftStills(); Finish(); yield break; }
         if (HasFlag("-reel")) yield return DestructionReel();
         else yield return Battle();
         Finish();
@@ -322,6 +323,7 @@ public class SiegeRecording : MonoBehaviour
             {
                 nextReportAt += 30f;
                 File.WriteAllText(Path.Combine(outputDir, "report.txt"), report.ToString());
+                File.WriteAllText(Path.Combine(outputDir, "craft_shots.txt"), craftLog.ToString());
             }
             if (GameManager.CombatOver)
             {
@@ -432,7 +434,7 @@ public class SiegeRecording : MonoBehaviour
                     }
                     cutEndsAt = due ? Time.time + UnityEngine.Random.Range(14f, 18f) : Mathf.Max(cutEndsAt, Time.time + 8f);
                 }
-                report.AppendLine($"t={t:F0}s {what}");
+                report.AppendLine($"t={t:F0}s {what}  (frame {frame})");
             }
             yield return null;
         }
@@ -468,6 +470,141 @@ public class SiegeRecording : MonoBehaviour
         List<UnitHealthManager> side = UnitHealthManager.Active
             .Where(u => u != null && !u.IsDead && u.isAttackerSide == attackerSide && !u.IsDefense && u.GetComponent<Squadron>() == null).ToList();
         return side.FirstOrDefault(u => u.entry != null && u.entry.IsHero) ?? side.OrderByDescending(u => u.maxHealth).FirstOrDefault();
+    }
+
+    // ---------------- Strike craft stills (-craftStills -frames) ----------------
+    // Runs the battle and, as each moment comes up, saves a few PNGs of it: a Human two-ship pair in a fight
+    // (cinematic chase camera), a bomber escort, a Human V bombing run and an Avanti line-astern run (framed
+    // directly so the formation's shape reads).
+    private IEnumerator CraftStills()
+    {
+        cinematic.Enter();
+        cinematic.shotDuration = new Vector2(100000f, 100000f);
+        startedAt = Time.time;
+        var taken = new Dictionary<string, int>();
+        string[] wanted = { "pair", "escort", "human_v", "avanti_line", "chase" };
+        int Taken(string key) => taken.TryGetValue(key, out int n) ? n : 0;
+        float lastAt = -100f;
+        UnitHealthManager watching = null;
+        float watchingSince = 0f;
+        while (Time.time - startedAt < 900f && wanted.Any(w => Taken(w) < 3))
+        {
+            yield return null;
+            if (GameManager.CombatOver) break;
+            if (Time.time < lastAt + 1.2f) continue;
+            List<Squadron> all = Squadron.Active.Where(s => s != null && s.Health != null && !s.Health.IsDead && s.LeadCraft() != null).ToList();
+
+            // Bombing runs, framed directly.
+            Squadron run = all.FirstOrDefault(s => s.FlyingBombingRuns && s.BomberPhase == Squadron.RunPhase.Run
+                && s.fighters.Count(f => f != null && f.Alive) >= 3 && Taken(s.Avanti ? "avanti_line" : "human_v") < 3 && FormationTight(s));
+            if (run != null)
+            {
+                string key = run.Avanti ? "avanti_line" : "human_v";
+                int n = Taken(key);
+                yield return new WaitForEndOfFrame();
+                FrameFormation(run, !run.Avanti);
+                SaveStill($"{key}_{n}");
+                taken[key] = n + 1;
+                lastAt = Time.time;
+                report.AppendLine($"t={Time.time - startedAt:F0}s still {key}_{n}: {Describe(run.Health)}");
+                continue;
+            }
+
+            // Escorts with their bombers, from above and behind the bombers.
+            Squadron escort = all.FirstOrDefault(s => s.Escorting != null && s.EnemySquadron == null && s.Escorting.LeadCraft() != null && EscortGathered(s));
+            if (escort != null && Taken("escort") < 3)
+            {
+                int n = Taken("escort");
+                yield return new WaitForEndOfFrame();
+                FrameEscort(escort);
+                SaveStill($"escort_{n}");
+                taken["escort"] = n + 1;
+                lastAt = Time.time;
+                report.AppendLine($"t={Time.time - startedAt:F0}s still escort_{n}: {Describe(escort.Health)} with {Describe(escort.Escorting.Health)}");
+                continue;
+            }
+
+            // A Human pair in a fight (or any fighter in combat), through the cinematic camera's own chase shot.
+            Fighter pilot = cinematic.FeaturedPilot;
+            if (watching != null && !watching.IsDead && pilot != null && Time.time - watchingSince > 3f && pilot.InCombat && InView(pilot.transform.position))
+            {
+                bool paired = pilot.IsElementLead && Vector3.Distance(pilot.transform.position, pilot.Wingman.transform.position) < 30f;
+                string key = paired ? "pair" : "chase";
+                int n = Taken(key);
+                if (n < 3)
+                {
+                    yield return new WaitForEndOfFrame();
+                    captureCamera.transform.SetPositionAndRotation(mainCamera.transform.position, mainCamera.transform.rotation);
+                    captureCamera.fieldOfView = mainCamera.fieldOfView;
+                    SaveStill($"{key}_{n}");
+                    taken[key] = n + 1;
+                    lastAt = Time.time + 1.5f;
+                    report.AppendLine($"t={Time.time - startedAt:F0}s still {key}_{n}: {Describe(watching)}");
+                }
+            }
+            if (watching == null || watching.IsDead || Time.time - watchingSince > 14f)
+            {
+                Squadron fight = all.Where(s => s.FliesPairs && s.Engaging && s.EnemySquadron != null && s.fighters.Any(f => f != null && f.IsElementLead))
+                    .OrderBy(_ => UnityEngine.Random.value).FirstOrDefault()
+                    ?? all.Where(s => s.Engaging && !s.FlyingBombingRuns).OrderBy(_ => UnityEngine.Random.value).FirstOrDefault();
+                if (fight != null && fight.Health != watching)
+                {
+                    watching = fight.Health;
+                    watchingSince = Time.time;
+                    cinematic.Spectate(watching);
+                }
+            }
+        }
+        report.AppendLine("stills: " + string.Join(", ", taken.Select(kv => $"{kv.Key}={kv.Value}")));
+        cinematic.Exit();
+    }
+
+    private static bool FormationTight(Squadron s)
+    {
+        Fighter lead = s.LeadCraft();
+        Vector3 heading = lead.Velocity.sqrMagnitude > 1f ? lead.Velocity.normalized : lead.transform.forward;
+        foreach (Fighter f in s.fighters)
+            if (f != null && f.Alive && f != lead && Vector3.Distance(f.transform.position, s.FormationSlot(f, lead, heading)) > 6f) return false;
+        return true;
+    }
+
+    private static bool EscortGathered(Squadron escort)
+    {
+        Vector3 at = escort.Escorting.LeadCraft().transform.position;
+        return escort.fighters.Count(f => f != null && f.Alive && Vector3.Distance(f.transform.position, at) < 55f) >= 3;
+    }
+
+    private void Aim(Vector3 from, Vector3 at, float fov)
+    {
+        captureCamera.transform.SetPositionAndRotation(from, Quaternion.LookRotation(at - from, Vector3.up));
+        captureCamera.fieldOfView = fov;
+    }
+
+    // The Human V from above and behind; the Avanti line from beside and a little ahead.
+    private void FrameFormation(Squadron s, bool fromAbove)
+    {
+        Fighter lead = s.LeadCraft();
+        Vector3 heading = lead.Velocity.sqrMagnitude > 1f ? lead.Velocity.normalized : lead.transform.forward;
+        Vector3 flat = new Vector3(heading.x, 0f, heading.z).normalized;
+        Vector3 right = Vector3.Cross(Vector3.up, flat).normalized;
+        Vector3 centre = Vector3.zero;
+        int count = 0;
+        foreach (Fighter f in s.fighters) if (f != null && f.Alive) { centre += f.transform.position; count++; }
+        centre /= Mathf.Max(1, count);
+        Vector3 from = fromAbove
+            ? centre - flat * 30f + Vector3.up * 26f + right * 8f
+            : centre + right * 34f + flat * 10f + Vector3.up * 9f;
+        Aim(from, centre + flat * 3f, 45f);
+    }
+
+    private void FrameEscort(Squadron escort)
+    {
+        Fighter bomber = escort.Escorting.LeadCraft();
+        Vector3 heading = bomber.Velocity.sqrMagnitude > 1f ? bomber.Velocity.normalized : bomber.transform.forward;
+        Vector3 flat = new Vector3(heading.x, 0f, heading.z).normalized;
+        Vector3 right = Vector3.Cross(Vector3.up, flat).normalized;
+        Vector3 at = bomber.transform.position + Vector3.up * 5f;
+        Aim(at - flat * 55f + Vector3.up * 30f + right * 12f, at + flat * 5f, 55f);
     }
 
     // ---------------- Destruction reel (-reel) ----------------
@@ -752,6 +889,12 @@ public class SiegeRecording : MonoBehaviour
 
         List<UnitHealthManager> heroes = firing.Where(u => u.entry != null && u.entry.IsHero).ToList();
         List<UnitHealthManager> squadrons = firing.Where(u => u.TryGetComponent(out Squadron s) && s.Engaging && InTheFight(s)).ToList();
+        // Strike craft flying together: bombers forming up for or flying a run (the Human V, the Avanti line),
+        // and escorts riding with them. Firing or not.
+        List<UnitHealthManager> formations = UnitHealthManager.Active
+            .Where(u => u != null && !u.IsDead && !recent.Contains(u) && u.TryGetComponent(out Squadron s)
+                && ((s.FlyingBombingRuns && s.BomberPhase != Squadron.RunPhase.Egress) || (s.Escorting != null && s.Escorting.FlyingBombingRuns)))
+            .ToList();
         List<UnitHealthManager> missiles = firing.Where(u => u.GetComponentInChildren<MissileLauncher>() != null).ToList();
         List<UnitHealthManager> capitals = firing.Where(u => u.TryGetComponent(out SpaceUnit su)
             && (su.shipType == ShipType.Battleship || su.shipType == ShipType.Cruiser)).ToList();
@@ -761,8 +904,9 @@ public class SiegeRecording : MonoBehaviour
         List<UnitHealthManager> pool =
             roll < 0.1f && heroes.Count > 0 ? heroes :
             roll < 0.27f && missiles.Count > 0 ? missiles :
-            roll < 0.57f && capitals.Count > 0 ? capitals :
-            roll < 0.83f && squadrons.Count > 0 ? squadrons :
+            roll < 0.52f && capitals.Count > 0 ? capitals :
+            roll < 0.66f && formations.Count > 0 ? formations :
+            roll < 0.86f && squadrons.Count > 0 ? squadrons :
             escorts.Count > 0 ? escorts :
             capitals.Count > 0 ? capitals : firing;
         if (pool.Count == 0)
@@ -784,7 +928,37 @@ public class SiegeRecording : MonoBehaviour
     private static string Describe(UnitHealthManager unit)
     {
         string name = unit.entry != null && !string.IsNullOrEmpty(unit.entry.shipName) ? unit.entry.shipName : unit.name.Replace("(Clone)", "");
-        return $"{name} ({(unit.isAttackerSide ? "human" : "avanti")}) hp={(unit.maxHealth > 0f ? unit.currentHealth / unit.maxHealth : 0f):P0}";
+        string craft = "";
+        if (unit.TryGetComponent(out Squadron s))
+        {
+            int pairs = s.fighters.Count(f => f != null && f.IsElementLead);
+            craft = s.FlyingBombingRuns ? $" [bombing run: {s.BomberPhase}]" : s.Escorting != null ? $" [escort{(s.EnemySquadron != null ? ", engaging" : "")}]" : s.Engaging ? $" [{(s.EnemySquadron != null ? "dogfight" : "strafing")}]" : " [formation]";
+            if (pairs > 0) craft += $" pairs={pairs}";
+        }
+        return $"{name} ({(unit.isAttackerSide ? "human" : "avanti")}) hp={(unit.maxHealth > 0f ? unit.currentHealth / unit.maxHealth : 0f):P0}{craft}";
+    }
+
+    // Strike craft on camera, every couple of seconds, against the frame number (for pulling stills).
+    private float nextCraftLogAt;
+    private readonly StringBuilder craftLog = new StringBuilder();
+
+    private void LogCraftShot()
+    {
+        if (cinematic == null || !capturing || Time.time < nextCraftLogAt) return;
+        nextCraftLogAt = Time.time + 2f;
+        UnitHealthManager on = cinematic.Target;
+        if (on == null || !on.TryGetComponent(out Squadron s)) return;
+        Fighter pilot = cinematic.FeaturedPilot;
+        string who = pilot == null ? "formation" : pilot.IsElementLead ? "pair lead" : pilot.IsWingman ? "wingman" : "solo";
+        float partner = pilot != null && pilot.Partner != null ? Vector3.Distance(pilot.transform.position, pilot.Partner.transform.position) : -1f;
+        bool inView = pilot == null || InView(pilot.transform.position);
+        craftLog.AppendLine($"frame {frame} t={Time.time - startedAt:F0}s {Describe(on)} shot={who} combat={(pilot != null && pilot.InCombat)} partnerDist={partner:F0} inView={inView}");
+    }
+
+    private bool InView(Vector3 point)
+    {
+        Vector3 v = mainCamera.WorldToViewportPoint(point);
+        return v.z > 0f && v.x > 0.1f && v.x < 0.9f && v.y > 0.1f && v.y < 0.9f;
     }
 
     // ---------------- Capture ----------------
@@ -811,6 +985,7 @@ public class SiegeRecording : MonoBehaviour
     // Live mode: the frame rate through the fight, every 10 seconds (average and worst frame).
     private void Update()
     {
+        LogCraftShot();
         if (!live || !capturing) return;
         if (fpsWindowStart < 0f) fpsWindowStart = Time.unscaledTime;
         fpsFrames++;
@@ -925,6 +1100,7 @@ public class SiegeRecording : MonoBehaviour
     {
         StopEncoder();
         File.WriteAllText(Path.Combine(outputDir, "report.txt"), report.ToString());
+        if (craftLog.Length > 0) File.WriteAllText(Path.Combine(outputDir, "craft_shots.txt"), craftLog.ToString());
         Debug.Log("SIEGE REPORT\n" + report);
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.Exit(0);

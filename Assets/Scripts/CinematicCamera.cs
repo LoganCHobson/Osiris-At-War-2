@@ -81,6 +81,7 @@ public class CinematicCamera : MonoBehaviour
     public UnitHealthManager Target => target;
     public float LookWeight { get; private set; }
     public bool IsWatchingSquadron => targetSquadron != null;
+    public Fighter FeaturedPilot => Active ? featured : null;
 
     private bool TargetAlive => target != null && !target.IsDead;
 
@@ -411,6 +412,9 @@ public class CinematicCamera : MonoBehaviour
         targetSquadron = targetHull == null ? unit.GetComponent<Squadron>() : null;
         lastSquadronCenter = Vector3.positiveInfinity;
         squadronYaw = float.NaN;
+        featured = null;
+        formationShot = targetSquadron != null && targetSquadron.InFormation;
+        formationFlipSince = -1f;
         follow = unit.transform;
         lostAt = -1f;
         Measure();
@@ -477,7 +481,14 @@ public class CinematicCamera : MonoBehaviour
             Vector3 travel = followCenter - lastSquadronCenter;
             travel.y = 0f;
             float dt = Mathf.Max(0.0001f, PresentationClock.Delta);
-            if (lastSquadronCenter != Vector3.positiveInfinity && travel.sqrMagnitude > 0.0001f && travel.magnitude / dt < 400f)
+            if (targetSquadron.FlyingBombingRuns && targetSquadron.BomberPhase == Squadron.RunPhase.Run)
+            {
+                // On the run itself the formation holds one heading: frame along it, not along the jitter.
+                Vector3 run = targetSquadron.RunDirection;
+                float runYaw = Mathf.Atan2(run.x, run.z) * Mathf.Rad2Deg;
+                squadronYaw = float.IsNaN(squadronYaw) ? runYaw : Mathf.LerpAngle(squadronYaw, runYaw, 1f - Mathf.Exp(-1.2f * dt));
+            }
+            else if (lastSquadronCenter != Vector3.positiveInfinity && travel.sqrMagnitude > 0.0001f && travel.magnitude / dt < 400f)
             {
                 float rawYaw = Mathf.Atan2(travel.x, travel.z) * Mathf.Rad2Deg;
                 squadronYaw = float.IsNaN(squadronYaw) ? rawYaw : Mathf.LerpAngle(squadronYaw, rawYaw, 1f - Mathf.Exp(-0.7f * dt));
@@ -644,61 +655,130 @@ public class CinematicCamera : MonoBehaviour
         return best != null ? best.position : (Vector3?)null;
     }
 
-    // A squadron in a fight (not just flying somewhere, and not bombers on a run, where the formation is the
-    // show): follow one pilot. Keep him while he's alive or going down in flames; then pick the busiest.
+    // A squadron in a fight, or flying escort: follow one pilot - never the middle of a dogfighting squadron,
+    // which is mostly empty space. A squadron flying together (a bombing run, or cruising with nothing to
+    // fight) is shot as a formation instead. The switch between the two waits until the change has held a
+    // moment, so a target dying mid-fight doesn't throw the camera out to the formation and back.
+    private bool formationShot;
+    private float formationFlipSince = -1f;
+    private const float PilotHold = 9f;       // At least this long on one pilot (unless he's shot down).
+    private const float PilotMaxHold = 22f;   // ...and then on to another, for variety.
+    private const float CutDistance = 70f;    // A new pilot further off than this is a cut, not a swing across.
+
+    private bool FormationFraming()
+    {
+        bool wanted = targetSquadron.InFormation;
+        if (wanted == formationShot) { formationFlipSince = -1f; return formationShot; }
+        if (formationFlipSince < 0f) formationFlipSince = PresentationClock.Now;
+        if (PresentationClock.Now - formationFlipSince > 1.5f)
+        {
+            formationShot = wanted;
+            formationFlipSince = -1f;
+            if (!wanted) featured = null;
+        }
+        return formationShot;
+    }
+
     private Fighter Featured()
     {
-        if (targetSquadron == null || targetSquadron.IsMoving || targetSquadron.FlyingBombingRuns || !targetSquadron.Engaging)
+        if (targetSquadron == null || FormationFraming())
         {
             featured = null;
             return null;
         }
         bool keep = featured != null && featured.gameObject.activeInHierarchy && featured.transform.IsChildOf(targetSquadron.transform);
         if (keep && !featured.Alive && !featured.IsDying) keep = false;
-        if (keep && PresentationClock.Now - featuredSince > 12f && featured.Alive && featured.Interest < 1f) keep = false; // Gone quiet: find the action.
+        float held = PresentationClock.Now - featuredSince;
+        if (keep && featured.Alive && held > PilotHold && (!featured.InCombat || held > PilotMaxHold)) keep = false; // Gone quiet: find the action.
         if (!keep)
         {
             Fighter best = null;
             float bestScore = float.MinValue;
+            Vector3 from = featured != null ? featured.transform.position : camTransform.position;
             foreach (Fighter fighter in targetSquadron.fighters)
             {
                 if (fighter == null || !fighter.Alive) continue;
-                float score = fighter.Interest + Random.value * 0.5f;
+                float score = fighter.Interest + (fighter.InCombat ? 1.5f : 0f) + (fighter == featured ? -1f : 0f) + Random.value * 0.5f;
+                score -= Mathf.Clamp01(Vector3.Distance(fighter.transform.position, from) / 250f) * 0.6f; // Rather someone nearby.
                 if (score > bestScore) { bestScore = score; best = fighter; }
             }
-            if (best != featured) { featuredSince = PresentationClock.Now; snap = featured == null; }
+            if (best != featured)
+            {
+                featuredSince = PresentationClock.Now;
+                // A short swing to a pilot close by; a clean cut to one across the battle.
+                snap = featured == null || best == null || Vector3.Distance(best.transform.position, featured.transform.position) > CutDistance;
+                featuredVelocity = Vector3.zero;
+            }
             featured = best;
         }
         return featured;
     }
 
-    // Behind the pilot and a little above, pulled back far enough that whoever he's fighting - the bandit
-    // he's chasing, the one on his tail, the ship he's strafing - is in the shot too.
+    // Who else belongs in the pilot's shot: the bandit on his tail, the one he's chasing, the ship he's
+    // strafing, his wingman (or lead), or the bombers he's escorting.
+    private static Vector3? Company(Fighter pilot, out bool partner)
+    {
+        partner = false;
+        if (pilot.Pursuer != null && pilot.Pursuer.gameObject.activeInHierarchy) return pilot.Pursuer.transform.position;
+        if (pilot.Prey != null && pilot.Prey.gameObject.activeInHierarchy) return pilot.Prey.transform.position;
+        if (pilot.ShipAim != null) return pilot.ShipAim.position;
+        Fighter pair = pilot.Partner;
+        if (pair != null && pair.Alive) { partner = true; return pair.transform.position; }
+        Squadron squadron = pilot.GetComponentInParent<Squadron>();
+        Fighter bomber = squadron != null && squadron.Escorting != null ? squadron.Escorting.LeadCraft() : null;
+        return bomber != null ? bomber.transform.position : (Vector3?)null;
+    }
+
+    // A chase shot: behind the pilot, above and a little to one side, far enough back that his turns don't
+    // swing him out of the frame, along his heading smoothed over half a second or so (so the camera eases
+    // round after him instead of whipping with every jink), looking a little ahead of him. Whoever he's
+    // fighting is brought into the shot when they're close.
     private void FrameFighter(Fighter pilot, float dt, out Vector3 position, out Vector3 look, out float fov)
     {
         Vector3 here = pilot.transform.position;
         Vector3 velocity = pilot.Velocity.sqrMagnitude > 1f ? pilot.Velocity : pilot.transform.forward * 20f;
-        featuredVelocity = Vector3.Lerp(featuredVelocity.sqrMagnitude > 0.01f ? featuredVelocity : velocity, velocity, 1f - Mathf.Exp(-2.5f * dt));
+        featuredVelocity = Vector3.Lerp(featuredVelocity.sqrMagnitude > 0.01f ? featuredVelocity : velocity, velocity, 1f - Mathf.Exp(-1.8f * dt));
         Vector3 heading = featuredVelocity.normalized;
 
-        Vector3? other = null;
-        if (pilot.Pursuer != null && pilot.Pursuer.gameObject.activeInHierarchy) other = pilot.Pursuer.transform.position;
-        else if (pilot.Prey != null && pilot.Prey.gameObject.activeInHierarchy) other = pilot.Prey.transform.position;
-        else if (pilot.ShipAim != null) other = pilot.ShipAim.position;
-
+        Vector3? other = Company(pilot, out bool partner);
         // Only bring the other party into the shot when it's close - pulling back to fit a distant one shrinks
         // the pilot to a speck.
-        if (other.HasValue && Vector3.Distance(here, other.Value) > 55f) other = null;
+        if (other.HasValue && Vector3.Distance(here, other.Value) > 70f) other = null;
         float spread = other.HasValue ? Vector3.Distance(here, other.Value) : 0f;
-        float back = Mathf.Clamp(6f + spread * 0.3f, 6f, 20f);
+        float back = Mathf.Clamp(11f + spread * 0.35f, 11f, 28f);
         Vector3 side = Vector3.Cross(Vector3.up, heading);
         if (side.sqrMagnitude < 0.01f) side = Vector3.right;
         side.Normalize();
 
-        position = here - heading * back + Vector3.up * back * 0.28f + side * this.side * back * 0.18f;
-        // Look between the two, weighted toward the pilot so he stays the subject.
-        look = other.HasValue ? Vector3.Lerp(here, other.Value, 0.38f) : here + heading * 12f;
-        fov = Mathf.Lerp(48f, 60f, Mathf.InverseLerp(0f, 55f, spread));
+        position = here - heading * back + Vector3.up * back * 0.3f + side * this.side * back * (partner ? 0.35f : 0.2f);
+        // Look between the two, weighted well toward the pilot so he stays the subject.
+        look = other.HasValue ? Vector3.Lerp(here + heading * 4f, other.Value, partner ? 0.4f : 0.3f) : here + heading * 6f;
+        fov = Mathf.Lerp(50f, 62f, Mathf.InverseLerp(0f, 70f, spread));
+    }
+
+    // A formation on its bombing run: either over the shoulder (behind and above, the target ship ahead
+    // past the bombers) or alongside (off the flank and a little ahead, looking back across the line).
+    private void FrameBombingRun(float dt, out Vector3 position, out Vector3 look, out float fov)
+    {
+        Quaternion yaw = Quaternion.Euler(0f, followYaw, 0f);
+        Vector3 heading = yaw * Vector3.forward;
+        Vector3 right = yaw * Vector3.right;
+        Vector3 c = followCenter;
+        float r = Mathf.Max(followSize, 16f);
+        UnitHealthManager ship = targetSquadron.CurrentTarget;
+        bool shoulder = shot == Shot.Chase || shot == Shot.Bridge || shot == Shot.LowBow || shot == Shot.Duel;
+        if (shoulder)
+        {
+            position = c - heading * r * 1.5f + Vector3.up * r * 0.5f + right * side * r * 0.45f;
+            look = ship != null && !ship.IsDead ? Vector3.Lerp(c, ship.transform.position, 0.15f) : c + heading * r;
+            fov = 52f;
+        }
+        else
+        {
+            position = c + right * side * r * 1.8f + heading * r * 0.45f + Vector3.up * r * 0.25f;
+            look = c - heading * r * 0.1f;
+            fov = 46f;
+        }
     }
 
     private void Frame()
@@ -718,6 +798,11 @@ public class CinematicCamera : MonoBehaviour
         if (pilot != null)
         {
             FrameFighter(pilot, dt, out position, out look, out fov);
+            goto Apply;
+        }
+        if (targetSquadron != null && targetSquadron.FlyingBombingRuns && shot != Shot.Overview && lostAt < 0f)
+        {
+            FrameBombingRun(dt, out position, out look, out fov);
             goto Apply;
         }
 
@@ -806,13 +891,37 @@ public class CinematicCamera : MonoBehaviour
             return;
         }
 
-        // A featured pilot is chased tightly - fighters move 30-50 units a second and turn hard, so a lazy camera
-        // loses them out of the frame; a formation is framed a little more lazily.
-        float smoothing = pilot != null ? positionSmoothing * 0.18f : targetSquadron != null ? positionSmoothing * 0.9f : positionSmoothing;
-        float sharpness = pilot != null ? rotationSharpness * 2.5f : targetSquadron != null ? rotationSharpness * 1.6f : rotationSharpness;
+        // A featured pilot: the camera follows smoothly (fighters move 30-50 units a second; a stiff camera
+        // judders with every correction), and the aim is held so he never leaves the middle of the frame - see
+        // below. A formation is framed a little more lazily.
+        float smoothing = pilot != null ? positionSmoothing * 0.6f : targetSquadron != null ? positionSmoothing * 0.9f : positionSmoothing;
+        float sharpness = pilot != null ? rotationSharpness * 1.3f : targetSquadron != null ? rotationSharpness * 1.4f : rotationSharpness;
         camTransform.position = Vector3.SmoothDamp(camTransform.position, position, ref moveVelocity, smoothing, Mathf.Infinity, dt);
+        // Fallen too far behind (a hard reversal): catch up rather than watch him shrink away.
+        if (pilot != null)
+        {
+            Vector3 gap = camTransform.position - pilot.transform.position;
+            float far = Vector3.Distance(position, pilot.transform.position) * 1.9f + 6f;
+            if (gap.magnitude > far) camTransform.position = pilot.transform.position + gap.normalized * far;
+        }
         camTransform.rotation = Quaternion.Slerp(camTransform.rotation, rotation, 1f - Mathf.Exp(-sharpness * dt));
         viewCamera.fieldOfView = Mathf.Lerp(viewCamera.fieldOfView, fov, 1f - Mathf.Exp(-fovSharpness * dt));
+        if (pilot != null) KeepInFrame(pilot.transform.position);
+    }
+
+    // However the smoothing lags, the pilot stays within the middle of the frame: if he's drifted further
+    // off-centre than that, turn the camera onto him just enough. Eased in over the first second and a half
+    // on a new pilot, so a swing from one pilot to the next is a pan, not a snap.
+    private void KeepInFrame(Vector3 subject)
+    {
+        Vector3 toSubject = subject - camTransform.position;
+        if (toSubject.sqrMagnitude < 0.01f) return;
+        float ease = Mathf.Clamp01((PresentationClock.Now - featuredSince) / 1.5f);
+        float limit = Mathf.Lerp(80f, viewCamera.fieldOfView * 0.3f, ease * ease * (3f - 2f * ease));
+        float off = Vector3.Angle(camTransform.forward, toSubject);
+        if (off <= limit) return;
+        Quaternion onSubject = Quaternion.LookRotation(toSubject, Vector3.up);
+        camTransform.rotation = Quaternion.RotateTowards(camTransform.rotation, onSubject, off - limit);
     }
 
     // Middle of everything still fighting, and how far the fighting spreads from it.
