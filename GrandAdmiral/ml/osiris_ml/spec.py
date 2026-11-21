@@ -70,6 +70,15 @@ FEATURES = (
 )
 N_FEATURES = len(FEATURES)
 
+# The AI's own standing orders, echoed back as features so the policy knows what it is doing. The
+# critic the trainer scores moves with must not see them: the AI presses when it is already winning,
+# so a critic that sees "press" learns press = win, and every order then looks good merely by
+# appearing in the next state (diagnose --estimator, 2026-11-21: it rated v12 -> v34 +0.27 while
+# self-play showed no gain). The value head in the bundle (used on the client) still sees everything.
+OWN_ORDER_FEATURES = ("stance_press", "stance_fallback", "formation_tight", "formation_loose", "escort_screen",
+                      "escort_hunt", "maneuver_flank", "maneuver_envelop", "tempo_rotate", "tempo_pulse")
+OWN_ORDER_COLUMNS = tuple(FEATURES.index(f) for f in OWN_ORDER_FEATURES)
+
 # Per-enemy features used to choose the focus target.
 CONTACT_FEATURES = (
     "heuristic_priority",   # ln(priority / best priority), clamped -5..0 (best = 0)

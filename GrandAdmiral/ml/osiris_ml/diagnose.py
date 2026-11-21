@@ -91,10 +91,10 @@ def gradient_agreement(model, train_ds, cfg: train.TrainConfig, splits=3, seed=0
 # both limits on, ~1.7 with no clip at all). So: widen the clip, keep the real KL stop (0.04) and the
 # anchor, and see which width lets training reach the KL cap with a held-out gain that holds up.
 VARIANTS = [
-    ("clip 0.5, KL stop 0.04", {"clip": 0.5, "max_kl": 0.04}),
-    ("clip 1.0, KL stop 0.04", {"clip": 1.0, "max_kl": 0.04}),
-    ("clip 3.0, KL stop 0.04", {"clip": 3.0, "max_kl": 0.04}),
-    ("no clip, KL stop 0.04", {"clip": 1e6, "max_kl": 0.04}),
+    # Third run (2026-11-21), after hiding the AI's own orders from the scoring critic and judging
+    # gains by battle outcome (lam 1): does training still find gains the stricter gate accepts?
+    ("as configured (lam 0.9), KL stop 0.04", {"max_kl": 0.04}),
+    ("trainer lam 1.0, KL stop 0.04", {"max_kl": 0.04, "gae_lambda": 1.0}),
 ]
 
 
@@ -154,8 +154,7 @@ def run(engine, public_keys, cfg: pipeline.RoundConfig, epochs=40, seconds=600):
 # critic that sees them can learn "pressing goes with winning" only because the AI presses when it is
 # already winning; GAE then credits each order with the jump in V it causes by showing up in the next
 # state, and the trainer and the gate both chase that. lam=1 (R - V(s_t)) has no such bootstrap.
-ORDER_FEATURES = ("stance_press", "stance_fallback", "formation_tight", "formation_loose", "escort_screen",
-                  "escort_hunt", "maneuver_flank", "maneuver_envelop", "tempo_rotate", "tempo_pulse")
+ORDER_FEATURES = spec.OWN_ORDER_FEATURES
 
 
 def _values(model, ds, fit_ds, drop_orders):
@@ -212,7 +211,7 @@ def estimator_check(models, train_ds, hold_ds, pairs):
             continue
         old, new = models[old_v], models[new_v]
         row = {"pair": f"v{old_v} -> v{new_v}"}
-        row["as the gate does it (stored critic, lam 0.9)"] = _estimate(old, new, hold_ds, None)
+        row["as the gate does it (stored critic, lam 1.0)"] = _estimate(old, new, hold_ds, train.advantages(new, hold_ds, 1.0))
         for drop in (False, True):
             v, r2 = _values(new, hold_ds, train_ds, drop)
             tag = "critic without own orders" if drop else "critic with own orders"

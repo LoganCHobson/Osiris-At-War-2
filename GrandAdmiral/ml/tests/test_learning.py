@@ -1,5 +1,6 @@
 """Does the learning loop actually learn, and does the gate only let improvements through?"""
 
+import dataclasses
 import numpy as np
 import pytest
 
@@ -240,3 +241,16 @@ def test_estimator_check_on_the_toy(baseline):
     for key, value in rows[0].items():
         if isinstance(value, dict):
             assert value["estimate"] == 0.0, (key, value)
+
+
+def test_scoring_critic_cannot_see_own_orders(baseline):
+    # The AI's own standing orders must not move the values the trainer scores moves with.
+    rng = np.random.default_rng(9)
+    records = [parse(toyenv.play(_explore(baseline), rng)) for _ in range(200)]
+    ds = dataset.build(records)
+    v = train.scoring_values(baseline, ds)
+    flipped = dataclasses.replace(ds, x=ds.x.copy())
+    cols = list(spec.OWN_ORDER_COLUMNS)
+    flipped.x[:, cols] = 1.0 - flipped.x[:, cols]
+    assert np.allclose(v, train.scoring_values(baseline, flipped))
+    assert gate.GateConfig().gae_lambda == 1.0

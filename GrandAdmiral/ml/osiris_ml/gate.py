@@ -29,6 +29,9 @@ class GateConfig:
     confidence: float = 0.95
     min_improvement: float = 0.0
     max_kl: float = 0.05
+    # Monte Carlo advantages (R - V(s_t)) for the gain estimate: bootstrapping through V(s_t+1), as the
+    # trainer does, let a critic fooled by the AI's own orders pass models that won no more often.
+    gae_lambda: float = 1.0
     min_canary: float = 0.95
     arena_tolerance: float = 0.05
     require_arena: bool = False
@@ -55,11 +58,11 @@ def changed_heads(old, new):
                          and np.array_equal(old.b2[spec.HEAD_OUTPUTS[name]], new.b2[spec.HEAD_OUTPUTS[name]])))
 
 
-def _per_battle_improvement(old, new, ds: Dataset, adv=None):
+def _per_battle_improvement(old, new, ds: Dataset, adv=None, lam=1.0):
     """Each held-out battle's estimated advantage gain: sum over its decisions of
     (pi_new - pi_old)/mu * A, with importance ratios capped to keep the variance sane. Advantages
     use the candidate's critic, which was fit on the training split only."""
-    adv = advantages(new, ds) if adv is None else adv
+    adv = advantages(new, ds, lam) if adv is None else adv
     out_old, _ = old.forward(ds.x)
     out_new, _ = new.forward(ds.x)
     battles = np.unique(ds.battle)
@@ -115,7 +118,7 @@ def evaluate(old, new, holdout: Dataset, installs: int, cfg: GateConfig = GateCo
                               f"{trusted_battles} self-play battles)")
 
     if len(holdout.x) and new.is_finite():
-        gain, weight = _per_battle_improvement(old, new, holdout)
+        gain, weight = _per_battle_improvement(old, new, holdout, lam=cfg.gae_lambda)
         rng = np.random.default_rng(cfg.seed)
         n = len(gain)
         samples = []

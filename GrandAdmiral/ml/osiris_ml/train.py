@@ -154,14 +154,32 @@ def fit_critic(model, ds: Dataset, ridge=1e-2):
     return fitted
 
 
-def advantages(critic, ds: Dataset, lam=0.9):
-    """GAE(lambda) advantages, normalised. Rewards only arrive at the end of a battle, so
-    delta_t = V(s_t+1) - V(s_t), and the last decision's delta is R - V(s_T). lam=1 would be the
-    plain (much noisier) Monte Carlo advantage R - V(s_t)."""
+def scoring_values(model, ds: Dataset, ridge=1e-2):
+    """V(s) for scoring moves in `ds`: a ridge critic on `model`'s hidden layer, fit to `ds`, that
+    can't see the AI's own standing orders (spec.OWN_ORDER_FEATURES says why)."""
     if len(ds.x) == 0:
         return np.zeros(0)
-    out, _ = critic.forward(ds.x)
-    v = out[:, spec.OUT_VALUE]
+    x = ds.x.copy()
+    x[:, list(spec.OWN_ORDER_COLUMNS)] = 0.0
+    _, (_, h) = model.forward(x)
+    design = np.hstack([h, np.ones((len(h), 1))])
+    w = ds.weights[:, None]
+    gram = design.T @ (design * w) + ridge * np.eye(design.shape[1])
+    coef = np.linalg.solve(gram, design.T @ (ds.returns * ds.weights))
+    return design @ coef
+
+
+def advantages(critic, ds: Dataset, lam=0.9, values=None):
+    """GAE(lambda) advantages, normalised. Rewards only arrive at the end of a battle, so
+    delta_t = V(s_t+1) - V(s_t), and the last decision's delta is R - V(s_T). lam=1 would be the
+    plain (much noisier) Monte Carlo advantage R - V(s_t), which no critic bias can tilt: V(s_t) is
+    then only a baseline. values: V per row, instead of the critic's value head."""
+    if len(ds.x) == 0:
+        return np.zeros(0)
+    if values is None:
+        out, _ = critic.forward(ds.x)
+        values = out[:, spec.OUT_VALUE]
+    v = values
     a = np.zeros_like(v)
     running = 0.0
     for i in range(len(v) - 1, -1, -1):
@@ -248,7 +266,7 @@ def train(previous, ds: Dataset, cfg: TrainConfig = TrainConfig()):
     anchor_params = [p.copy() for p in previous.params()]
     if len(ds.x) == 0:
         return model
-    adv = advantages(fit_critic(previous, ds), ds, cfg.gae_lambda)
+    adv = advantages(None, ds, cfg.gae_lambda, values=scoring_values(previous, ds))
     optimiser = Adam(model.params(), cfg.learning_rate)
     rng = np.random.default_rng(cfg.seed)
     n = len(ds.x)
