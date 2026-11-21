@@ -21,6 +21,10 @@ public class DifficultySim : MonoBehaviour
     public int selfPlayRounds = 10;
     [Tooltip("Only Grand Admiral vs Admiral (selfPlayRounds x 4 battles), offline: no model check, nothing reported.")]
     public bool grandAdmiralOnly;
+    [Tooltip("Test commander (-probe <mode>, GAProbe): self-play's battles with some of the model's calls made at random or fixed. Plays the server's model, uploads nothing.")]
+    public string probe;
+    private bool Probing => !string.IsNullOrEmpty(probe);
+    private bool FarmBattles => selfPlay || Probing; // Equal-cost fleets, fresh maps, campaign-style share.
 
     private static readonly (DifficultyLevel stronger, DifficultyLevel weaker)[] Matchups =
     {
@@ -36,7 +40,13 @@ public class DifficultySim : MonoBehaviour
     private IEnumerator Start()
     {
         yield return null;
-        if (selfPlay) yield return GrandAdmiralService.SelfPlayModel(); // The trial being tested, else the newest release.
+        if (FarmBattles) yield return GrandAdmiralService.SelfPlayModel(); // The trial being tested, else the newest release.
+        if (Probing)
+        {
+            Osiris.GrandAdmiral.GAProbe.Active = Osiris.GrandAdmiral.GAProbe.Parse(probe);
+            if (Osiris.GrandAdmiral.GAProbe.Active == null) { Debug.LogError($"DIFFSIM unknown probe '{probe}'"); Application.Quit(2); yield break; }
+            Debug.Log($"DIFFSIM probe {probe} with model v{(GrandAdmiral.Model != null ? GrandAdmiral.Model.Version : 0)}");
+        }
         GameSpeed.SetSpeed(simSpeed);
         report.AppendLine($"DIFFICULTY SIM  {factionA?.name} vs {factionB?.name}  speed x{simSpeed}  limit {battleTimeLimit}s");
 
@@ -45,10 +55,10 @@ public class DifficultySim : MonoBehaviour
         int battle = 0;
         // Self-play needs fresh maps every run, or the AI learns a handful of asteroid layouts by heart.
         // The difficulty comparison keeps its fixed seeds so runs stay comparable.
-        int seedBase = selfPlay ? Random.Range(0, 1000000) : 1000;
+        int seedBase = FarmBattles ? Random.Range(0, 1000000) : 1000;
         int gaGames = 0, gaWins = 0, gaDraws = 0;
         var matchups = new List<(DifficultyLevel stronger, DifficultyLevel weaker)>();
-        if (selfPlay || grandAdmiralOnly)
+        if (FarmBattles || grandAdmiralOnly)
         {
             for (int i = 0; i < selfPlayRounds; i++) matchups.Add((DifficultyLevel.GrandAdmiral, DifficultyLevel.Admiral));
         }
@@ -100,7 +110,7 @@ public class DifficultySim : MonoBehaviour
                 if (variant % 2 == 0) // Side-swapped pairs share one budget, and one kind of battle.
                 {
                     battleBudget = Random.Range(MinBudget, MaxBudget + 1);
-                    campaignStyle = selfPlay && Random.value < CampaignStyleShare;
+                    campaignStyle = FarmBattles && Random.value < CampaignStyleShare;
                 }
                 List<ShipEntry> strongFleet = FleetFor(strongFaction), weakFleet = FleetFor(weakFaction);
                 RetreatManager.Simulated = campaignStyle;
@@ -158,7 +168,8 @@ public class DifficultySim : MonoBehaviour
                         admiral_left = weakLeft,
                         decisions = strong.GrandAdmiralRecord != null ? strong.GrandAdmiralRecord.Decisions.Count : 0,
                         terrain = terrainSeed,
-                        budget = selfPlay ? battleBudget : 0,
+                        budget = FarmBattles ? battleBudget : 0,
+                        probe = probe ?? "",
                         self_play = selfPlay,
                         campaign_style = campaignStyle,
                         reserves = strong.GrandAdmiralRecord != null && strong.GrandAdmiralRecord.Decisions.Exists(d => d.Commit != null),
@@ -207,6 +218,7 @@ public class DifficultySim : MonoBehaviour
         public int decisions, terrain, budget;
         public bool self_play, campaign_style, reserves;
         public string retreated; // "grand_admiral", "admiral", or "" if nobody jumped out
+        public string probe;     // the test commander (GAProbe), "" for a normal battle
     }
 
     // ---- command line (shared by the editor runner and the standalone self-play player) ----
@@ -224,6 +236,7 @@ public class DifficultySim : MonoBehaviour
         if (int.TryParse(rounds, out int r)) selfPlayRounds = Mathf.Clamp(r, 1, 250);
         selfPlay = HasFlag("-selfPlay");
         grandAdmiralOnly = HasFlag("-grandAdmiralOnly");
+        probe = Argument("-probe", "");
         string report = Argument("-simReport", "");
         if (!string.IsNullOrEmpty(report)) reportPath = report;
     }
@@ -245,7 +258,7 @@ public class DifficultySim : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void BootFromCommandLine()
     {
-        if (Application.isEditor || (!HasFlag("-selfPlay") && !HasFlag("-grandAdmiralOnly"))) return;
+        if (Application.isEditor || (!HasFlag("-selfPlay") && !HasFlag("-grandAdmiralOnly") && !HasFlag("-probe"))) return;
         SiegeRecordingAssets assets = Resources.Load<SiegeRecordingAssets>("Dev/SiegeRecordingAssets");
         if (assets == null || assets.titans == null || assets.avanti == null || GameManager.Instance == null)
         {
@@ -296,7 +309,7 @@ public class DifficultySim : MonoBehaviour
 
     private List<ShipEntry> FleetFor(Faction faction)
     {
-        List<Ship> fleet = selfPlay ? FleetBuilder.EqualCost(faction, battleBudget) : FleetBuilder.Standard(faction);
+        List<Ship> fleet = FarmBattles ? FleetBuilder.EqualCost(faction, battleBudget) : FleetBuilder.Standard(faction);
         return fleet.ConvertAll(ship => ShipEntry.New(ship, faction));
     }
 
@@ -315,7 +328,7 @@ public class DifficultySim : MonoBehaviour
         return null;
     }
 
-    private int PopulationCap => selfPlay && !campaignStyle ? 999 : GameManager.Instance.populationCap; // Equal cost, not equal population.
+    private int PopulationCap => FarmBattles && !campaignStyle ? 999 : GameManager.Instance.populationCap; // Equal cost, not equal population.
 
     // What the enemy can put on the field: its best ships up to the population cap (as a campaign battle tells the AI).
     private float FieldablePower(List<ShipEntry> fleet)

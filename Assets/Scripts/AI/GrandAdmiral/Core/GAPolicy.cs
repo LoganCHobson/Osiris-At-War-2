@@ -106,6 +106,7 @@ namespace Osiris.GrandAdmiral
         {
             double[] p = MaskedSoftmax(state.Output, offset, 3, mask, Temperature, Exploration);
             int a = Sample(p);
+            if (GAProbe.Active != null) a = GAProbe.Active.Override(GAProbe.HeadAt(offset), a, mask, 3);
             return new GAChoice { Action = a, Probability = p[a], Mask = (bool[])mask.Clone(), Distribution = p };
         }
 
@@ -132,6 +133,7 @@ namespace Osiris.GrandAdmiral
         {
             double p1 = RetreatProbability(state.Output[GASpec.OutRetreat], Temperature, Exploration);
             int a = random.NextDouble() < p1 ? 1 : 0;
+            if (GAProbe.Active != null) a = GAProbe.Active.Override("retreat", a, null, 2);
             return new GAChoice { Action = a, Probability = a == 1 ? p1 : 1 - p1, Distribution = new[] { 1 - p1, p1 } };
         }
 
@@ -154,6 +156,7 @@ namespace Osiris.GrandAdmiral
             }
             double[] p = MaskedSoftmax(scores, 0, n, null, Temperature, Exploration);
             int a = Sample(p);
+            if (GAProbe.Active != null) a = GAProbe.Active.Override("target", a, null, n);
             return new GAChoice { Action = a, Probability = p[a], Distribution = p, Contacts = rounded };
         }
     }

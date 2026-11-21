@@ -126,6 +126,7 @@ public static class GrandAdmiral
             Adaptation.Learn(steps, record.Return(), Model.Knob(GASpec.Knob.AdaptLearningRate), record.Exploration);
             WriteFileAtomic(AdaptationFile, Adaptation.ToBytes());
         }
+        if (GAProbe.Active != null) return; // Test commanders' battles never reach training or the arena.
         if (record.Uploadable && GameSettings.ShareBattleData)
         {
             GrandAdmiralService.Enqueue(record);
