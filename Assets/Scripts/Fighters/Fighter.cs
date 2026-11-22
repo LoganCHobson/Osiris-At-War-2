@@ -243,7 +243,7 @@ public class Fighter : MonoBehaviour
         float distance = Vector3.Distance(transform.position, slot);
 
         bool parked = !squadron.IsMoving && squadron.AnchorSpeed < holdAnchorSpeed;
-        if (!parked || distance > (holding ? holdRadius * 1.5f : holdRadius))
+        if (!parked || distance > (holding ? HoldCapture * 1.5f : HoldCapture))
         {
             ReleaseHold();
             return false;
@@ -255,12 +255,18 @@ public class Fighter : MonoBehaviour
             holdVelocity = Velocity;
         }
 
-        transform.position = Vector3.SmoothDamp(transform.position, slot, ref holdVelocity, holdSettleTime, speed, dt);
+        // Settling in from further out (HoldCapture) takes a little longer.
+        float settle = holdSettleTime * Mathf.Lerp(1f, 2.2f, Mathf.InverseLerp(holdRadius, HoldCapture, distance));
+        transform.position = Vector3.SmoothDamp(transform.position, slot, ref holdVelocity, settle, speed, dt);
         currentSpeed = holdVelocity.magnitude;
 
         bank = Mathf.Lerp(bank, 0f, dt * 3f);
         Vector3 heading = Flat(squadron.transform.forward);
         if (heading.sqrMagnitude < 0.001f) heading = Flat(transform.forward);
+        // Still coasting in: nose along the way it's going, not sliding sideways into the slot.
+        Vector3 drift = Flat(holdVelocity);
+        if (drift.sqrMagnitude > 1f && heading.sqrMagnitude > 0.001f)
+            heading = Vector3.Slerp(heading.normalized, drift.normalized, Mathf.Clamp01(drift.magnitude / (speed * 0.5f)));
         if (heading.sqrMagnitude > 0.001f)
         {
             Quaternion settled = Quaternion.LookRotation(heading.normalized) * Quaternion.Euler(0f, 0f, bank);
@@ -368,16 +374,37 @@ public class Fighter : MonoBehaviour
         slot += Vector3.up * Mathf.Sin(Time.time * 1.3f + wobbleSeed) * 0.6f;
 
         float distance = Vector3.Distance(transform.position, slot);
-        throttle = Mathf.Clamp(distance / 12f, 0.35f, formationSpeedBoost);
 
+        // Parked (and further out than the hold capture): fly to the slot; HoldFormation takes over from
+        // HoldCapture, which is wider than the turning circle, so nobody circles the slot.
+        bool parked = !squadron.IsMoving && squadron.AnchorSpeed < holdAnchorSpeed;
+        if (parked)
+        {
+            throttle = Mathf.Clamp(distance / 20f, 0.45f, formationSpeedBoost);
+            return slot;
+        }
+
+        // On the move: keep station. The steering point is always ahead of the craft along the squadron's
+        // heading, so a craft that has drifted past its slot eases off and lets it come back to him instead of
+        // looping round to it; the throttle does the rest.
+        Vector3 heading = squadron.transform.forward;
+        heading.y = 0f;
+        if (heading.sqrMagnitude < 0.01f) heading = Flat(transform.forward);
+        heading = heading.sqrMagnitude > 0.01f ? heading.normalized : Vector3.forward;
+        Vector3 to = slot - transform.position;
+        float along = Vector3.Dot(to, heading);
+        float wanted = distance > 60f ? speed * formationSpeedBoost : squadron.AnchorSpeed + along * 0.7f;
+        throttle = Mathf.Clamp(wanted / Mathf.Max(1f, speed * speedJitter), 0.25f, formationSpeedBoost);
         if (distance < 1.5f)
         {
             transform.position = Vector3.Lerp(transform.position, slot, 0.2f);
-            return transform.position + squadron.transform.forward * 10f;
+            return transform.position + heading * 10f;
         }
-
-        return slot;
+        float ahead = Mathf.Clamp(distance * 0.8f, 10f, 30f) + Mathf.Max(0f, -along);
+        return slot + heading * ahead;
     }
+
+    private float HoldCapture => Mathf.Max(holdRadius, 32f);
 
     private Vector3 FightPoint()
     {

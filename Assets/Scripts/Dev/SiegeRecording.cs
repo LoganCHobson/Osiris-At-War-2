@@ -234,6 +234,7 @@ public class SiegeRecording : MonoBehaviour
         if (HasFlag("-gridTest")) { yield return GridTest(); Finish(); yield break; }
         if (HasFlag("-hitTest")) { yield return HitTest(); Finish(); yield break; }
         if (HasFlag("-craftStills")) { yield return CraftStills(); Finish(); yield break; }
+        if (HasFlag("-openingTest")) { yield return OpeningTest(); Finish(); yield break; }
         if (HasFlag("-reel")) yield return DestructionReel();
         else yield return Battle();
         Finish();
@@ -557,6 +558,76 @@ public class SiegeRecording : MonoBehaviour
         }
         report.AppendLine("stills: " + string.Join(", ", taken.Select(kv => $"{kv.Key}={kv.Value}")));
         cinematic.Exit();
+    }
+
+    // Dev check (-openingTest -frames [-pipeTo]): the first minute on Human and Avanti fighter squadrons
+    // before contact, logging every two seconds how many idle craft are turning hard (a loop) and how far
+    // they are from their slots.
+    private IEnumerator OpeningTest()
+    {
+        cinematic.Enter();
+        cinematic.shotDuration = new Vector2(100000f, 100000f);
+        capturing = true;
+        startedAt = Time.time;
+        var lastForward = new Dictionary<Fighter, Vector3>();
+        // Loops: each idle craft's signed turning, summed over 8s windows; 300 degrees one way is a loop.
+        var lastYaw = new Dictionary<Fighter, float>();
+        var turned = new Dictionary<Fighter, float>();
+        float nextLogAt = 0f, nextCutAt = 0f, windowEndsAt = 8f;
+        int loopsTotal = 0;
+        bool human = true;
+        while (Time.time - startedAt < 64f)
+        {
+            yield return null;
+            float t = Time.time - startedAt;
+            foreach (Squadron s in Squadron.Active)
+            {
+                if (s == null || s.Engaging || s.Escorting != null) continue;
+                foreach (Fighter f in s.fighters)
+                {
+                    if (f == null || !f.Alive) continue;
+                    float yaw = f.transform.eulerAngles.y;
+                    if (lastYaw.TryGetValue(f, out float before))
+                        turned[f] = (turned.TryGetValue(f, out float sum) ? sum : 0f) + Mathf.DeltaAngle(before, yaw);
+                    lastYaw[f] = yaw;
+                }
+            }
+            if (t >= windowEndsAt)
+            {
+                int loops = turned.Values.Count(v => Mathf.Abs(v) >= 300f);
+                loopsTotal += loops;
+                report.AppendLine($"t={windowEndsAt - 8f:F0}-{windowEndsAt:F0}s idle craft that looped (300+ deg one way): {loops} of {turned.Count}");
+                turned.Clear();
+                windowEndsAt += 8f;
+            }
+            if (t >= nextCutAt)
+            {
+                nextCutAt = t + 16f;
+                Squadron pick = Squadron.Active.FirstOrDefault(s => s != null && s.CraftRole != Squadron.Role.Bomber && s.Avanti != human && s.LeadCraft() != null);
+                human = !human;
+                if (pick != null) { cinematic.Spectate(pick.Health); report.AppendLine($"t={t:F0}s camera on {Describe(pick.Health)}  (frame {frame})"); }
+            }
+            if (t < nextLogAt) continue;
+            nextLogAt = t + 2f;
+            int idle = 0, hard = 0;
+            float farthest = 0f;
+            foreach (Squadron s in Squadron.Active)
+            {
+                if (s == null || s.CraftRole == Squadron.Role.Bomber || s.Engaging || s.Escorting != null) continue;
+                foreach (Fighter f in s.fighters)
+                {
+                    if (f == null || !f.Alive) continue;
+                    idle++;
+                    if (lastForward.TryGetValue(f, out Vector3 before) && Vector3.Angle(before, f.transform.forward) > 60f) hard++; // Over 30 deg/s held for 2s.
+                    lastForward[f] = f.transform.forward;
+                    farthest = Mathf.Max(farthest, Vector3.Distance(f.transform.position, s.transform.TransformPoint(s.FormationOffset(s.fighters.IndexOf(f)))));
+                }
+            }
+            report.AppendLine($"t={t:F0}s idle craft {idle}, turned >60deg in 2s: {hard}, farthest from slot {farthest:F0}");
+        }
+        report.AppendLine($"LOOPS TOTAL {loopsTotal}");
+        cinematic.Exit();
+        capturing = false;
     }
 
     private static bool FormationTight(Squadron s)
@@ -983,9 +1054,26 @@ public class SiegeRecording : MonoBehaviour
     private int fpsFrames;
 
     // Live mode: the frame rate through the fight, every 10 seconds (average and worst frame).
+    // The soundtrack's cues, for scoring the film afterwards the way MusicManager plays it in game: calm until
+    // a shot is fired (within 6s), combat until 25s pass without one. Video time = frame / frameRate.
+    private bool musicCombat;
+    private readonly StringBuilder musicCues = new StringBuilder();
+
+    private void LogMusicCue()
+    {
+        if (!capturing) return;
+        float sinceShot = Time.time - UnitHealthManager.LastShotAnywhere;
+        bool want = musicCombat ? sinceShot < 25f : sinceShot < 6f;
+        if (musicCues.Length == 0) musicCues.AppendLine($"{(float)frame / frameRate:F2} calm");
+        if (want == musicCombat) return;
+        musicCombat = want;
+        musicCues.AppendLine($"{(float)frame / frameRate:F2} {(want ? "combat" : "calm")}");
+    }
+
     private void Update()
     {
         LogCraftShot();
+        LogMusicCue();
         if (!live || !capturing) return;
         if (fpsWindowStart < 0f) fpsWindowStart = Time.unscaledTime;
         fpsFrames++;
@@ -1101,6 +1189,7 @@ public class SiegeRecording : MonoBehaviour
         StopEncoder();
         File.WriteAllText(Path.Combine(outputDir, "report.txt"), report.ToString());
         if (craftLog.Length > 0) File.WriteAllText(Path.Combine(outputDir, "craft_shots.txt"), craftLog.ToString());
+        if (musicCues.Length > 0) File.WriteAllText(Path.Combine(outputDir, "music_cues.txt"), musicCues.ToString() + $"{(float)frame / frameRate:F2} end\n");
         Debug.Log("SIEGE REPORT\n" + report);
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.Exit(0);

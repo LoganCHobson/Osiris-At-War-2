@@ -153,9 +153,17 @@ public class HullDamage : MonoBehaviour
         if (health != null) health.DealRandomDamage(health.maxHealth * 0.15f);
     }
 
+    // A part whose name has "Light" or "Lights" as a word (Avanti_Cruiser_Lights_LOD0, Light). Not any name
+    // containing the letters: the Human carrier's FlightDeck matched that, so its whole bow blinked in and
+    // out with the damage-flicker lights whenever it was hit.
     public static bool IsLight(Renderer renderer)
     {
-        return renderer.name.IndexOf("light", System.StringComparison.OrdinalIgnoreCase) >= 0;
+        foreach (string word in renderer.name.Split('_', ' ', '-', '.'))
+        {
+            if (word.Equals("light", System.StringComparison.OrdinalIgnoreCase)
+                || word.Equals("lights", System.StringComparison.OrdinalIgnoreCase)) return true;
+        }
+        return false;
     }
 
     private void RegisterHit(Vector3 point)

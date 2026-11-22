@@ -19,8 +19,11 @@ public class PlaneShadows : MonoBehaviour
     private void LateUpdate()
     {
         int used = 0;
+        // A gameplay aid, like the altitude markers: none of it in the cinematic camera (or its recordings).
+        bool show = !CinematicCamera.Active;
         foreach (UnitHealthManager unit in UnitHealthManager.Active)
         {
+            if (!show) break;
             if (unit == null || unit.IsDead || unit.IsDefense || unit.GetComponent<Squadron>() != null) continue;
             if (!BattleSensors.PlayerCanSee(unit)) continue;
             Vector3 position = unit.transform.position;
