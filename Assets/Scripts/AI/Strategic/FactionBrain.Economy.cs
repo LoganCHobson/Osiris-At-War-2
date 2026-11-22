@@ -31,6 +31,7 @@ public partial class FactionBrain
         AddShipyardOption();
         AddBattleStationOption();
         AddStationDemolishOption();
+        AddProbeOption(); // FactionBrain.Probes.cs
         economyOptions.Sort((a, b) => b.score.CompareTo(a.score));
 
         int currency = GalacticState.Instance.GetCurrency(faction);

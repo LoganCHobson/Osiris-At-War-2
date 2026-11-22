@@ -106,6 +106,11 @@ public class GalacticSim : MonoBehaviour
         float meanPinned = pinnedShares.Count > 0 ? pinnedShares.Average() : 0f;
         sb.AppendLine($"navy at the single biggest guard post: mean {meanPinned:P0}  worst {worstPinnedShare:P0}");
         sb.AppendLine($"guard samples in a standoff: {standoffSamples} of {samples}");
+        if (AIDirector.Instance != null)
+        {
+            foreach (FactionBrain brain in AIDirector.Instance.brains)
+                sb.AppendLine($"  spy probes {brain.faction.name}: ordered {brain.ProbesOrdered}, sent {brain.ProbesSent}, now {SpyProbes.CountFor(brain.faction)} {brain.ProbeIntent}");
+        }
         foreach (KeyValuePair<string, float> guard in longestGuard.OrderByDescending(g => g.Value).Take(5))
         {
             sb.AppendLine($"  longest-held guard: {guard.Key}  {guard.Value:F0}s");

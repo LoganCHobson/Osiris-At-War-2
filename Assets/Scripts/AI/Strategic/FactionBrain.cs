@@ -116,6 +116,7 @@ public partial class FactionBrain
         UpdateCampaigns();
         PlanMilitary();
         PlanEconomy();
+        DispatchProbes(); // FactionBrain.Probes.cs
     }
 
     public float Grievance(Faction other)

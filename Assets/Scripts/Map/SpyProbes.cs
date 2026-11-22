@@ -76,7 +76,33 @@ public static class SpyProbes
     public static bool Queue(Planet planet)
     {
         if (WhyNot(planet) != null || !GalacticState.Instance.TrySpend(planet.owner, Cost)) return false;
+        Enqueue(planet);
+        return true;
+    }
+
+    // An order already paid for (the AI's economy pays as it chooses).
+    public static void Enqueue(Planet planet)
+    {
         Orders.Add(new Order { faction = SaveRegistry.Id(planet.owner), planet = planet.planetName, remaining = BuildTime });
+    }
+
+    public static int CountFor(Faction faction)
+    {
+        string id = SaveRegistry.Id(faction);
+        return All.Count(p => p.faction == id) + Orders.Count(o => o.faction == id);
+    }
+
+    public static Planet PlanetNamed(string name) => name == null ? null : Planet.All.Find(p => p != null && p.planetName == name);
+
+    // Sends a parked probe along the hyperlanes to this planet's spot. False if there's no route.
+    public static bool Send(Probe probe, Planet target)
+    {
+        if (probe == null || target == null || !probe.Parked) return false;
+        Planet from = PlanetNamed(probe.planet);
+        if (from == null || from == target) return false;
+        List<Planet> route = GalacticPathfinder.FindPath(from, target, SaveRegistry.FindFaction(probe.faction));
+        if (route.Count < 2) return false;
+        probe.route = route.Skip(1).Select(p => p.planetName).ToList();
         return true;
     }
 
@@ -327,10 +353,7 @@ public class SpyProbeLayer : MonoBehaviour
         {
             debugCursor = null;
             debugRelease = false;
-            if (valid)
-            {
-                dragging.route = route.Skip(1).Select(p => p.planetName).ToList();
-            }
+            if (valid) SpyProbes.Send(dragging, dropPlanet);
             dragging = null;
             dropPlanet = null;
             PlanetTooltip.Instance?.SetRouteInfo(null);
