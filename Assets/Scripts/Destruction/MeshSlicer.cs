@@ -217,6 +217,141 @@ public static class MeshSlicer
         return patch.ToMesh(name, out _);
     }
 
+    // A chunk of plating torn off the hull: the hull surface around `center`, cut to an irregular polygon of
+    // `sides` straight edges (so it comes away as a plate, not as whatever long triangles happen to reach the
+    // point - on the Human hulls those made long spikes) and given `thickness`: the outer face, a back face and
+    // edge walls, all in the hull's own material, so the plate reads as a solid slab of metal.
+    public static Mesh ExtractPlate(MeshData data, Vector3 center, Vector3 normal, float halfSize, float thickness, int sides, string name, out Vector3 plateCenter)
+    {
+        plateCenter = center;
+        normal = normal.sqrMagnitude > 1e-8f ? normal.normalized : Vector3.up;
+        Piece piece = new Piece(data.submeshes.Length, data.hasNormals, data.hasTangents, data.hasUVs, 256);
+        int[] map = NewMap(data.positions.Length);
+        float reachSqr = halfSize * halfSize * 2.5f * 2.5f;
+
+        int Take(int index)
+        {
+            if (map[index] < 0) map[index] = piece.Add(data.positions[index], data.normals[index], data.tangents[index], data.uvs[index]);
+            return map[index];
+        }
+
+        int found = 0;
+        for (int s = 0; s < data.submeshes.Length; s++)
+        {
+            int[] tris = data.submeshes[s];
+            for (int k = 0; k < tris.Length; k += 3)
+            {
+                Vector3 a = data.positions[tris[k]], b = data.positions[tris[k + 1]], c = data.positions[tris[k + 2]];
+                Vector3 faceNormal = Vector3.Cross(b - a, c - a);
+                if (Vector3.Dot(faceNormal, normal) <= 0.2f * faceNormal.magnitude) continue; // the far side of a thin hull
+                if ((ClosestOnTriangle(center, a, b, c) - center).sqrMagnitude > reachSqr) continue;
+                piece.submeshes[s].Add(Take(tris[k]));
+                piece.submeshes[s].Add(Take(tris[k + 1]));
+                piece.submeshes[s].Add(Take(tris[k + 2]));
+                found++;
+            }
+        }
+        if (found == 0) return null;
+
+        // Cut to the polygon: each side a plane facing out from the centre; keep what's inside.
+        Vector3 across = Vector3.Cross(normal, Mathf.Abs(normal.y) < 0.9f ? Vector3.up : Vector3.right).normalized;
+        Vector3 along = Vector3.Cross(normal, across);
+        float turn = Random.value * Mathf.PI * 2f;
+        for (int i = 0; i < sides; i++)
+        {
+            float angle = turn + (i + Random.Range(-0.2f, 0.2f)) * Mathf.PI * 2f / sides;
+            Vector3 outward = across * Mathf.Cos(angle) + along * Mathf.Sin(angle);
+            Split(piece, new Plane(outward, center + outward * halfSize * Random.Range(0.7f, 1.1f)), false, data.weldTolerance, normal, out Piece inside, out _);
+            piece = inside;
+            if (!piece.HasTriangles) return null;
+        }
+
+        // Thickness: outer face, back face pushed in along the plate's normal, and walls along the open edges.
+        Piece solid = new Piece(data.submeshes.Length, data.hasNormals, data.hasTangents, data.hasUVs, piece.positions.Count * 3);
+        Vector3 inset = -normal * thickness;
+        Vector3 sum = Vector3.zero;
+        for (int i = 0; i < piece.positions.Count; i++) sum += piece.positions[i];
+        plateCenter = sum / piece.positions.Count;
+
+        Dictionary<(Vector3Int, Vector3Int), int> edgeUses = new Dictionary<(Vector3Int, Vector3Int), int>();
+        List<(int a, int b)> edges = new List<(int, int)>();
+        float weld = 1f / Mathf.Max(1e-6f, data.weldTolerance * 4f);
+        Vector3Int Key(Vector3 p) => new Vector3Int(Mathf.RoundToInt(p.x * weld), Mathf.RoundToInt(p.y * weld), Mathf.RoundToInt(p.z * weld));
+        (Vector3Int, Vector3Int) Edge(Vector3Int u, Vector3Int v) =>
+            u.x < v.x || (u.x == v.x && (u.y < v.y || (u.y == v.y && u.z <= v.z))) ? (u, v) : (v, u);
+
+        for (int s = 0; s < piece.submeshes.Length - 1; s++)
+        {
+            List<int> tris = piece.submeshes[s];
+            for (int k = 0; k < tris.Count; k += 3)
+            {
+                int i0 = tris[k], i1 = tris[k + 1], i2 = tris[k + 2];
+                int f0 = solid.Copy(piece, i0), f1 = solid.Copy(piece, i1), f2 = solid.Copy(piece, i2);
+                solid.submeshes[s].Add(f0); solid.submeshes[s].Add(f1); solid.submeshes[s].Add(f2);
+                int b0 = Back(solid, piece, i0, inset), b1 = Back(solid, piece, i1, inset), b2 = Back(solid, piece, i2, inset);
+                solid.submeshes[s].Add(b0); solid.submeshes[s].Add(b2); solid.submeshes[s].Add(b1);
+
+                foreach ((int a, int b) e in new[] { (i0, i1), (i1, i2), (i2, i0) })
+                {
+                    Vector3Int ka = Key(piece.positions[e.a]), kb = Key(piece.positions[e.b]);
+                    var key = Edge(ka, kb);
+                    edgeUses.TryGetValue(key, out int uses);
+                    edgeUses[key] = uses + 1;
+                    edges.Add(e);
+                }
+            }
+        }
+
+        List<int> walls = solid.submeshes[0]; // bare metal edges: the plate's own material, not the wreck interior
+        foreach ((int a, int b) in edges)
+        {
+            Vector3 pa = piece.positions[a], pb = piece.positions[b];
+            Vector3Int ka = Key(pa), kb = Key(pb);
+            if (edgeUses[Edge(ka, kb)] != 1) continue; // inside the plate
+            Vector3 mid = (pa + pb) * 0.5f;
+            Vector3 outward = mid - plateCenter;
+            outward -= normal * Vector3.Dot(outward, normal);
+            Vector3 wallNormal = Vector3.Cross(pb - pa, normal).normalized;
+            if (Vector3.Dot(wallNormal, outward) < 0f) wallNormal = -wallNormal;
+            Vector4 tangent = new Vector4(normal.x, normal.y, normal.z, 1f);
+            int wa = solid.Add(pa, wallNormal, tangent, piece.uvs[a]), wb = solid.Add(pb, wallNormal, tangent, piece.uvs[b]);
+            int wc = solid.Add(pb + inset, wallNormal, tangent, piece.uvs[b]), wd = solid.Add(pa + inset, wallNormal, tangent, piece.uvs[a]);
+            // Wind so the wall faces out (Unity's front face: cross(p1 - p0, p2 - p0) points at the viewer).
+            bool flip = Vector3.Dot(Vector3.Cross(pb - pa, (pb + inset) - pa), wallNormal) < 0f;
+            if (!flip) { walls.Add(wa); walls.Add(wb); walls.Add(wc); walls.Add(wa); walls.Add(wc); walls.Add(wd); }
+            else { walls.Add(wa); walls.Add(wc); walls.Add(wb); walls.Add(wa); walls.Add(wd); walls.Add(wc); }
+        }
+
+        return solid.ToMesh(name, out _);
+    }
+
+    private static int Back(Piece solid, Piece source, int index, Vector3 inset)
+    {
+        Vector4 t = source.tangents[index];
+        return solid.Add(source.positions[index] + inset, -source.normals[index], new Vector4(-t.x, -t.y, -t.z, t.w), source.uvs[index]);
+    }
+
+    public static Vector3 ClosestOnTriangle(Vector3 p, Vector3 a, Vector3 b, Vector3 c)
+    {
+        Vector3 ab = b - a, ac = c - a, ap = p - a;
+        float d1 = Vector3.Dot(ab, ap), d2 = Vector3.Dot(ac, ap);
+        if (d1 <= 0f && d2 <= 0f) return a;
+        Vector3 bp = p - b;
+        float d3 = Vector3.Dot(ab, bp), d4 = Vector3.Dot(ac, bp);
+        if (d3 >= 0f && d4 <= d3) return b;
+        float vc = d1 * d4 - d3 * d2;
+        if (vc <= 0f && d1 >= 0f && d3 <= 0f) return a + ab * (d1 / (d1 - d3));
+        Vector3 cp = p - c;
+        float d5 = Vector3.Dot(ab, cp), d6 = Vector3.Dot(ac, cp);
+        if (d6 >= 0f && d5 <= d6) return c;
+        float vb = d5 * d2 - d1 * d6;
+        if (vb <= 0f && d2 >= 0f && d6 <= 0f) return a + ac * (d2 / (d2 - d6));
+        float va = d3 * d6 - d5 * d4;
+        if (va <= 0f && (d4 - d3) >= 0f && (d5 - d6) >= 0f) return b + (c - b) * ((d4 - d3) / ((d4 - d3) + (d5 - d6)));
+        float denom = 1f / (va + vb + vc);
+        return a + ab * (vb * denom) + ac * (vc * denom);
+    }
+
     private static Piece FromData(MeshData data)
     {
         int count = data.positions.Length;

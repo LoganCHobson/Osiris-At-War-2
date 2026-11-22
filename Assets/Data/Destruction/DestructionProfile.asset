@@ -54,23 +54,25 @@ MonoBehaviour:
   joltStrength: 14
   interiorMaterial: {fileID: 2100000, guid: 2214e0559ee6dbf46983415185382525, type: 2}
   pieceWeightsSmall:
-  - 0.3
-  - 0.5
-  - 0.2
-  - 0
+  - 0.08
+  - 0.52
+  - 0.32
+  - 0.08
   pieceWeightsLarge:
-  - 0.15
+  - 0
+  - 0.25
+  - 0.4
   - 0.35
-  - 0.35
-  - 0.15
   cutTilt: 25
   largePartFraction: 0.35
   looseDebrisChance: 0.45
-  plateShards: {x: 3, y: 8}
-  plateShardRadius: {x: 0.04, y: 0.08}
-  separationSpeed: 2.5
+  plateShards: {x: 5, y: 16}
+  plateShardRadius: {x: 0.05, y: 0.11}
+  separationSpeed: 5
+  seamStagger: {x: 0.45, y: 1}
+  breakupBlastScale: 0.28
   debrisSpeed: 9
-  chunkSpin: 10
+  chunkSpin: 16
   debrisSpin: {x: 60, y: 260}
   wreckLifetime: 12
   debrisLifetime: {x: 4, y: 7}

@@ -17,6 +17,7 @@ public class HullScarring : MonoBehaviour
     private const float BlackenedAt = 0.012f;
     private const float ScarredAt = 0.028f;
     private const float BreachedAt = 0.05f;
+    private const float GuttedAt = 0.085f;  // past breached: a plate blown loose and folded back (HullDeformation.Peel)
     private const int MaxScoresPerCell = 4;
     private const int MaxMarksPerShip = 110;
 
@@ -28,6 +29,7 @@ public class HullScarring : MonoBehaviour
         public Vector3 lastLocalPoint;
         public Vector3 lastLocalDirection;
         public Ember glow; // The patch's heat: kept hot while it's under fire, cools once the fire stops.
+        public bool gutted;
     }
 
     private HullDamage hull;
@@ -55,6 +57,9 @@ public class HullScarring : MonoBehaviour
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetStatics() => meshData.Clear();
+
+    // A mesh that has been reshaped (HullDeformation): marks are cut from it afresh next time.
+    public static void Forget(Mesh mesh) => meshData.Remove(mesh);
 
     public static void Fit(GameObject ship)
     {
@@ -118,6 +123,11 @@ public class HullScarring : MonoBehaviour
         int stageBefore = cell.stage;
         Advance(cell, stage, surface, surfacePoint, normal, direction);
         if (cell.stage >= 1 && cell.stage == stageBefore) Reheat(cell, surface, surfacePoint, normal, direction);
+        if (!cell.gutted && cell.damage >= GuttedAt)
+        {
+            cell.gutted = true;
+            HullDeformation.For(gameObject).Peel(surface, surfacePoint, normal, hull.Size * Random.Range(0.06f, 0.09f), marksRoot);
+        }
     }
 
     // Bring a patch up to `stage`, showing each stage it passes through.
@@ -127,13 +137,15 @@ public class HullScarring : MonoBehaviour
         {
             cell.stage = 1;
             Mark(scorchMaterial ??= MakeMaterial(ScorchTexture(), new Color(0.02f, 0.018f, 0.015f, 1f)), surface, surfacePoint, normal, direction, hull.Size * 0.07f, 1.5f, 0.001f);
-            cell.glow = Glow(emberMaterial ??= GlowMaterial(EmberTexture()), surface, surfacePoint, normal, direction, hull.Size * 0.05f, 12f, 3f);
+            cell.glow = Glow(emberMaterial ??= GlowMaterial(EmberTexture()), surface, surfacePoint, normal, direction, hull.Size * 0.032f, 12f, 1.7f);
         }
         if (cell.stage < 2 && stage >= 2)
         {
             cell.stage = 2;
+            // The plating gives: dished in round the hits and buckled (before the scar, so it's drawn on the dent).
+            HullDeformation.For(gameObject).Dent(surface, surfacePoint, normal, hull.Size * Random.Range(0.08f, 0.11f), hull.Size * Random.Range(0.016f, 0.024f), marksRoot);
             Mark(scarMaterial ??= MakeMaterial(ScarTexture(), new Color(0.015f, 0.012f, 0.01f, 1f)), surface, surfacePoint, normal, direction, hull.Size * 0.09f, 1.2f, 0.002f);
-            cell.glow = Glow(crackGlowMaterial ??= GlowMaterial(CrackGlowTexture()), surface, surfacePoint, normal, direction, hull.Size * 0.09f, 30f, 3.5f);
+            cell.glow = Glow(crackGlowMaterial ??= GlowMaterial(CrackGlowTexture()), surface, surfacePoint, normal, direction, hull.Size * 0.055f, 30f, 1.9f);
             if (hull.profile != null && hull.profile.breachVent != null)
                 DestructionFx.Attach(hull.profile.breachVent, marksRoot, surfacePoint + normal * hull.Size * 0.003f, hull.SizeScale * 0.35f, normal);
         }
@@ -227,16 +239,21 @@ public class HullScarring : MonoBehaviour
         }
         if (marks >= MaxMarksPerShip) return;
         cell.glow = cell.stage >= 2
-            ? Glow(crackGlowMaterial ??= GlowMaterial(CrackGlowTexture()), surface, point, normal, direction, hull.Size * 0.09f, 30f, 3.5f)
-            : Glow(emberMaterial ??= GlowMaterial(EmberTexture()), surface, point, normal, direction, hull.Size * 0.05f, 12f, 3f);
+            ? Glow(crackGlowMaterial ??= GlowMaterial(CrackGlowTexture()), surface, point, normal, direction, hull.Size * 0.055f, 30f, 1.9f)
+            : Glow(emberMaterial ??= GlowMaterial(EmberTexture()), surface, point, normal, direction, hull.Size * 0.032f, 12f, 1.7f);
     }
 
     // The hull split open: a black wound, jagged plates torn up and peeled back around it, burning.
     private void Breach(MeshFilter surface, Vector3 point, Vector3 normal, Vector3 direction)
     {
         float radius = hull.Size * 0.055f;
+        // Holed: a wider stretch of hull warped in, then the hole itself, its edges petalled in by the shell
+        // (or out, a third of the time, by something going off inside). The wound is then cut from what's left.
+        HullDeformation deformation = HullDeformation.For(gameObject);
+        deformation.Dent(surface, point, normal, hull.Size * 0.13f, hull.Size * 0.014f, marksRoot);
+        deformation.Hole(surface, point, normal, hull.Size * Random.Range(0.028f, 0.042f), Random.value < 0.35f, hull.profile != null ? hull.profile.interiorMaterial : null, marksRoot);
         Mark(woundMaterial ??= MakeMaterial(WoundTexture(), new Color(0f, 0f, 0f, 1f)), surface, point, normal, direction, radius, 1.4f, 0.004f);
-        Ember breachGlow = Glow(emberMaterial ??= GlowMaterial(EmberTexture()), surface, point, normal, direction, radius * 1.3f, 30f, 3f);
+        Ember breachGlow = Glow(emberMaterial ??= GlowMaterial(EmberTexture()), surface, point, normal, direction, radius * 0.75f, 30f, 2.2f);
         lastBreachGlow = breachGlow;
 
         MeshSlicer.MeshData data = Data(surface.sharedMesh);
@@ -252,7 +269,8 @@ public class HullScarring : MonoBehaviour
                 Vector3 plateCentre = point + outwardDir * radius * 0.75f;
                 Vector3 localCentre = surface.transform.InverseTransformPoint(plateCentre);
                 float localRadius = radius * 0.45f / Mathf.Max(0.0001f, surface.transform.lossyScale.x);
-                Mesh plate = MeshSlicer.ExtractPatch(data, localCentre, localRadius, "TornPlate", out _);
+                Vector3 localNormal = surface.transform.InverseTransformDirection(normal);
+                Mesh plate = MeshSlicer.ExtractPlate(data, localCentre, localNormal, localRadius, localRadius * 0.2f, Random.Range(4, 6), "TornPlate", out _);
                 if (plate == null) continue;
 
                 GameObject go = new GameObject("TornPlate");
@@ -293,6 +311,7 @@ public class HullScarring : MonoBehaviour
     {
         if (hull == null || !Ready()) return;
         if (!HullPoint(point + outward * hull.Size * 0.05f, -outward, out Vector3 surfacePoint, out Vector3 normal, out MeshFilter surface)) return;
+        HullDeformation.For(gameObject).Dent(surface, surfacePoint, normal, radius * 1.6f, radius * 0.25f, marksRoot);
         Mark(scorchMaterial ??= MakeMaterial(ScorchTexture(), new Color(0.02f, 0.018f, 0.015f, 1f)), surface, surfacePoint, normal, Vector3.Cross(normal, Vector3.up), radius * 1.5f, 1f, 0.001f);
         Mark(woundMaterial ??= MakeMaterial(WoundTexture(), new Color(0f, 0f, 0f, 1f)), surface, surfacePoint, normal, Vector3.Cross(normal, Vector3.up), radius, 1f, 0.003f);
     }

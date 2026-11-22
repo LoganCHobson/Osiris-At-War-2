@@ -251,7 +251,7 @@ public class ShipDestruction : MonoBehaviour
         nextChainAt = Time.time + Mathf.Lerp(profile.chainInterval.x, profile.chainInterval.y, progress) * Random.Range(0.7f, 1.3f);
 
         Vector3 point = hull.RandomSurfacePoint(out Vector3 normal);
-        bool big = Random.value < progress * 0.6f;
+        bool big = Random.value < progress * 0.35f; // Mostly small bursts: big ones' smoke hid the seams giving way.
 
         hull.Explode(big ? profile.mediumExplosion : profile.smallExplosion, point, big ? profile.mediumExplosionScale : profile.smallExplosionScale);
         DestructionFx.Blast(big ? profile.largeBlastClips : profile.smallBlastClips, point, profile, Mathf.Lerp(1.1f, 0.75f, hull.SizeT));
@@ -296,7 +296,6 @@ public class ShipDestruction : MonoBehaviour
         int pieceCount = plannedPieces > 0 ? plannedPieces : Mathf.Clamp(profile.PickPieceCount(sizeT), 1, 8);
         PieceCount = pieceCount;
         bool intact = pieceCount == 1;
-        Vector3 inheritedSpin = transform.TransformDirection(angularVelocity) * 0.8f;
         Plane[] planes = BuildCutPlanes(pieceCount, out Vector3 axis, out Vector3[] cutPoints);
 
         Transform[] containers = new Transform[pieceCount];
@@ -308,44 +307,35 @@ public class ShipDestruction : MonoBehaviour
         }
 
         BreakHull(planes, containers, chunks, center, out MeshRenderer shardSource, out MeshSlicer.MeshData shardData);
-        ThrowPlating(shardSource, shardData, center, intact ? 0.5f : 1f);
         MoveAttachments(planes, containers);
-        OpenBreaches(planes, cutPoints, containers, scale);
+        for (int k = 0; k < pieceCount; k++) Repivot(containers[k]);
 
-        float blastScale = intact ? 0.6f : 1f;
-        foreach (ParticleSystem blast in profile.breakupExplosions)
+        if (!intact)
         {
-            hull.Explode(blast, center, profile.breakupExplosionScale * blastScale);
+            // Comes apart in stages (WreckBreakup): the keel goes first, the other seams after it, each with its
+            // own blast, torn plating and burning ends. Nothing big goes off at the centre to hide it.
+            List<WreckChunk>[] plating = SeamPlating(shardSource, shardData, planes, cutPoints);
+            WreckBreakup.Begin(profile, chunks, planes, cutPoints, plating, Velocity, transform.TransformDirection(angularVelocity),
+                scale, sizeT, hull.Size);
+            DestructionFx.Explode(profile.smallExplosion, center, profile.smallExplosionScale * scale, profile.explosionLifetime);
         }
-        if (intact)
+        else
         {
+            // Dies whole: a gutted hulk, burning, rolling on.
+            ThrowPlating(shardSource, shardData, center, 0.6f);
+            foreach (ParticleSystem blast in profile.breakupExplosions)
+            {
+                hull.Explode(blast, center, profile.breakupExplosionScale * profile.breakupBlastScale);
+            }
             for (int i = 0; i < 3; i++) hull.SpawnDamageEffect(hull.RandomSurfacePoint(out Vector3 normal), normal);
             foreach (Transform effect in hull.EffectsRoot) effect.SetParent(containers[0], true);
-        }
-        DestructionFx.Flash(center, profile.flashColor, profile.flashIntensity * 0.55f * blastScale * Mathf.Lerp(0.6f, 1.5f, sizeT), hull.Size * profile.flashRange, profile.flashDuration * Mathf.Lerp(0.8f, 1.5f, sizeT));
-        Shockwave.Maybe(center, transform.up, hull.Size * Mathf.Lerp(1.6f, 2.6f, sizeT) * blastScale, Mathf.Lerp(1.1f, 1.8f, sizeT), sizeT);
-        DestructionFx.Blast(profile.largeBlastClips, center, profile, Mathf.Lerp(1.1f, 0.7f, sizeT));
-        CameraShake.Shake(center, profile.breakupShake * blastScale * Mathf.Lerp(0.4f, 1.2f, sizeT));
-        ImpactFlash.Pulse(center, Mathf.Lerp(0.2f, 0.45f, sizeT) * blastScale);
-
-        for (int k = 0; k < pieceCount; k++)
-        {
-            Repivot(containers[k]);
-
-            Vector3 away = containers[k].position - center;
-            if (away.sqrMagnitude < 0.0001f) away = axis * (k - (pieceCount - 1) * 0.5f);
-            if (away.sqrMagnitude < 0.0001f) away = Random.onUnitSphere * 0.2f;
-            away.Normalize();
-
-            float separation = intact ? 0f : profile.separationSpeed * Random.Range(0.7f, 1.3f) * Mathf.Lerp(1.3f, 0.7f, sizeT);
-            Vector3 linear = Velocity + away * separation + Random.insideUnitSphere * 0.3f;
-
-            Vector3 hinge = intact ? Vector3.zero : Vector3.Cross(transform.up, away);
-            Vector3 angular = inheritedSpin
-                + hinge * profile.chunkSpin * Mathf.Lerp(1.5f, 0.5f, sizeT) * Random.Range(0.6f, 1.2f)
-                + Random.insideUnitSphere * 2f;
-
-            chunks[k].Launch(profile, linear, angular, scale, profile.persistentWrecks, profile.wreckLifetime * Random.Range(0.8f, 1.2f), true);
+            DestructionFx.Flash(center, profile.flashColor, profile.flashIntensity * 0.4f * Mathf.Lerp(0.6f, 1.5f, sizeT), hull.Size * profile.flashRange, profile.flashDuration * Mathf.Lerp(0.8f, 1.5f, sizeT));
+            Shockwave.Maybe(center, transform.up, hull.Size * Mathf.Lerp(1.2f, 2f, sizeT), Mathf.Lerp(1.1f, 1.8f, sizeT), sizeT);
+            DestructionFx.Blast(profile.largeBlastClips, center, profile, Mathf.Lerp(1.1f, 0.7f, sizeT));
+            CameraShake.Shake(center, profile.breakupShake * 0.6f * Mathf.Lerp(0.4f, 1.2f, sizeT));
+            ImpactFlash.Pulse(center, Mathf.Lerp(0.12f, 0.3f, sizeT));
+            chunks[0].Launch(profile, Velocity, transform.TransformDirection(angularVelocity) * 0.8f + Random.insideUnitSphere * 2f,
+                scale, profile.persistentWrecks, profile.wreckLifetime, true);
         }
 
         if (hull.gfxRoot != null) hull.gfxRoot.gameObject.SetActive(false);
@@ -356,6 +346,45 @@ public class ShipDestruction : MonoBehaviour
 
         onBreakup.Invoke();
         Destroy(gameObject);
+    }
+
+    // Plating that tears off as each seam fails: patches of hull near the break, held (hidden) until it goes.
+    private List<WreckChunk>[] SeamPlating(MeshRenderer source, MeshSlicer.MeshData data, Plane[] planes, Vector3[] cutPoints)
+    {
+        List<WreckChunk>[] plating = new List<WreckChunk>[planes.Length];
+        for (int i = 0; i < planes.Length; i++) plating[i] = new List<WreckChunk>();
+        if (source == null || data == null || planes.Length == 0) return plating;
+
+        MeshFilter filter = source.GetComponent<MeshFilter>();
+        float localScale = Mathf.Max(0.0001f, source.transform.lossyScale.x);
+        int perSeam = Mathf.Max(2, Mathf.RoundToInt(Mathf.Lerp(profile.plateShards.x, profile.plateShards.y, hull.SizeT) / planes.Length * 1.5f));
+        float band = hull.Size * 0.14f;
+
+        for (int i = 0; i < planes.Length; i++)
+        {
+            for (int n = 0; n < perSeam; n++)
+            {
+                Vector3 local = default, localNormal = default;
+                bool found = false;
+                for (int tries = 0; tries < 16 && !found; tries++)
+                {
+                    if (!HullSurface.SampleLocal(filter, out local, out localNormal)) break;
+                    found = Mathf.Abs(planes[i].GetDistanceToPoint(source.transform.TransformPoint(local))) < band;
+                }
+                if (!found) continue;
+
+                float radius = hull.Size * Random.Range(profile.plateShardRadius.x, profile.plateShardRadius.y) / localScale;
+                Mesh mesh = Plate(data, local, localNormal, radius, out Vector3 patchCenter);
+                if (mesh == null) continue;
+
+                WreckChunk shard = NewChunk("Plating", source.transform.TransformPoint(patchCenter));
+                CopyRenderer(source, mesh, mesh.subMeshCount > data.submeshes.Length, shard.transform);
+                shard.Own(mesh);
+                shard.gameObject.SetActive(false);
+                plating[i].Add(shard);
+            }
+        }
+        return plating;
     }
 
     private Plane[] BuildCutPlanes(int pieceCount, out Vector3 axisWorld, out Vector3[] cutPoints)
@@ -523,14 +552,14 @@ public class ShipDestruction : MonoBehaviour
             if (!HullSurface.SampleLocal(filter, out Vector3 local, out Vector3 localNormal)) continue;
 
             float radius = hull.Size * Random.Range(profile.plateShardRadius.x, profile.plateShardRadius.y) / localScale;
-            Mesh mesh = MeshSlicer.ExtractPatch(data, local, radius, "Plating", out Vector3 patchCenter);
+            Mesh mesh = Plate(data, local, localNormal, radius, out Vector3 patchCenter);
             if (mesh == null) continue;
 
             Vector3 worldCenter = source.transform.TransformPoint(patchCenter);
             Vector3 worldNormal = source.transform.TransformDirection(localNormal).normalized;
 
             WreckChunk shard = NewChunk("Plating", worldCenter);
-            CopyRenderer(source, mesh, false, shard.transform);
+            CopyRenderer(source, mesh, mesh.subMeshCount > data.submeshes.Length, shard.transform);
             shard.Own(mesh);
 
             if (Random.value < 0.4f)
@@ -589,23 +618,6 @@ public class ShipDestruction : MonoBehaviour
         }
     }
 
-    private void OpenBreaches(Plane[] planes, Vector3[] cutPoints, Transform[] containers, float scale)
-    {
-        float offset = hull.Size * 0.02f;
-
-        for (int i = 0; i < planes.Length; i++)
-        {
-            Vector3 normal = planes[i].normal;
-            Vector3 backSide = cutPoints[i] + normal * offset;
-            Vector3 frontSide = cutPoints[i] - normal * offset;
-
-            DestructionFx.Attach(profile.breachVent, containers[i], backSide, profile.breachVentScale * scale);
-            DestructionFx.Attach(profile.breachVent, containers[i + 1], frontSide, profile.breachVentScale * scale);
-
-            hull.Explode(profile.mediumExplosion, cutPoints[i], profile.mediumExplosionScale * 1.5f);
-        }
-    }
-
     private Transform TopmostParticle(Transform current)
     {
         while (current.parent != null && current.parent != transform && current.parent.GetComponent<ParticleSystem>() != null)
@@ -654,6 +666,10 @@ public class ShipDestruction : MonoBehaviour
         }
         return planes.Length;
     }
+
+    // A torn-off plate: a solid, straight-edged chunk of the hull (MeshSlicer.ExtractPlate), never a sliver.
+    private static Mesh Plate(MeshSlicer.MeshData data, Vector3 local, Vector3 localNormal, float radius, out Vector3 center) =>
+        MeshSlicer.ExtractPlate(data, local, localNormal, radius, radius * Random.Range(0.18f, 0.32f), Random.Range(4, 7), "Plating", out center);
 
     private WreckChunk NewChunk(string chunkName, Vector3 position)
     {

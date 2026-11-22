@@ -13,6 +13,16 @@ public static class DestructionShowcaseRunner
         EditorApplication.EnterPlaymode();
     }
 
+    // Hull battle damage up close, then the breakup (HullDamageShowcase). -captureDir, -noDeform.
+    public static void RunHullDamage()
+    {
+        DestructionSetup.SetUpShips();
+        EditorSceneManager.OpenScene("Assets/Scenes/BattleScene.unity", OpenSceneMode.Single);
+        new GameObject("HullDamageShowcase").AddComponent<HullDamageShowcase>();
+        Application.runInBackground = true;
+        EditorApplication.EnterPlaymode();
+    }
+
     public static void RunBattle()
     {
         DestructionSetup.SetUpShips();

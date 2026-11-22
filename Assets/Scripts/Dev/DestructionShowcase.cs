@@ -8,9 +8,9 @@ using UnityEngine.AI;
 
 public class DestructionShowcase : MonoBehaviour
 {
-    public int width = 960;
-    public int height = 540;
-    public int frameRate = 20;
+    public int width = 1280;
+    public int height = 720;
+    public int frameRate = 30;
 
     static readonly string[] Ships = { "Human/Human_Cruiser", "Avanti/Avanti_Destroyer", "Human/Human_Battleship", "Avanti/Avanti_Capital" };
 
@@ -31,7 +31,7 @@ public class DestructionShowcase : MonoBehaviour
     {
         outputDir = Argument("-captureDir", Path.Combine(Application.temporaryCachePath, "DestructionShowcase"));
         Directory.CreateDirectory(outputDir);
-        foreach (string old in Directory.GetFiles(outputDir, "*.png")) File.Delete(old);
+        foreach (string old in Directory.GetFiles(outputDir, "*.jpg")) File.Delete(old);
 
         yield return null;
         Time.captureFramerate = frameRate;
@@ -104,7 +104,19 @@ public class DestructionShowcase : MonoBehaviour
         until = Time.time + 1.5f;
         while (Time.time < until && ship != null) { Track(ship); yield return null; }
 
-        destruction.SendMessage("DestroyNow");
+        // Finished off by gunfire, as in battle (killing every hardpoint at once flared them all together).
+        float giveUp = Time.time + 10f;
+        while (ship != null && !health.IsDead)
+        {
+            if (Time.time > giveUp) { destruction.SendMessage("DestroyNow"); break; }
+            if (Time.time >= nextHit)
+            {
+                nextHit = Time.time + 0.15f;
+                health.DealRandomDamage(health.maxHealth * 0.08f);
+            }
+            Track(ship);
+            yield return null;
+        }
 
         while (ship != null)
         {
@@ -185,28 +197,16 @@ public class DestructionShowcase : MonoBehaviour
         Quaternion around = Quaternion.Euler(elevation, 120f + orbit, 0f);
         captureCamera.transform.position = focus - around * Vector3.forward * viewDistance;
         captureCamera.transform.rotation = around;
-    }
 
-    IEnumerator CaptureLoop()
-    {
-        while (true)
-        {
-            yield return new WaitForEndOfFrame();
-            if (!capturing || captureCamera == null) continue;
-
-            RenderTexture previous = RenderTexture.active;
-            RenderTexture.active = target;
-            readback.ReadPixels(new Rect(0, 0, width, height), 0, 0);
-            readback.Apply(false);
-            RenderTexture.active = previous;
-            File.WriteAllBytes(Path.Combine(outputDir, $"f{frame:D5}.png"), readback.EncodeToPNG());
-            frame++;
-        }
-    }
-
-    void OnEnable()
-    {
-        StartCoroutine(CaptureLoop());
+        // Rendered here, not at end of frame: WaitForEndOfFrame never comes in a batch-mode editor.
+        captureCamera.Render();
+        RenderTexture previous = RenderTexture.active;
+        RenderTexture.active = target;
+        readback.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+        readback.Apply(false);
+        RenderTexture.active = previous;
+        File.WriteAllBytes(Path.Combine(outputDir, $"f{frame:D5}.jpg"), readback.EncodeToJPG(92));
+        frame++;
     }
 
     GameObject Spawn(string key, Vector3 pos, Quaternion rot)

@@ -61,6 +61,10 @@ public class DestructionProfile : ScriptableObject
     public Vector2Int plateShards = new Vector2Int(3, 8);
     public Vector2 plateShardRadius = new Vector2(0.04f, 0.08f);
     public float separationSpeed = 2.5f;
+    [Tooltip("Seconds between one seam giving way and the next (WreckBreakup): the keel breaks, then the rest.")]
+    public Vector2 seamStagger = new Vector2(0.45f, 1f);
+    [Tooltip("The breakup fireball at the first break, as a share of breakupExplosionScale (it used to swallow the whole ship).")]
+    [Range(0.1f, 1f)] public float breakupBlastScale = 0.45f;
     public float debrisSpeed = 9f;
     public float chunkSpin = 10f;
     public Vector2 debrisSpin = new Vector2(60f, 260f);
