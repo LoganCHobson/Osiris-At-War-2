@@ -95,13 +95,18 @@ public class BattleHazards : MonoBehaviour
         int nebulae = Next() < 0.55f ? (Next() < 0.35f ? 2 : 1) : 0;
         nebulae = Mathf.Max(nebulae, ForceNebulae);
         ForceNebulae = 0;
+        BattleContext context = BattleContext.Instance;
+        bool skirmish = context != null && context.isSkirmish;
+        if (skirmish && context.skirmishNebulae >= 0) nebulae = context.skirmishNebulae;
         for (int i = 0; i < nebulae; i++)
         {
             float radius = Mathf.Lerp(110f, 170f, Next());
             if (TryPlace(radius, out Vector2 spot)) AddZone(Kind.Nebula, spot, radius);
         }
 
-        if (Next() < 0.35f)
+        bool storm = Next() < 0.35f;
+        if (skirmish && context.skirmishIonStorm >= 0) storm = context.skirmishIonStorm > 0;
+        if (storm)
         {
             float radius = Mathf.Lerp(90f, 140f, Next());
             if (TryPlace(radius, out Vector2 spot)) AddZone(Kind.IonStorm, spot, radius);

@@ -37,8 +37,10 @@ public class HullDamageShowcase : MonoBehaviour
 
         Vector3 a = GameManager.Instance.attackerShipSpawnPoint.position, d = GameManager.Instance.defenderShipSpawnPoint.position;
         Vector3 centre = (a + d) / 2f, axis = (d - a).normalized;
+        string only = Argument("-ships", "");
         foreach (string key in Ships)
         {
+            if (only.Length > 0 && !key.Contains(only)) continue;
             Random.InitState(key.GetHashCode()); // the same patches with and without -noDeform
             GameObject ship = Spawn(key, centre, Quaternion.LookRotation(axis));
             yield return null;
@@ -87,9 +89,10 @@ public class HullDamageShowcase : MonoBehaviour
                 Vector3 normal = ship.transform.TransformDirection(lines[i].normal);
                 Vector3 dir = (-normal + Random.insideUnitSphere * 0.25f).normalized;
                 Vector3 from = point + Random.insideUnitSphere * hull.Size * 0.012f - dir * hull.Size * 0.6f;
-                foreach (RaycastHit hit in Physics.RaycastAll(from, dir, hull.Size * 1.2f))
+                foreach (RaycastHit hit in SortedHits(from, dir, hull.Size * 1.2f))
                 {
                     if (hit.collider.GetComponentInParent<HullScarring>() == null || hit.collider.transform.root != ship.transform) continue;
+                    if (hit.collider.gameObject.layer == ShieldGenerator.Layer) continue; // as if the shield were down
                     dose[i] -= 0.004f;
                     landed++;
                     HullScarring.Impact(hit.collider, hit.point, dir * 40f, health.maxHealth * 0.004f);
@@ -101,12 +104,19 @@ public class HullDamageShowcase : MonoBehaviour
         }
     }
 
+    static RaycastHit[] SortedHits(Vector3 from, Vector3 dir, float length)
+    {
+        RaycastHit[] hits = Physics.RaycastAll(from, dir, length);
+        System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+        return hits;
+    }
+
     IEnumerator Circle(GameObject ship)
     {
         HullScarring scarring = ship.GetComponent<HullScarring>();
         HullDeformation deformation = ship.GetComponent<HullDeformation>();
         Closeups(ship);
-        Debug.Log($"[HullDamage] {ship.name}: marks {(scarring != null ? scarring.MarkCount : -1)}, holes {(deformation != null ? deformation.Holes : 0)}, hits {landed}");
+        Debug.Log($"[HullDamage] {ship.name}: marks {(scarring != null ? scarring.MarkCount : -1)}, missed hull {(scarring != null ? scarring.MissedHull : -1)}, colliders {ship.GetComponentsInChildren<Collider>().Length} surfaces {ship.GetComponent<HullDamage>().Surfaces.Count}, holes {(deformation != null ? deformation.Holes : 0)}, hits {landed}");
         float until = Time.time + 8f;
         orbitSpeed = 30f;
         while (Time.time < until && ship != null)

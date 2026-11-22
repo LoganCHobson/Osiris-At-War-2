@@ -106,6 +106,9 @@ public class GalacticSim : MonoBehaviour
         float meanPinned = pinnedShares.Count > 0 ? pinnedShares.Average() : 0f;
         sb.AppendLine($"navy at the single biggest guard post: mean {meanPinned:P0}  worst {worstPinnedShare:P0}");
         sb.AppendLine($"guard samples in a standoff: {standoffSamples} of {samples}");
+        int[] tiers = new int[Shipyards.MaxTier + 1];
+        foreach (Planet planet in Planet.All) if (planet != null) tiers[planet.ShipyardTier]++;
+        sb.AppendLine($"shipyards by tier: light {tiers[1]}  heavy {tiers[2]}  capital {tiers[3]}");
         if (AIDirector.Instance != null)
         {
             foreach (FactionBrain brain in AIDirector.Instance.brains)

@@ -41,7 +41,7 @@ public static class Strength
     public static float Defenses(Planet planet)
     {
         if (planet == null) return 0f;
-        return (planet.hasCapitalShipyard ? ShipyardPower : 0f) + (planet.hasBattleStation ? BattleStationPower : 0f);
+        return Shipyards.Power(planet.ShipyardTier) + (planet.hasBattleStation ? BattleStationPower : 0f);
     }
 
     public static bool IsPlayer(Faction faction)

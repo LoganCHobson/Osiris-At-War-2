@@ -13,6 +13,7 @@ public class PlanetIntel
     public Faction owner;
     public bool hasTaxOffice;
     public bool hasCapitalShipyard;
+    public int shipyardTier;
     public bool hasBattleStation;
     public readonly List<FleetSighting> fleets = new List<FleetSighting>();
 
@@ -22,6 +23,7 @@ public class PlanetIntel
         owner = planet.owner;
         hasTaxOffice = planet.hasTaxOffice;
         hasCapitalShipyard = planet.hasCapitalShipyard;
+        shipyardTier = planet.ShipyardTier;
         hasBattleStation = planet.hasBattleStation;
 
         fleets.Clear();

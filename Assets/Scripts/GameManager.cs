@@ -93,7 +93,7 @@ public class GameManager : MonoBehaviour
 
         if (context.defenderHasShipyard)
         {
-            SpawnPlanetDefense(DefensePrefab(context.defenderFaction, shipyard: true), shipyardLocalOffset, isShipyardBonus: true, isBattleStation: false);
+            SpawnPlanetDefense(DefensePrefab(context.defenderFaction, shipyard: true, context.YardTier), shipyardLocalOffset, isShipyardBonus: true, isBattleStation: false);
         }
 
         if (context.defenderHasBattleStation)
@@ -341,9 +341,9 @@ public class GameManager : MonoBehaviour
         return 30f;
     }
 
-    private GameObject DefensePrefab(Faction faction, bool shipyard)
+    private GameObject DefensePrefab(Faction faction, bool shipyard, int tier = Shipyards.LegacyTier)
     {
-        GameObject own = faction == null ? null : shipyard ? faction.capitalShipyardPrefab : faction.battleStationPrefab;
+        GameObject own = faction == null ? null : shipyard ? faction.ShipyardPrefab(tier) : faction.battleStationPrefab;
         if (own != null) return own;
         return shipyard ? shipyardDefenderPrefab : battleStationPrefab;
     }
@@ -370,6 +370,14 @@ public class GameManager : MonoBehaviour
         GameObject spawned = Instantiate(prefab, basePosition + rotation * local, rotation);
         UnitHealthManager health = spawned.GetComponent<UnitHealthManager>();
         health?.ConfigureSpecial(isShipyardBonus, isBattleStation);
+        if (isShipyardBonus && health != null)
+        {
+            // Higher yards are tougher (Shipyards.HealthScale). Hull is the sum of the hardpoints, read in Start.
+            int tier = BattleContext.Instance != null ? BattleContext.Instance.YardTier : Shipyards.LegacyTier;
+            float scale = Shipyards.HealthScale(tier);
+            foreach (HardpointHealth part in spawned.GetComponentsInChildren<HardpointHealth>(true)) part.maxHealth *= scale;
+            health.maxHealth *= scale;
+        }
 
         ApplyAllegiance(spawned, false);
         BattleTerrain.Instance?.AddDefenseZone(health, false); // Attackers can't drop reinforcements near it.
@@ -379,13 +387,22 @@ public class GameManager : MonoBehaviour
     // A capital shipyard lends the battle its guard squadron - one battleship, two destroyers and a corvette of
     // the defender's own classes, free: they don't count against the population cap, and they belong to the
     // yard, not the fleet, so win or lose (or retreat) they don't join the roster afterwards.
-    private static readonly ShipType[] ShipyardGuard = { ShipType.Battleship, ShipType.Destroyer, ShipType.Destroyer, ShipType.Corvette };
+    // By yard tier: a Light Frigate Yard keeps two corvettes, a Heavy Cruiser Yard two destroyers and a corvette,
+    // a Capital Shipyard the full squadron.
+    private static readonly ShipType[][] ShipyardGuards =
+    {
+        new[] { ShipType.Corvette, ShipType.Corvette },
+        new[] { ShipType.Destroyer, ShipType.Destroyer, ShipType.Corvette },
+        new[] { ShipType.Battleship, ShipType.Destroyer, ShipType.Destroyer, ShipType.Corvette },
+    };
 
     private void SpawnShipyardGuard(Vector3 yard, Quaternion facing, float yardRadius)
     {
         Faction faction = BattleContext.Instance != null ? BattleContext.Instance.defenderFaction : null;
         if (faction == null || faction.roster == null) return;
         Vector3 forward = facing * Vector3.forward, right = facing * Vector3.right;
+        int tier = BattleContext.Instance != null ? BattleContext.Instance.YardTier : Shipyards.LegacyTier;
+        ShipType[] ShipyardGuard = ShipyardGuards[tier - 1];
         for (int i = 0; i < ShipyardGuard.Length; i++)
         {
             Ship ship = faction.roster.Find(s => s != null && s.prefab != null && s.prefab.TryGetComponent(out SpaceUnit u) && u.shipType == ShipyardGuard[i]);

@@ -42,6 +42,7 @@ public class PlanetSave
     public string owner;
     public bool hasTaxOffice;
     public bool hasCapitalShipyard;
+    public int shipyardTier; // 0 in saves from before tiers (= Shipyards.LegacyTier)
     public bool hasBattleStation;
     public List<BuildSave> buildQueue = new List<BuildSave>();
 }

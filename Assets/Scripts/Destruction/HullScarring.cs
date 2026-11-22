@@ -20,6 +20,8 @@ public class HullScarring : MonoBehaviour
     private const float GuttedAt = 0.085f;  // past breached: a plate blown loose and folded back (HullDeformation.Peel)
     private const int MaxScoresPerCell = 4;
     private const int MaxMarksPerShip = 110;
+    private float stageScale = 1f;
+    private int markLimit = MaxMarksPerShip;
 
     private class Cell
     {
@@ -41,6 +43,7 @@ public class HullScarring : MonoBehaviour
     private Ember lastBreachGlow;
     private int marks;
     public int MarkCount => marks;
+    public int MissedHull { get; private set; } // hits that found no hull surface to mark (dev checks)
     private float cellSize;
 
     private class Ember
@@ -92,26 +95,35 @@ public class HullScarring : MonoBehaviour
             if (surface.TryGetComponent(out Collider collider)) hullColliders.Add(collider);
         }
         cellSize = Mathf.Max(1f, hull.Size * 0.1f);
+        // Big hulls (the Avanti capital, battleships) have far more health and far more hull to spread hits over,
+        // so at the same thresholds they hardly ever dented or holed. Their patches reach each stage sooner, and
+        // they carry more marks.
+        stageScale = Mathf.Clamp(Mathf.Pow(27f / Mathf.Max(1f, hull.Size), 0.9f), 0.35f, 1f);
+        markLimit = Mathf.RoundToInt(MaxMarksPerShip / stageScale);
         return hullColliders.Count > 0;
     }
 
+    private static readonly Unity.Profiling.ProfilerMarker RegisterMarker = new Unity.Profiling.ProfilerMarker("HullScarring.Register"),
+        MarkMarker = new Unity.Profiling.ProfilerMarker("HullScarring.Mark");
+
     private void Register(Vector3 point, Vector3 direction, float damage, Collider struck)
     {
+        using var registerTiming = RegisterMarker.Auto();
         if (hull == null || health == null || health.IsDead || health.maxHealth <= 0f || !Ready()) return;
 
         // Where the shot met the hull plating (a hit on a turret or other hardpoint marks the deck under it).
         Vector3 dirN = direction.sqrMagnitude > 0.0001f ? direction.normalized : (transform.position - point).normalized;
-        if (!HullPoint(point, dirN, out Vector3 surfacePoint, out Vector3 normal, out MeshFilter surface)) return;
+        if (!HullPoint(point, dirN, out Vector3 surfacePoint, out Vector3 normal, out MeshFilter surface)) { MissedHull++; return; }
 
         Vector3 local = transform.InverseTransformPoint(surfacePoint);
         Vector3Int key = new Vector3Int(Mathf.FloorToInt(local.x / cellSize), Mathf.FloorToInt(local.y / cellSize), Mathf.FloorToInt(local.z / cellSize));
         if (!cells.TryGetValue(key, out Cell cell)) cells[key] = cell = new Cell();
 
         float before = cell.damage;
-        cell.damage += damage / health.maxHealth;
+        cell.damage += damage / health.maxHealth / stageScale;
         cell.lastLocalPoint = local;
         cell.lastLocalDirection = transform.InverseTransformDirection(direction);
-        if (marks >= MaxMarksPerShip) return;
+        if (marks >= markLimit) return;
 
         // Carbon scoring: one streak each time the patch soaks up another slice of damage.
         if (Mathf.FloorToInt(cell.damage / ScoreEvery) > Mathf.FloorToInt(before / ScoreEvery) && cell.scores < MaxScoresPerCell && cell.stage < 2)
@@ -203,6 +215,7 @@ public class HullScarring : MonoBehaviour
     // projected onto it and stretched along the line of fire (`stretch`).
     private MeshRenderer Mark(Material material, MeshFilter surface, Vector3 point, Vector3 normal, Vector3 direction, float radius, float stretch, float lift)
     {
+        using var markTiming = MarkMarker.Auto();
         Mesh mesh = Patch(surface, point, normal, direction, radius, stretch, lift + 0.0006f);
         if (mesh == null) return null;
         marks++;
@@ -237,7 +250,7 @@ public class HullScarring : MonoBehaviour
             cell.glow.bornAt = Mathf.Max(cell.glow.bornAt, Time.time - cell.glow.life * 0.1f);
             return;
         }
-        if (marks >= MaxMarksPerShip) return;
+        if (marks >= markLimit) return;
         cell.glow = cell.stage >= 2
             ? Glow(crackGlowMaterial ??= GlowMaterial(CrackGlowTexture()), surface, point, normal, direction, hull.Size * 0.055f, 30f, 1.9f)
             : Glow(emberMaterial ??= GlowMaterial(EmberTexture()), surface, point, normal, direction, hull.Size * 0.032f, 12f, 1.7f);

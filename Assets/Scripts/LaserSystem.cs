@@ -13,6 +13,8 @@ public class LaserSystem : MonoBehaviour
     private const int MaxHits = 4; // Enough to see past a friendly shield bubble or two.
 
     private static LaserSystem instance;
+    private static readonly Unity.Profiling.ProfilerMarker AdvanceMarker = new Unity.Profiling.ProfilerMarker("LaserSystem.Advance"),
+        CastMarker = new Unity.Profiling.ProfilerMarker("LaserSystem.Raycasts"), ResolveMarker = new Unity.Profiling.ProfilerMarker("LaserSystem.Resolve");
     private static readonly List<Laser> active = new List<Laser>();
 
     private Laser[] batch = new Laser[0];
@@ -232,6 +234,7 @@ public class LaserSystem : MonoBehaviour
         }
         active.CopyTo(0, batch, 0, count); // Bolts that land are removed from `active` while we work.
 
+        AdvanceMarker.Begin();
         for (int i = 0; i < count; i++)
         {
             Laser laser = batch[i];
@@ -242,9 +245,13 @@ public class LaserSystem : MonoBehaviour
             commands[i] = new RaycastCommand(froms[i], direction, new QueryParameters(laser.HitMask), Mathf.Max(length, 0.0001f));
         }
 
+        AdvanceMarker.End();
+        CastMarker.Begin();
         JobHandle handle = RaycastCommand.ScheduleBatch(commands.GetSubArray(0, count), results.GetSubArray(0, count * MaxHits), 32, MaxHits);
         handle.Complete();
+        CastMarker.End();
 
+        using var resolving = ResolveMarker.Auto();
         for (int i = 0; i < count; i++)
         {
             Laser laser = batch[i];

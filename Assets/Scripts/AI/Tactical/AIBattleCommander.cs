@@ -182,7 +182,7 @@ public partial class AIBattleCommander : MonoBehaviour
 
         if (IsAttackerSide)
         {
-            if (context.defenderHasShipyard) power += Strength.ShipyardPower;
+            if (context.defenderHasShipyard) power += Shipyards.Power(context.YardTier);
             if (context.defenderHasBattleStation) power += Strength.BattleStationPower;
         }
         return power;
@@ -1465,7 +1465,7 @@ public partial class AIBattleCommander : MonoBehaviour
     private static float BasePower(UnitHealthManager health)
     {
         if (health.isBattleStation) return Strength.BattleStationPower;
-        if (health.isShipyardBonus) return Strength.ShipyardPower;
+        if (health.isShipyardBonus) return BattleContext.Instance != null ? Shipyards.Power(BattleContext.Instance.YardTier) : Strength.ShipyardPower;
         return health.sourceShip != null ? health.sourceShip.combatPower : Strength.DefaultShipPower;
     }
 

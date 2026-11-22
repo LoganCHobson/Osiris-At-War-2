@@ -23,11 +23,22 @@ public class Planet : MonoBehaviour
 
     public bool canBuildCapitalShipyard = true;
     public bool hasTaxOffice;
-    public bool hasCapitalShipyard;
+    public bool hasCapitalShipyard;   // a shipyard of any tier (Shipyards.cs)
+    [Tooltip("Shipyard tier: 1 Light Frigate Yard, 2 Heavy Cruiser Yard, 3 Capital Shipyard. 0 with a yard = 2 (a yard from before tiers).")]
+    public int shipyardTier;
     public bool hasBattleStation;
     public List<ShipBuildOrder> shipBuildQueue = new List<ShipBuildOrder>();
 
     public bool IsShipyardSite => canBuildCapitalShipyard || hasCapitalShipyard;
+
+    // 0 without a yard, else 1-3.
+    public int ShipyardTier => !hasCapitalShipyard ? 0 : shipyardTier <= 0 ? Shipyards.LegacyTier : Mathf.Min(shipyardTier, Shipyards.MaxTier);
+
+    public void SetShipyard(int tier)
+    {
+        hasCapitalShipyard = tier > 0;
+        shipyardTier = Mathf.Clamp(tier, 0, Shipyards.MaxTier);
+    }
 
     private readonly GalacticFleet[] fleetSlots = new GalacticFleet[FleetSlotCount];
 

@@ -24,7 +24,10 @@ public class DifficultySim : MonoBehaviour
     [Tooltip("Test commander (-probe <mode>, GAProbe): self-play's battles with some of the model's calls made at random or fixed. Plays the server's model, uploads nothing.")]
     public string probe;
     private bool Probing => !string.IsNullOrEmpty(probe);
-    private bool FarmBattles => selfPlay || Probing; // Equal-cost fleets, fresh maps, campaign-style share.
+    [Tooltip("Experiment (-matchup Admiral:Cadet): only that pairing, farm-style (equal cost, fresh maps), one GASTAT line per battle, nothing uploaded. Answers \"does better play win at equal cost?\".")]
+    public string matchup;
+    private (DifficultyLevel stronger, DifficultyLevel weaker)? fixedMatchup;
+    private bool FarmBattles => selfPlay || Probing || fixedMatchup.HasValue; // Equal-cost fleets, fresh maps, campaign-style share.
 
     private static readonly (DifficultyLevel stronger, DifficultyLevel weaker)[] Matchups =
     {
@@ -40,7 +43,19 @@ public class DifficultySim : MonoBehaviour
     private IEnumerator Start()
     {
         yield return null;
-        if (FarmBattles) yield return GrandAdmiralService.SelfPlayModel(); // The trial being tested, else the newest release.
+        if (!string.IsNullOrEmpty(matchup))
+        {
+            string[] pair = matchup.Split(':');
+            if (pair.Length != 2 || !System.Enum.TryParse(pair[0], out DifficultyLevel a) || !System.Enum.TryParse(pair[1], out DifficultyLevel b)
+                || a == DifficultyLevel.GrandAdmiral || b == DifficultyLevel.GrandAdmiral)
+            {
+                Debug.LogError($"DIFFSIM bad -matchup '{matchup}' (want e.g. Admiral:Cadet, no GrandAdmiral)");
+                Application.Quit(2);
+                yield break;
+            }
+            fixedMatchup = (a, b);
+        }
+        if (FarmBattles && !fixedMatchup.HasValue) yield return GrandAdmiralService.SelfPlayModel(); // The trial being tested, else the newest release.
         if (Probing)
         {
             Osiris.GrandAdmiral.GAProbe.Active = Osiris.GrandAdmiral.GAProbe.Parse(probe);
@@ -58,7 +73,11 @@ public class DifficultySim : MonoBehaviour
         int seedBase = FarmBattles ? Random.Range(0, 1000000) : 1000;
         int gaGames = 0, gaWins = 0, gaDraws = 0;
         var matchups = new List<(DifficultyLevel stronger, DifficultyLevel weaker)>();
-        if (FarmBattles || grandAdmiralOnly)
+        if (fixedMatchup.HasValue)
+        {
+            for (int i = 0; i < selfPlayRounds; i++) matchups.Add(fixedMatchup.Value);
+        }
+        else if (FarmBattles || grandAdmiralOnly)
         {
             for (int i = 0; i < selfPlayRounds; i++) matchups.Add((DifficultyLevel.GrandAdmiral, DifficultyLevel.Admiral));
         }
@@ -146,7 +165,24 @@ public class DifficultySim : MonoBehaviour
                 bool strongWon = outcome == stronger.ToString(), weakWon = outcome == weaker.ToString();
                 strong.NotifyBattleEnded(strongWon, strong.Retreating, weak.Retreating);
                 weak.NotifyBattleEnded(weakWon, weak.Retreating, strong.Retreating);
-                if (stronger == DifficultyLevel.GrandAdmiral && weaker == DifficultyLevel.Admiral && strong.GrandAdmiralActive)
+                if (fixedMatchup.HasValue)
+                {
+                    Debug.Log("GASTAT " + JsonUtility.ToJson(new BattleStat
+                    {
+                        result = strongWon ? "win" : weakWon ? "loss" : "draw",
+                        side = strongerAttacks ? "attacker" : "defender",
+                        game_seconds = Time.time - started,
+                        wall_seconds = Time.realtimeSinceStartup - wallStarted,
+                        ga_left = strongLeft,
+                        admiral_left = weakLeft,
+                        terrain = terrainSeed,
+                        budget = battleBudget,
+                        probe = $"{stronger}-vs-{weaker}",
+                        campaign_style = campaignStyle,
+                        retreated = retreated.HasValue ? (retreated.Value == strongerAttacks ? "grand_admiral" : "admiral") : "",
+                    }));
+                }
+                else if (stronger == DifficultyLevel.GrandAdmiral && weaker == DifficultyLevel.Admiral && strong.GrandAdmiralActive)
                 {
                     // Campaign-style battles train the model but stay out of the arena: a trial is judged
                     // against the release's record, which was played without reserves or retreats.
@@ -237,6 +273,7 @@ public class DifficultySim : MonoBehaviour
         selfPlay = HasFlag("-selfPlay");
         grandAdmiralOnly = HasFlag("-grandAdmiralOnly");
         probe = Argument("-probe", "");
+        matchup = Argument("-matchup", "");
         string report = Argument("-simReport", "");
         if (!string.IsNullOrEmpty(report)) reportPath = report;
     }
@@ -258,7 +295,7 @@ public class DifficultySim : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void BootFromCommandLine()
     {
-        if (Application.isEditor || (!HasFlag("-selfPlay") && !HasFlag("-grandAdmiralOnly") && !HasFlag("-probe"))) return;
+        if (Application.isEditor || (!HasFlag("-selfPlay") && !HasFlag("-grandAdmiralOnly") && !HasFlag("-probe") && !HasFlag("-matchup"))) return;
         SiegeRecordingAssets assets = Resources.Load<SiegeRecordingAssets>("Dev/SiegeRecordingAssets");
         if (assets == null || assets.titans == null || assets.avanti == null || GameManager.Instance == null)
         {

@@ -16,11 +16,13 @@ MonoBehaviour:
     name: Missile
     destroyerSalvo: 6
     corvetteSalvo: 3
+    battleshipSalvo: 4
+    cruiserSalvo: 2
     reload: 12
     salvoSpacing: 0.15
     speed: 42
     turnRate: 120
-    damage: 9
+    damage: 20
     passesThroughShields: 1
     shieldMultiplier: 1
     hullMultiplier: 1
@@ -38,6 +40,8 @@ MonoBehaviour:
     name: Plasma Torpedo
     destroyerSalvo: 2
     corvetteSalvo: 1
+    battleshipSalvo: 0
+    cruiserSalvo: 0
     reload: 15
     salvoSpacing: 0.25
     speed: 30

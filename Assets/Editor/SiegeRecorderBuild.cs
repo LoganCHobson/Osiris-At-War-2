@@ -33,6 +33,7 @@ public static class SiegeRecorderBuild
             scenes = new[] { "Assets/Scenes/BattleScene.unity", "Assets/Scenes/MainMenu.unity", "Assets/Scenes/GalacticMap.unity" },
             locationPathName = location,
             target = BuildTarget.StandaloneWindows64,
+            subtarget = (int)StandaloneBuildSubtarget.Player, // a windowed player, even in a project last set to build servers
             options = buildOptions,
         };
         BuildReport report = BuildPipeline.BuildPlayer(options);

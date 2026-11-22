@@ -144,7 +144,13 @@ public static class ProductionOrders
                 break;
             }
 
-            Planet yard = candidates.OrderBy(y => load[y]).First();
+            // Only a yard of a high enough tier can build it (Shipyards.cs).
+            Planet yard = candidates.Where(y => global::Shipyards.CanBuild(y, ship)).OrderBy(y => load[y]).FirstOrDefault();
+            if (yard == null)
+            {
+                result.stoppedBecause = ShipInfo.Name(ship) + " needs a " + global::Shipyards.Name(global::Shipyards.RequiredTier(ship));
+                continue;
+            }
             if (!GalacticState.Instance.TrySpend(faction, ship.cost))
             {
                 result.stoppedBecause = "Not enough credits";

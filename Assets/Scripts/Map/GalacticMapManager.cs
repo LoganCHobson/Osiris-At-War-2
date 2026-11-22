@@ -132,7 +132,7 @@ public class GalacticMapManager : MonoBehaviour
 
         bool attackerWon = context.defenderLost && !context.attackerLost;
 
-        float destroyedDefenses = (context.defenderHasShipyard && !context.defenderShipyardSurvived ? Strength.ShipyardPower : 0f)
+        float destroyedDefenses = (context.defenderHasShipyard && !context.defenderShipyardSurvived ? Shipyards.Power(context.YardTier) : 0f)
             + (context.defenderHasBattleStation && !context.defenderBattleStationSurvived ? Strength.BattleStationPower : 0f);
 
         GalacticEvents.RaiseBattleResolved(new BattleReport

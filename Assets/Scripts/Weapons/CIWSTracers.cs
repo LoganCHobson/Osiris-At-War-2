@@ -2,8 +2,11 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 // Every CIWS round in the battle, simulated and drawn here as one mesh of glowing tracer streaks (thousands
-// of pooled projectiles would be far too slow at 50 rounds a second per gun). A round only checks the fighter
-// or missile its gun was aiming at; everything else it misses harmlessly.
+// of pooled projectiles would be far too slow at 50 rounds a second per gun). A round fired at a fighter or a
+// missile only checks that target; everything else it misses harmlessly. A round fired at a warship (a Human
+// fighter's strafing run) is hit-tested against the real geometry, as a laser bolt is: it strikes the first
+// enemy shield, hardpoint or hull in its path. (It used to check only for passing within 1.4 of the aimed
+// hardpoint's centre, so on a big hull nearly every round went straight through.)
 public class CIWSTracers : MonoBehaviour
 {
     private const int MaxRounds = 3000;
@@ -25,7 +28,11 @@ public class CIWSTracers : MonoBehaviour
         public UnitHealthManager source;
         public DamageLedger.Weapon weapon;
         public float fighterRadius;
+        public int shipMask;      // non-zero: aimed at a warship, hit-tested against colliders on these layers
+        public bool attackerSide; // the shooter's side, so its own ships and shields don't stop the round
     }
+
+    private const float HullDamageMultiplier = 0.35f; // as Laser: a round in bare hull does less than one in a hardpoint
 
     private static CIWSTracers instance;
 
@@ -110,6 +117,14 @@ public class CIWSTracers : MonoBehaviour
     private void Add(Vector3 position, Vector3 velocity, float life, float damage, Missile missile, HardpointHealth fighter, UnitHealthManager source, DamageLedger.Weapon weapon)
     {
         if (count >= MaxRounds) return;
+        int shipMask = 0;
+        if (fighter != null && fighter.GetComponentInParent<Fighter>() == null)
+        {
+            // A warship's hardpoint: hit whatever of the enemy's is really in the way.
+            shipMask = (1 << fighter.gameObject.layer) | (1 << fighter.transform.root.gameObject.layer) | ShieldGenerator.Mask
+                | WreckChunk.BlockingMask | BattleTerrain.BlockingMask;
+            fighter = null;
+        }
         rounds[count++] = new Round
         {
             position = position,
@@ -121,6 +136,8 @@ public class CIWSTracers : MonoBehaviour
             fighterRadius = 1.4f,
             source = source,
             weapon = weapon,
+            shipMask = shipMask,
+            attackerSide = source != null && source.isAttackerSide,
         };
     }
 
@@ -137,6 +154,7 @@ public class CIWSTracers : MonoBehaviour
             round.position = to;
             round.life -= dt;
 
+            if (round.life <= 0f && round.shipMask != 0) Laser.Count(TallyKey(round), 4); // a strafing round that hit nothing
             if (round.life <= 0f || Hit(ref round, from, to))
             {
                 rounds[i] = rounds[--count];
@@ -144,8 +162,11 @@ public class CIWSTracers : MonoBehaviour
         }
     }
 
+    private static readonly RaycastHit[] shipHits = new RaycastHit[6];
+
     private static bool Hit(ref Round round, Vector3 from, Vector3 to)
     {
+        if (round.shipMask != 0) return HitShip(ref round, from, to);
         if (round.missile != null)
         {
             if (!round.missile.InFlight)
@@ -175,6 +196,62 @@ public class CIWSTracers : MonoBehaviour
         }
         return false;
     }
+
+    // A round at a warship: the nearest enemy shield (if it's up), hardpoint or hull along this step.
+    private static bool HitShip(ref Round round, Vector3 from, Vector3 to)
+    {
+        Vector3 step = to - from;
+        float length = step.magnitude;
+        if (length < 1e-4f) return false;
+        int hits = Physics.RaycastNonAlloc(from, step / length, shipHits, length, round.shipMask, QueryTriggerInteraction.Collide);
+        float best = float.MaxValue;
+        bool struck = false;
+        for (int pass = 0; pass < hits; pass++)
+        {
+            // Nearest first, without sorting the buffer: pick the closest not yet ruled out.
+            int index = -1;
+            for (int i = 0; i < hits; i++)
+            {
+                if (shipHits[i].collider == null) continue;
+                if (index < 0 || shipHits[i].distance < shipHits[index].distance) index = i;
+            }
+            if (index < 0) break;
+            RaycastHit hit = shipHits[index];
+            shipHits[index] = default;
+            if (hit.distance > best) break;
+            Collider collider = hit.collider;
+            int layer = collider.gameObject.layer;
+            if (layer == WreckChunk.WreckLayer || layer == BattleTerrain.AsteroidLayer) { Laser.Count(TallyKey(round), 3); return true; } // soaked up
+
+            if (layer == ShieldGenerator.Layer)
+            {
+                ShieldGenerator shield = collider.GetComponentInParent<ShieldGenerator>();
+                UnitHealthManager owner = shield != null ? shield.GetComponentInParent<UnitHealthManager>() : null;
+                if (owner == null || owner.isAttackerSide == round.attackerSide) continue; // our own side's bubble
+                DamageLedger.Begin(round.source, round.weapon);
+                bool absorbed = shield.Absorb(round.damage, hit.point);
+                DamageLedger.End();
+                if (absorbed) { Sfx.Play(Sfx.Cue.HitShield, hit.point); Laser.Count(TallyKey(round), 2); return true; }
+                continue; // down: on to the hull behind it
+            }
+
+            UnitHealthManager ship = collider.GetComponentInParent<UnitHealthManager>();
+            if (ship == null || ship.IsDead || ship.isAttackerSide == round.attackerSide) continue;
+            DamageLedger.Begin(round.source, round.weapon);
+            HullScarring.Impact(collider, hit.point, round.velocity, round.damage);
+            HardpointHealth hardpoint = collider.GetComponentInParent<HardpointHealth>();
+            if (hardpoint == null) hardpoint = collider.GetComponentInChildren<HardpointHealth>();
+            Laser.Count(TallyKey(round), hardpoint != null ? 0 : 1);
+            if (hardpoint != null) hardpoint.DealDamage(round.damage);
+            else ship.DealRandomDamage(round.damage * HullDamageMultiplier);
+            DamageLedger.End();
+            struck = true;
+            break;
+        }
+        return struck;
+    }
+
+    private static string TallyKey(in Round round) => "tracer " + (round.attackerSide ? "attacker" : "defender");
 
     private static bool Passes(Vector3 from, Vector3 to, Vector3 point, float radius)
     {

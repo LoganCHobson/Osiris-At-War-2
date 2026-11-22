@@ -86,7 +86,7 @@ public class CursorManager : MonoBehaviour
         Ray ray = cam.ScreenPointToRay(Input.mousePosition);
         Plane groundPlane = new Plane(Vector3.up, new Vector3(0, markerHeight, 0));
 
-        if (isMarkerActive && markerInstance != null && groundPlane.Raycast(ray, out float rayDistance))
+        if (isMarkerActive && !CinematicCamera.Active && markerInstance != null && groundPlane.Raycast(ray, out float rayDistance))
         {
             markerInstance.SetActive(true);
             markerInstance.transform.position = ray.GetPoint(rayDistance);
@@ -149,6 +149,7 @@ public class CursorManager : MonoBehaviour
 
     private void ShowHeightLine(bool show, Vector3 from, Vector3 to)
     {
+        show &= !CinematicCamera.Active; // The cursor's height guide is a gameplay aid: never in the cinematic camera.
         if (heightLine == null)
         {
             if (!show) return;

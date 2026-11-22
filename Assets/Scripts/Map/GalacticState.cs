@@ -12,6 +12,7 @@ public class GalacticState : MonoBehaviour
         public Faction owner;
         public bool hasTaxOffice;
         public bool hasCapitalShipyard;
+        public int shipyardTier;
         public bool hasBattleStation;
         public List<ShipBuildOrder> shipBuildQueue = new List<ShipBuildOrder>();
     }
@@ -71,6 +72,7 @@ public class GalacticState : MonoBehaviour
                 owner = planet.owner,
                 hasTaxOffice = planet.hasTaxOffice,
                 hasCapitalShipyard = planet.hasCapitalShipyard,
+                shipyardTier = planet.ShipyardTier,
                 hasBattleStation = planet.hasBattleStation,
                 shipBuildQueue = planet.shipBuildQueue.ConvertAll(o => new ShipBuildOrder { ship = o.ship, remainingTime = o.remainingTime, deliverTo = o.deliverTo })
             });
@@ -111,6 +113,7 @@ public class GalacticState : MonoBehaviour
                 planet.SetOwnership(snapshot.owner);
                 planet.hasTaxOffice = snapshot.hasTaxOffice;
                 planet.hasCapitalShipyard = snapshot.hasCapitalShipyard;
+                planet.shipyardTier = snapshot.shipyardTier;
                 planet.hasBattleStation = snapshot.hasBattleStation;
                 planet.shipBuildQueue = snapshot.shipBuildQueue.ConvertAll(o => new ShipBuildOrder { ship = o.ship, remainingTime = o.remainingTime, deliverTo = o.deliverTo });
             }

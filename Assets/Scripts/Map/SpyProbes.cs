@@ -68,7 +68,7 @@ public static class SpyProbes
     public static string WhyNot(Planet planet)
     {
         if (planet == null || planet.owner == null || !planet.owner.isPlayerFaction) return "Not your planet";
-        if (!planet.hasCapitalShipyard) return "Needs a capital shipyard";
+        if (!planet.hasCapitalShipyard) return "Needs a shipyard";
         if (GalacticState.Instance == null || GalacticState.Instance.GetCurrency(planet.owner) < Cost) return "Not enough credits";
         return null;
     }

@@ -30,7 +30,9 @@ MonoBehaviour:
   projectilePrefab: {fileID: 9062178426813273101, guid: c35cd167db47fd049b45319467d5858c, type: 3}
   shipMaterial: {fileID: 2100000, guid: f08f8a8e202ab3b40a94f7444c93f08d, type: 2}
   maxBattleStations: 50
-  capitalShipyardPrefab: {fileID: 7886890329125972385, guid: c2a1b398ef5a43b4a8bdb8d2dcf1d190, type: 3}
+  capitalShipyardPrefab: {fileID: 4981552138547673364, guid: b046f7891b2724949afadc5fad82778e, type: 3}
+  lightShipyardPrefab: {fileID: 507097361259018415, guid: f9729238edd34dd4bb94ba33604e7ea4, type: 3}
+  grandShipyardPrefab: {fileID: 4367842288500214470, guid: 06666e02f1290614393770c005ef987a, type: 3}
   battleStationPrefab: {fileID: 235726955036474397, guid: 00236b2199d774e4fa4e3ad582a02989, type: 3}
   description: Mutinied Imperial Guard officers running a strict, disciplined military
     junta. The most professional and dangerous of the warlords.

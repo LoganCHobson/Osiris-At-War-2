@@ -19,6 +19,7 @@ public class UITour : MonoBehaviour
         Directory.CreateDirectory(outputDir);
 
         yield return Wait(4f);
+        if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-skirmishTour") >= 0) { yield return SkirmishTour(); yield break; }
         yield return Shot("1_main_menu");
 
         MainMenuController menu = FindFirstObjectByType<MainMenuController>();
@@ -52,6 +53,43 @@ public class UITour : MonoBehaviour
         yield return Wait(5f);
         yield return Shot("8_battle");
 
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.Exit(0);
+#endif
+    }
+
+    // -skirmishTour: the skirmish screen as it opens (fleets rolled), then with both fleets built by hand, a
+    // station and Capital Shipyard and a crowded map, and that battle a few seconds in.
+    private IEnumerator SkirmishTour()
+    {
+        foreach (string key in new[] { "playerMode", "enemyMode", "structures", "asteroids", "nebulae", "storm", "role" }) PlayerPrefs.DeleteKey("osiris.skirmish." + key);
+        MainMenuController menu = FindFirstObjectByType<MainMenuController>();
+        Call(menu, "OpenSkirmish");
+        yield return Wait(1f);
+        yield return Shot("s1_skirmish_rolled");
+        Destroy(FindFirstObjectByType<SkirmishSetup>().gameObject);
+        yield return Wait(0.5f);
+
+        PlayerPrefs.SetInt("osiris.skirmish.playerMode", 1);
+        PlayerPrefs.SetInt("osiris.skirmish.enemyMode", 1);
+        PlayerPrefs.SetInt("osiris.skirmish.structures", 7);
+        PlayerPrefs.SetInt("osiris.skirmish.asteroids", 3);
+        PlayerPrefs.SetInt("osiris.skirmish.nebulae", 3);
+        PlayerPrefs.SetInt("osiris.skirmish.storm", 2);
+        Call(menu, "OpenSkirmish");
+        yield return Wait(1f);
+        yield return Shot("s2_skirmish_by_hand");
+
+        SkirmishSetup setup = FindFirstObjectByType<SkirmishSetup>();
+        Call(setup, "StartBattle");
+        yield return Wait(10f);
+        yield return Shot("s3_skirmish_battle");
+        BattleContext context = BattleContext.Instance;
+        File.WriteAllText(Path.Combine(outputDir, "skirmish.txt"),
+            $"station={context?.defenderHasBattleStation} yard={context?.defenderHasShipyard} tier={context?.defenderShipyardTier} asteroids={context?.skirmishAsteroids} nebulae={context?.skirmishNebulae} storm={context?.skirmishIonStorm} "
+            + $"fields={(BattleTerrain.Instance != null ? BattleTerrain.Instance.Fields.Count : -1)} units={UnitHealthManager.Active.Count} defenses={UnitHealthManager.Active.FindAll(u => u != null && u.IsDefense).Count}");
+        PlayerPrefs.DeleteKey("osiris.skirmish.playerMode");
+        PlayerPrefs.DeleteKey("osiris.skirmish.enemyMode");
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.Exit(0);
 #endif

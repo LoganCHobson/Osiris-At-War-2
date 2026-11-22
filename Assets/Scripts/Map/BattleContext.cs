@@ -31,6 +31,9 @@ public class BattleContext : MonoBehaviour
     public PlanetAppearance destinationAppearance;
 
     public bool defenderHasShipyard;
+    public int defenderShipyardTier;
+    // The defender's yard tier, or the old single yard's (a Heavy Cruiser Yard) when none was recorded.
+    public int YardTier => defenderShipyardTier > 0 ? Mathf.Min(defenderShipyardTier, Shipyards.MaxTier) : Shipyards.LegacyTier;
     public bool defenderShipyardSurvived = true;
     public bool defenderHasBattleStation;
     public bool defenderBattleStationSurvived = true;
@@ -54,6 +57,10 @@ public class BattleContext : MonoBehaviour
     public bool isSkirmish;
     public Faction skirmishPlayer;
     public DifficultyLevel skirmishDifficulty;
+    // Skirmish map choices (SkirmishSetup): -1 = leave it to the map's roll.
+    public int skirmishAsteroids = -1;   // 0 none, 1 a few, 2 many
+    public int skirmishNebulae = -1;     // how many
+    public int skirmishIonStorm = -1;    // 0 none, 1 one
 
     private void Awake()
     {
@@ -100,6 +107,7 @@ public class BattleContext : MonoBehaviour
         destinationAppearance = planet != null ? planet.Appearance.Clone() : null; // Painted into the battle sky.
 
         defenderHasShipyard = planet != null && planet.hasCapitalShipyard;
+        defenderShipyardTier = planet != null ? planet.ShipyardTier : 0;
         defenderHasBattleStation = planet != null && planet.hasBattleStation;
 
         attackerStartPower = Strength.Of(attackerRoster);
@@ -242,6 +250,7 @@ public class BattleContext : MonoBehaviour
         destinationPlanetName = null;
         destinationAppearance = null;
         defenderHasShipyard = false;
+        defenderShipyardTier = 0;
         defenderShipyardSurvived = true;
         defenderHasBattleStation = false;
         defenderBattleStationSurvived = true;
@@ -255,6 +264,7 @@ public class BattleContext : MonoBehaviour
         defenderRetreated = false;
         IsLocked = false;
         isSkirmish = false;
+        skirmishAsteroids = skirmishNebulae = skirmishIonStorm = -1;
         skirmishPlayer = null;
         skirmishDifficulty = DifficultyLevel.Captain;
     }

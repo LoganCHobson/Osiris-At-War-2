@@ -51,8 +51,8 @@ public static class FleetDoctrine
         }
         return type switch
         {
-            ShipType.Battleship => new Entry(3.0f, 1f, 1f),
-            ShipType.Cruiser => new Entry(2.6f, 1f, 3f),
+            ShipType.Battleship => new Entry(3.6f, 1f, 1f),  // Holds the line: heavy armour, no shield.
+            ShipType.Cruiser => new Entry(2.9f, 1f, 3f),
             ShipType.Destroyer => new Entry(2.6f, 1f, 1f),
             ShipType.Corvette => new Entry(2.6f, 1f, 1f),
             ShipType.Carrier => new Entry(2.6f, 1f, 1f),

@@ -62,6 +62,7 @@ public class PlanetBuildPanel : MonoBehaviour
 
     private class StructureRow
     {
+        public TMP_Text title;
         public TMP_Text status;
         public Button button;
         public TMP_Text buttonLabel;
@@ -137,12 +138,23 @@ public class PlanetBuildPanel : MonoBehaviour
         Refresh();
     }
 
+    // Builds a Light Frigate Yard on a shipyard site, or upgrades the yard here one tier (Shipyards.cs).
     public void BuildCapitalShipyard()
     {
-        if (currentPlanet == null || !currentPlanet.canBuildCapitalShipyard || currentPlanet.hasCapitalShipyard) return;
-        if (!TrySpend(Planet.CapitalShipyardCost)) return;
-        currentPlanet.hasCapitalShipyard = true;
-        Refresh();
+        if (currentPlanet == null) return;
+        int tier = currentPlanet.ShipyardTier;
+        if (tier == 0)
+        {
+            if (!currentPlanet.canBuildCapitalShipyard || !TrySpend(Shipyards.BuildCost)) return;
+            currentPlanet.SetShipyard(1);
+        }
+        else
+        {
+            if (tier >= Shipyards.MaxTier || !TrySpend(Shipyards.UpgradeCost(tier))) return;
+            currentPlanet.SetShipyard(tier + 1);
+        }
+        shownRoster = null; // Rebuild the cards: what they say depends on the tier.
+        Show(currentPlanet);
     }
 
     public void BuildBattleStation()
@@ -195,7 +207,9 @@ public class PlanetBuildPanel : MonoBehaviour
     private string WhyNot(Ship ship)
     {
         if (!CanBuildHere()) return "Not your planet";
-        if (!currentPlanet.hasCapitalShipyard) return currentPlanet.canBuildCapitalShipyard ? "Needs a capital shipyard" : "No shipyard site";
+        if (!currentPlanet.hasCapitalShipyard) return currentPlanet.canBuildCapitalShipyard ? "Needs a shipyard" : "No shipyard site";
+        int needs = Shipyards.RequiredTier(ship);
+        if (currentPlanet.ShipyardTier < needs) return "Needs a " + Shipyards.Name(needs);
         if (Credits < ship.cost) return "Not enough credits";
         if (!debugBuildOnAnyPlanet && ship.populationCost > Manpower.Free(currentPlanet.owner)) return "Manpower limit reached";
         return null;
@@ -250,10 +264,20 @@ public class PlanetBuildPanel : MonoBehaviour
             mine && !p.hasTaxOffice && credits >= Planet.TaxOfficeCost, p.hasTaxOffice);
 
         bool site = p.canBuildCapitalShipyard || p.hasCapitalShipyard;
+        int tier = p.ShipyardTier;
+        PlanetIntel seen = !mine && !FogOfWar.CanSee(p) ? FogOfWar.LastSeen(p) : null;
+        int shownTier = mine || FogOfWar.CanSee(p) ? tier : seen != null && seen.hasCapitalShipyard ? Mathf.Max(1, seen.shipyardTier) : 0;
+        structures[1].title.text = shownTier > 0 ? Shipyards.Name(shownTier) : "Shipyard";
+        int upgrade = Shipyards.UpgradeCost(tier);
         SetStructure(structures[1], mine,
-            mine ? (site ? "Builds ships  ·  +" + Manpower.PerCapitalShipyard + " MP" : "No shipyard site here") : Seen(p.hasCapitalShipyard, "Built"),
-            p.hasCapitalShipyard ? "BUILT" : site ? $"BUILD ${Planet.CapitalShipyardCost}" : "NO SITE",
-            mine && site && !p.hasCapitalShipyard && credits >= Planet.CapitalShipyardCost, p.hasCapitalShipyard);
+            mine ? (!site ? "No shipyard site here"
+                    : tier == 0 ? Shipyards.Builds(1)
+                    : tier < Shipyards.MaxTier ? "Upgrade: " + Shipyards.Builds(tier + 1).TrimStart('+', ' ').ToLowerInvariant()
+                    : "Builds every ship")
+                 : Seen(p.hasCapitalShipyard, Shipyards.Name(Mathf.Max(1, shownTier))),
+            !site ? "NO SITE" : tier == 0 ? $"BUILD ${Shipyards.BuildCost}" : tier < Shipyards.MaxTier ? $"UPGRADE ${upgrade}" : "MAX TIER",
+            mine && site && (tier == 0 ? credits >= Shipyards.BuildCost : tier < Shipyards.MaxTier && credits >= upgrade),
+            tier >= Shipyards.MaxTier);
 
         bool limit = mine && p.owner != null && !p.hasBattleStation && Planet.BattleStationLimitReached(p.owner);
         SetStructure(structures[2], mine,
@@ -618,7 +642,7 @@ public class PlanetBuildPanel : MonoBehaviour
         button.colors = colors;
         button.onClick.AddListener(action);
 
-        return new StructureRow { status = status, button = button, buttonLabel = label, buttonBackground = background };
+        return new StructureRow { title = name, status = status, button = button, buttonLabel = label, buttonBackground = background };
     }
 
     private void BuildShipyard()

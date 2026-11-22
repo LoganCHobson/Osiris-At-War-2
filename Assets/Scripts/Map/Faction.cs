@@ -18,7 +18,17 @@ public class Faction : ScriptableObject
 
     [Header("Structures")]
     [Min(0)] public int maxBattleStations = 50;
+    [Tooltip("Stage 2: the Heavy Cruiser Yard (and any tier without its own model).")]
     public GameObject capitalShipyardPrefab;
+    [Tooltip("Stage 1: the Light Frigate Yard.")]
+    public GameObject lightShipyardPrefab;
+    [Tooltip("Stage 3: the Capital Shipyard.")]
+    public GameObject grandShipyardPrefab;
+
+    public GameObject ShipyardPrefab(int tier) =>
+        tier <= 1 && lightShipyardPrefab != null ? lightShipyardPrefab
+        : tier >= 3 && grandShipyardPrefab != null ? grandShipyardPrefab
+        : capitalShipyardPrefab;
     public GameObject battleStationPrefab;
 
     [TextArea]

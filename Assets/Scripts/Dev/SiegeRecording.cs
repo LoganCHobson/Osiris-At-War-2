@@ -151,6 +151,7 @@ public class SiegeRecording : MonoBehaviour
         context.hasDefender = true;
         context.destinationPlanetName = "Kesharra Prime";
         context.defenderHasShipyard = true;
+        context.defenderShipyardTier = int.TryParse(Argument("-yardTier", ""), out int yardTier) ? yardTier : 0; // 0 = the Heavy Cruiser Yard
         context.defenderHasBattleStation = true;
 
         if (balance == "cost" || balance == "pop")
@@ -308,6 +309,7 @@ public class SiegeRecording : MonoBehaviour
         startedAt = Time.time;
         wallStart = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000.0;
         if (HasFlag("-profile")) StartCoroutine(ProfileFight());
+        if (HasFlag("-lineCensus")) StartCoroutine(LineCensus());
         float overAt = -1f;
         float cutEndsAt = 0f;
         float nextWideAt = WideEvery;
@@ -1187,6 +1189,7 @@ public class SiegeRecording : MonoBehaviour
     private void Finish()
     {
         StopEncoder();
+        if (!report.ToString().Contains("BOLTS ")) report.Append(Laser.OutcomeReport());
         File.WriteAllText(Path.Combine(outputDir, "report.txt"), report.ToString());
         if (craftLog.Length > 0) File.WriteAllText(Path.Combine(outputDir, "craft_shots.txt"), craftLog.ToString());
         if (musicCues.Length > 0) File.WriteAllText(Path.Combine(outputDir, "music_cues.txt"), musicCues.ToString() + $"{(float)frame / frameRate:F2} end\n");
@@ -1198,11 +1201,14 @@ public class SiegeRecording : MonoBehaviour
 #endif
     }
 
-    // Development builds: -profile records Unity's profiler through 60s of the main engagement (from 45s in)
-    // to <captureDir>/siege_profile.raw, then quits. SiegeProfileReport (editor) turns it into a summary.
+    // Development builds: -profile records Unity's profiler through the main engagement (-profileFrom seconds in,
+    // default 45, for -profileFor seconds, default 60) to <captureDir>/siege_profile.raw, then quits.
+    // SiegeProfileReport (editor) turns it into a summary.
     private IEnumerator ProfileFight()
     {
-        float from = startedAt + 45f;
+        float.TryParse(Argument("-profileFrom", "45"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float profileFrom);
+        if (!float.TryParse(Argument("-profileFor", "60"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float profileFor)) profileFor = 60f;
+        float from = startedAt + profileFrom;
         while (Time.time < from) yield return null;
         string path = Path.Combine(outputDir, "siege_profile.raw");
         UnityEngine.Profiling.Profiler.logFile = path;
@@ -1210,12 +1216,40 @@ public class SiegeRecording : MonoBehaviour
         UnityEngine.Profiling.Profiler.maxUsedMemory = 256 * 1024 * 1024;
         UnityEngine.Profiling.Profiler.enabled = true;
         report.AppendLine($"profiling from t={Time.time - startedAt:F0}s units={UnitHealthManager.Active.Count}");
-        float until = Time.time + 60f;
+        float until = Time.time + profileFor;
         while (Time.time < until) yield return null;
         UnityEngine.Profiling.Profiler.enabled = false;
         UnityEngine.Profiling.Profiler.logFile = "";
+        report.Append(Laser.OutcomeReport());
         report.AppendLine($"profiling done t={Time.time - startedAt:F0}s units={UnitHealthManager.Active.Count} particles={FindObjectsByType<ParticleSystem>(FindObjectsSortMode.None).Length} lights={FindObjectsByType<Light>(FindObjectsSortMode.None).Length} lines={FindObjectsByType<LineRenderer>(FindObjectsSortMode.None).Length} rigidbodies={FindObjectsByType<Rigidbody>(FindObjectsSortMode.None).Length}");
         Finish();
+    }
+
+    // Dev check (-lineCensus): every 5s, every visible renderer in the camera's view that stands tall and thin
+    // (a vertical bar or line: altitude stalks and the like), by name, parent chain, type and colour.
+    private IEnumerator LineCensus()
+    {
+        while (true)
+        {
+            yield return Wait(5f);
+            Camera view = Camera.main;
+            if (view == null) continue;
+            Plane[] frustum = GeometryUtility.CalculateFrustumPlanes(view);
+            report.AppendLine($"census t={Time.time - startedAt:F0}s cinematic={CinematicCamera.Active}");
+            int listed = 0;
+            foreach (Renderer r in FindObjectsByType<Renderer>(FindObjectsSortMode.None))
+            {
+                if (!r.enabled || !r.gameObject.activeInHierarchy || !GeometryUtility.TestPlanesAABB(frustum, r.bounds)) continue;
+                Vector3 size = r.bounds.size;
+                bool tall = size.y > 4f && size.y > 3f * Mathf.Max(size.x, size.z);
+                if (!tall && !(r is LineRenderer)) continue;
+                string path = r.name;
+                for (Transform t = r.transform.parent; t != null; t = t.parent) path = t.name + "/" + path;
+                string colour = r is LineRenderer line ? line.startColor.ToString() : r.sharedMaterial != null ? r.sharedMaterial.name : "-";
+                report.AppendLine($"   {r.GetType().Name} {path} size {size.x:0.0}x{size.y:0.0}x{size.z:0.0} at {r.bounds.center} {colour}");
+                if (++listed >= 40) break;
+            }
+        }
     }
 
     private IEnumerator BalanceRun()

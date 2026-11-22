@@ -40,6 +40,20 @@ public class BuildMenuTour : MonoBehaviour
         yield return Wait(1f);
         yield return Shot("1_build_menu");
 
+        // Shipyard tiers: a fresh Light Frigate Yard, then upgraded through the panel's own button.
+        planet.SetShipyard(1);
+        PlanetBuildPanel.Instance.Show(planet);
+        yield return Wait(1f);
+        yield return Shot("1a_yard_tier1");
+        PlanetBuildPanel.Instance.BuildCapitalShipyard();
+        yield return Wait(1f);
+        Debug.Log($"BUILDTOUR upgraded to tier {planet.ShipyardTier}");
+        yield return Shot("1b_yard_tier2");
+        PlanetBuildPanel.Instance.BuildCapitalShipyard();
+        yield return Wait(1f);
+        Debug.Log($"BUILDTOUR upgraded to tier {planet.ShipyardTier}");
+        yield return Shot("1c_yard_tier3");
+
         foreach (Ship ship in planet.owner.roster.Where(s => s != null).Take(4))
         {
             planet.shipBuildQueue.Add(new ShipBuildOrder { ship = ship, remainingTime = planet.owner.BuildTime(ship) });

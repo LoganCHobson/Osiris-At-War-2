@@ -31,6 +31,8 @@ MonoBehaviour:
   shipMaterial: {fileID: 2100000, guid: e80ac5bd71fb46c4b8edf423929223ec, type: 2}
   maxBattleStations: 50
   capitalShipyardPrefab: {fileID: 8716381926612168526, guid: 74f9109af68f774488335dc22271c338, type: 3}
+  lightShipyardPrefab: {fileID: 2290425006072993538, guid: 93089da1471fddc4983a39e0dc90384e, type: 3}
+  grandShipyardPrefab: {fileID: 4323590868524385089, guid: b1b3fdcc718868d4da61ce117fce5ef8, type: 3}
   battleStationPrefab: {fileID: 4661567290556253336, guid: 57fdbb30655657c428918b2bf1d3060a, type: 3}
   description: Human interlopers who arrived in Osiris mid-conquest and refused to
     look away. Disgusted by Avanti slaving and feudal savagery, they intend to break

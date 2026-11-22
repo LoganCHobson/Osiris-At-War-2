@@ -15,8 +15,8 @@ def kubectl(*args):
     return subprocess.run(["kubectl", *args], capture_output=True, text=True, check=False).stdout
 
 
-def collect(namespace):
-    pods = json.loads(kubectl("-n", namespace, "get", "pods", "-l", "experiment=ga-probe", "-o", "json") or '{"items":[]}')
+def collect(namespace, label="ga-probe"):
+    pods = json.loads(kubectl("-n", namespace, "get", "pods", "-l", f"experiment={label}", "-o", "json") or '{"items":[]}')
     battles = defaultdict(list)
     for pod in pods["items"]:
         if pod["status"].get("phase") not in ("Succeeded", "Failed", "Running"):
@@ -51,8 +51,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--namespace", default="oawga-machine-learning")
     parser.add_argument("--json")
+    parser.add_argument("--label", default="ga-probe", help="experiment label: ga-probe or ga-matchup")
     args = parser.parse_args()
-    battles = collect(args.namespace)
+    battles = collect(args.namespace, args.label)
     rows = {name: summarise(stats) for name, stats in battles.items() if stats}
     order = sorted(rows, key=lambda k: (k != "model", -rows[k]["win_pct"]))
     print(f"{'commander':<18}{'battles':>8}{'win %':>8}{'+-':>6}{'margin':>9}{'+-':>7}")

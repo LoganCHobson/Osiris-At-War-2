@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using SolarStudios;
 using UnityEngine;
 
@@ -18,6 +19,30 @@ public class Laser : MonoBehaviour
     // Where shots end up (dev stats): on a hardpoint's own collider, on bare hull, on a shield bubble, on a
     // wreck/rock/fighter, or nowhere (flew out of range).
     public static int StatHardpoint, StatHullFoundHardpointBelow, StatHull, StatShield, StatOther, StatExpired;
+
+    // Where bolts end up, by who fired them (strike craft or warship, attacker or defender): hardpoint, hull,
+    // shield, other (craft, wreck, rock), missed. For dev reports (SiegeRecording).
+    public static readonly Dictionary<string, int[]> Outcomes = new Dictionary<string, int[]>();
+    private void Tally(int outcome) =>
+        Count((fromWarship ? "warship" : "craft") + " " + (source != null ? (source.isAttackerSide ? "attacker" : "defender") : "?"), outcome);
+
+    public static void Count(string key, int outcome)
+    {
+        if (!Outcomes.TryGetValue(key, out int[] counts)) Outcomes[key] = counts = new int[5];
+        counts[outcome]++;
+    }
+
+    public static string OutcomeReport()
+    {
+        System.Text.StringBuilder text = new System.Text.StringBuilder();
+        foreach (KeyValuePair<string, int[]> pair in Outcomes)
+        {
+            int[] c = pair.Value;
+            int total = Mathf.Max(1, c[0] + c[1] + c[2] + c[3] + c[4]);
+            text.AppendLine($"BOLTS {pair.Key,-18} {total,7}: hardpoint {100f * c[0] / total,4:0}%  hull {100f * c[1] / total,4:0}%  shield {100f * c[2] / total,4:0}%  other {100f * c[3] / total,4:0}%  missed {100f * c[4] / total,4:0}%");
+        }
+        return text.ToString();
+    }
 
     // Dev diagnosis of misses: what each shot was fired at and how close it came.
     [System.NonSerialized] public Transform intended;
@@ -56,9 +81,39 @@ public class Laser : MonoBehaviour
     private ObjectPool sourcePool;
     private string effectKey;
 
+    // One hit-effect template per kind of bolt. The prefabs carry theirs as a child (three particle systems), and
+    // every bolt fired woke them all up with it: in a big battle that was half the frame. Each bolt drops its copy
+    // and points at the shared one; the template is only ever cloned by EffectPool.
+    private static readonly Dictionary<string, ParticleSystem> hitTemplates = new Dictionary<string, ParticleSystem>();
+    // Hit effects started this frame, and the most a frame gets: past that, a hit lands without its flash.
+    private static int effectsFrame = -1, effectsThisFrame;
+    private const int MaxHitEffectsPerFrame = 14;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetTemplates() { hitTemplates.Clear(); effectsFrame = -1; }
+
     private void Awake()
     {
         effectKey = gameObject.name.Replace("(Clone)", "").Trim();
+        if (particle != null && particle.transform.IsChildOf(transform))
+        {
+            if (!hitTemplates.TryGetValue(effectKey, out ParticleSystem shared) || shared == null)
+            {
+                shared = Instantiate(particle);
+                shared.name = effectKey + " HitEffect";
+                shared.gameObject.SetActive(false);
+                shared.transform.localScale = particle.transform.localScale; // as the effect was scaled when it sat under the bolt
+                hitTemplates[effectKey] = shared;
+            }
+            Destroy(particle.gameObject);
+            particle = shared;
+        }
+    }
+
+    private static bool EffectBudget()
+    {
+        if (Time.frameCount != effectsFrame) { effectsFrame = Time.frameCount; effectsThisFrame = 0; }
+        return effectsThisFrame++ < MaxHitEffectsPerFrame;
     }
 
     private void OnDisable()
@@ -170,7 +225,7 @@ public class Laser : MonoBehaviour
             float t = seg.sqrMagnitude > 0f ? Mathf.Clamp01(Vector3.Dot(p - from, seg) / seg.sqrMagnitude) : 0f;
             closestSqr = Mathf.Min(closestSqr, (from + seg * t - p).sqrMagnitude);
         }
-        if (lifeTimer >= timeOut) { StatExpired++; RecordMiss(); Recycle(); }
+        if (lifeTimer >= timeOut) { StatExpired++; Tally(4); RecordMiss(); Recycle(); }
     }
 
     private static readonly RaycastHit[] hitBuffer = new RaycastHit[16];
@@ -207,6 +262,7 @@ public class Laser : MonoBehaviour
             if (shield.Absorb(damage, candidate.point))
             {
                 StatShield++;
+                Tally(2);
                 Sfx.Play(Sfx.Cue.HitShield, candidate.point);
                 Recycle();
                 return true;
@@ -231,7 +287,7 @@ public class Laser : MonoBehaviour
         Vector3 closest = from + segment * along;
         if ((missile - closest).sqrMagnitude > intercept.HitRadius * intercept.HitRadius) return false;
 
-        if (particle != null)
+        if (particle != null && EffectBudget())
         {
             EffectPool.Play(effectKey + "_small", particle, closest, particle.transform.rotation, particleLifetime, particle.transform.localScale * CraftHitEffectScale);
         }
@@ -240,12 +296,15 @@ public class Laser : MonoBehaviour
         return true;
     }
 
+    private static readonly Unity.Profiling.ProfilerMarker ImpactMarker = new Unity.Profiling.ProfilerMarker("Laser.Impact");
+
     bool Impact(RaycastHit hit)
     {
+        using var impactTiming = ImpactMarker.Auto();
         Collider hitCollider = hit.collider;
         Fighter craft = hitCollider.GetComponentInParent<Fighter>();
 
-        if (particle != null)
+        if (particle != null && EffectBudget())
         {
             if (craft != null) EffectPool.Play(effectKey + "_small", particle, hit.point, particle.transform.rotation, particleLifetime, particle.transform.localScale * CraftHitEffectScale);
             else EffectPool.Play(effectKey, particle, hit.point, particle.transform.rotation, particleLifetime);
@@ -254,6 +313,7 @@ public class Laser : MonoBehaviour
         if (hitLayer == WreckChunk.WreckLayer || hitLayer == BattleTerrain.AsteroidLayer) // Wrecks and rocks soak the shot.
         {
             StatOther++;
+            Tally(3);
             Recycle();
             return true;
         }
@@ -262,10 +322,10 @@ public class Laser : MonoBehaviour
 
         bool ownHardpoint = hitCollider.TryGetComponent(out HardpointHealth hp) || (hp = hitCollider.GetComponentInParent<HardpointHealth>()) != null;
         bool belowHardpoint = !ownHardpoint && (hp = hitCollider.GetComponentInChildren<HardpointHealth>()) != null;
-        if (craft != null) StatOther++;
-        else if (ownHardpoint) StatHardpoint++;
-        else if (belowHardpoint) StatHullFoundHardpointBelow++;
-        else StatHull++;
+        if (craft != null) { StatOther++; Tally(3); }
+        else if (ownHardpoint) { StatHardpoint++; Tally(0); }
+        else if (belowHardpoint) { StatHullFoundHardpointBelow++; Tally(1); }
+        else { StatHull++; Tally(1); }
         if (ownHardpoint || belowHardpoint)
         {
             if (craft != null && fromWarship) Fighter.TakeShipHit(hp);

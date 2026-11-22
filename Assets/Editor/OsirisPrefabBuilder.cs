@@ -86,6 +86,13 @@ public static class OsirisPrefabBuilder
         ["Human_Station"] = (7500f, 240f, 200f),
         ["Avanti_Shipyard"] = (5200f, 140f, 200f),
         ["Avanti_Station"] = (8500f, 290f, 210f),
+        // Shipyard tiers (Shipyards.cs). Hull is the stage-2 yard's: battle scales it by tier (Shipyards.HealthScale).
+        // Firepower follows the gun count against stage 2 (Human 16 guns, Avanti 12).
+        ["Human_Shipyard_T1"] = (4500f, 120f * 8 / 16, 190f),
+        ["Human_Shipyard_T3"] = (4500f, 120f * 18 / 16, 190f),
+        ["Avanti_Shipyard_T1"] = (5200f, 140f * 8 / 12, 200f),
+        ["Avanti_Shipyard_T2"] = (5200f, 140f, 200f),
+        ["Avanti_Shipyard_T3"] = (5200f, 140f * 14 / 12, 200f),
     };
 
     class CraftSpec
@@ -175,6 +182,45 @@ public static class OsirisPrefabBuilder
         AssetDatabase.SaveAssets();
         SwapStartingFleets("Assets/Scenes/GalacticMap.unity", swaps);
         Debug.Log("[Osiris] Prefab build finished.");
+    }
+
+    // Builds only the shipyard tier prefabs (stage 1 and 3 for both factions, the revised Avanti stage 2) from
+    // their models, and assigns light / capital / grand shipyard prefabs on every faction. Batch:
+    // -executeMethod OsirisPrefabBuilder.BuildShipyardTiers
+    [MenuItem("Osiris/Build Shipyard Tiers")]
+    public static void BuildShipyardTiers()
+    {
+        OsirisShipSetup.SetUpAll();
+        var tiers = new Dictionary<string, (GameObject light, GameObject heavy, GameObject grand)>();
+        foreach (string f in Factions)
+        {
+            string dir = $"{OutRoot}/{f}";
+            var squadrons = new Dictionary<string, Ship>();
+            foreach (CraftSpec c in Craft(f))
+            {
+                var craft = AssetDatabase.LoadAssetAtPath<GameObject>($"{dir}/{c.name}.prefab");
+                if (craft != null && craft.TryGetComponent(out Ship ship)) squadrons[c.template] = ship;
+            }
+            GameObject light = BuildStructure($"{f}_Shipyard_T1", "CapitalShipYard", dir, squadrons);
+            GameObject heavy = f == "Avanti"
+                ? BuildStructure("Avanti_Shipyard_T2", "CapitalShipYard", dir, squadrons)
+                : AssetDatabase.LoadAssetAtPath<GameObject>($"{dir}/{f}_Shipyard.prefab");
+            GameObject grand = BuildStructure($"{f}_Shipyard_T3", "CapitalShipYard", dir, squadrons);
+            tiers[f] = (light, heavy, grand);
+        }
+        foreach (string guid in AssetDatabase.FindAssets("t:Faction", new[] { "Assets/Data/Factions" }))
+        {
+            var faction = AssetDatabase.LoadAssetAtPath<Faction>(AssetDatabase.GUIDToAssetPath(guid));
+            if (faction == null) continue;
+            var set = tiers[faction.name == "Faction_TitansOfOsiris" ? "Human" : "Avanti"];
+            if (set.light != null) faction.lightShipyardPrefab = set.light;
+            if (set.heavy != null) faction.capitalShipyardPrefab = set.heavy;
+            if (set.grand != null) faction.grandShipyardPrefab = set.grand;
+            EditorUtility.SetDirty(faction);
+            Debug.Log($"[Osiris] {faction.name}: shipyards {set.light?.name} / {set.heavy?.name} / {set.grand?.name}");
+        }
+        AssetDatabase.SaveAssets();
+        Debug.Log("[Osiris] Shipyard tiers built.");
     }
 
     static readonly Dictionary<string, Dictionary<string, Ship>> swaps = new Dictionary<string, Dictionary<string, Ship>>();

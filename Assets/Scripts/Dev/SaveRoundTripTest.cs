@@ -35,6 +35,10 @@ public class SaveRoundTripTest : MonoBehaviour
         Check(traveller != null && far != null && traveller.IsTraveling, "a player fleet set off on a multi-jump trip");
         yield return Wait(2.5f);
 
+        // Shipyard tiers: one of each, so a load that lost them shows in the snapshot.
+        List<Planet> yardSites = Planet.All.Where(p => p.hasCapitalShipyard).Take(3).ToList();
+        for (int i = 0; i < yardSites.Count; i++) yardSites[i].SetShipyard(i + 1);
+
         // Spy probes: one parked over an enemy world with its clock running, one in flight, one being built.
         Planet home = Planet.All.FirstOrDefault(p => p.owner != null && p.owner.isPlayerFaction);
         Planet enemy = Planet.All.FirstOrDefault(p => p.owner != null && !p.owner.isPlayerFaction && !p.owner.isNeutral);
@@ -149,7 +153,7 @@ public class SaveRoundTripTest : MonoBehaviour
         StringBuilder text = new StringBuilder();
         foreach (Planet planet in Planet.All.OrderBy(p => p.planetName))
         {
-            text.AppendLine($"{planet.planetName}: {SaveRegistry.Id(planet.owner)} tax={planet.hasTaxOffice} yard={planet.hasCapitalShipyard} station={planet.hasBattleStation} queue={planet.shipBuildQueue.Count}");
+            text.AppendLine($"{planet.planetName}: {SaveRegistry.Id(planet.owner)} tax={planet.hasTaxOffice} yard={planet.ShipyardTier} station={planet.hasBattleStation} queue={planet.shipBuildQueue.Count}");
         }
         foreach (GalacticFleet fleet in GalacticFleet.All.OrderBy(f => f.name))
         {

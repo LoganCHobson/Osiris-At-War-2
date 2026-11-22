@@ -74,6 +74,7 @@ public class PathVisualization : MonoBehaviour
 
     private bool ShouldShow()
     {
+        if (CinematicCamera.Active) return false; // A gameplay aid: never in the cinematic camera.
         if (agent == null || !agent.enabled || stateMachine == null || moveState == null) return false;
         if (health != null && health.IsDead) return false;
         if (GameManager.Instance != null && health != null && health.isAttackerSide != GameManager.Instance.PlayerIsAttacker) return false;

@@ -402,6 +402,7 @@ public class PlayerSpaceManager : MonoBehaviour
         heightPickValue = Mathf.Clamp((Input.mousePosition.y - heightPickStartY) * worldPerPixel, -ShipAltitude.MaxAltitude, ShipAltitude.MaxAltitude);
         heightPickValue = Mathf.Round(heightPickValue / 5f) * 5f;
 
+        if (CinematicCamera.Active) { heightPicking = false; ShowHeightPreview(false); return true; }
         heightPreview.SetPosition(0, heightPickHit.point);
         heightPreview.SetPosition(1, heightPickHit.point + Vector3.up * heightPickValue);
 

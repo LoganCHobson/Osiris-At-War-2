@@ -112,12 +112,22 @@ public class BattleTerrain : MonoBehaviour
     {
         Map = FindMapBounds();
         float savedClearChance = layout.clearMapChance;
+        float savedCoverage = layout.maxCoverage;
         if (ForceAsteroids) layout.clearMapChance = 0f;
+        BattleContext context = BattleContext.Instance;
+        if (context != null && context.isSkirmish && context.skirmishAsteroids >= 0)
+        {
+            // The skirmish picked the rocks: none, a few, or a lot.
+            layout.clearMapChance = context.skirmishAsteroids == 0 ? 1f : 0f;
+            if (context.skirmishAsteroids == 1) layout.maxCoverage = savedCoverage * 0.55f;
+            if (context.skirmishAsteroids == 2) layout.maxCoverage = Mathf.Min(0.4f, savedCoverage * 1.6f);
+        }
         Vector2 attacker = new Vector2(attackerStart.x, attackerStart.z);
         Vector2 defender = new Vector2(defenderStart.x, defenderStart.z);
 
         List<BattleTerrainLayout.FieldSpec> specs = BattleTerrainLayout.Generate(seed, Map, attacker, defender, layout);
         layout.clearMapChance = savedClearChance;
+        layout.maxCoverage = savedCoverage;
         ForceAsteroids = false;
 
         Material rockMaterial = Resources.Load<Material>(RockMaterialPath);

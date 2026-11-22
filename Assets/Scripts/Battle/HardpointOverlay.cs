@@ -68,7 +68,7 @@ public class HardpointOverlay : MonoBehaviour
     {
         HoveredHardpoint = null;
         FocusShip = null;
-        if (cam == null) { HideAll(); return; }
+        if (cam == null || CinematicCamera.Active) { HideAll(); return; }
         Vector2 mouse = Input.mousePosition;
 
         // Which enemy ship the pointer is on (sticky for a moment, so the pointer can move out to its icons).

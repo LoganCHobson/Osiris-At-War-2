@@ -18,6 +18,7 @@ public class OrderPreview : MonoBehaviour
 
     public void Add(Vector3 ground, float altitude, Color color)
     {
+        if (CinematicCamera.Active) return; // Order markers are a gameplay aid: never in the cinematic camera.
         (LineRenderer ring, LineRenderer stalk) marker = Marker(used++);
         Vector3 lifted = ground + Vector3.up * altitude;
 

@@ -16,6 +16,9 @@ public class MissileArsenal : ScriptableObject
         [Header("Launcher")]
         public int destroyerSalvo = 6;
         public int corvetteSalvo = 3;
+        [Tooltip("Battleships and cruisers: Human doctrine puts missile cells in the line too (0 = none).")]
+        public int battleshipSalvo;
+        public int cruiserSalvo;
         [Tooltip("Seconds between salvos.")]
         public float reload = 15f;
         [Tooltip("Seconds between missiles in one salvo.")]
@@ -56,8 +59,14 @@ public class MissileArsenal : ScriptableObject
             return copy;
         }
 
-        public int SalvoFor(ShipType type) =>
-            type == ShipType.Destroyer ? destroyerSalvo : type == ShipType.Corvette ? corvetteSalvo : 0;
+        public int SalvoFor(ShipType type) => type switch
+        {
+            ShipType.Destroyer => destroyerSalvo,
+            ShipType.Corvette => corvetteSalvo,
+            ShipType.Battleship => battleshipSalvo,
+            ShipType.Cruiser => cruiserSalvo,
+            _ => 0,
+        };
     }
 
     public Warhead conventional = new Warhead();

@@ -957,9 +957,14 @@ public class Fighter : MonoBehaviour
         nextTrailAt = Time.time;
 
         // A small blast where it was hit, then it burns.
-        if (deathEffect != null) EffectPool.Play("FighterDeath", deathEffect, transform.position, Quaternion.identity, deathEffectLifetime, deathEffect.transform.localScale * 0.45f);
+        if (deathEffect != null)
+        {
+            if (EffectPool.Budget("FighterDeath", 3))
+                EffectPool.Play("FighterDeath", deathEffect, transform.position, Quaternion.identity, deathEffectLifetime, deathEffect.transform.localScale * 0.45f);
+            else EffectPool.Puff("FighterDeathHit", deathEffect, transform.position, 0.45f, 3);
+        }
         DestructionProfile profile = FxProfile;
-        if (profile != null && profile.hullFires != null && profile.hullFires.Length > 0)
+        if (profile != null && profile.hullFires != null && profile.hullFires.Length > 0 && EffectPool.Budget("FighterFire", 2))
         {
             fireTrail = DestructionFx.Attach(profile.hullFires[0], transform, transform.position, 0.35f);
         }
@@ -1048,7 +1053,7 @@ public class Fighter : MonoBehaviour
         if (Time.time >= nextTrailAt && deathEffect != null)
         {
             nextTrailAt = Time.time + 0.09f;
-            EffectPool.Play("FighterDeath", deathEffect, transform.position, Quaternion.identity, deathEffectLifetime, deathEffect.transform.localScale * Random.Range(0.18f, 0.3f));
+            EffectPool.Puff("FighterDeathTrail", deathEffect, transform.position, 0.24f, 1); // emitted, not switched on: cheap
         }
 
         if (Time.time >= deathEndsAt) Explode(1.1f);
@@ -1058,7 +1063,10 @@ public class Fighter : MonoBehaviour
     {
         if (deathEffect != null)
         {
-            EffectPool.Play("FighterDeath", deathEffect, transform.position, Quaternion.identity, deathEffectLifetime, deathEffect.transform.localScale * scale);
+            // The full blast for the first few a frame; in a mass of kills the rest burst from the live emitter.
+            if (EffectPool.Budget("FighterDeath", 3))
+                EffectPool.Play("FighterDeath", deathEffect, transform.position, Quaternion.identity, deathEffectLifetime, deathEffect.transform.localScale * scale);
+            else EffectPool.Puff("FighterDeathBurst", deathEffect, transform.position, scale, 4);
         }
         if (dying) Sfx.Play(Sfx.Cue.ExplosionSmall, transform.position, 0.55f, 1.25f);
         if (fireTrail != null) Destroy(fireTrail);

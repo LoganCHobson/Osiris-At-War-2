@@ -1,3 +1,4 @@
+using System.Linq;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -29,6 +30,7 @@ public partial class FactionBrain
         AddShipOptions();
         AddTaxOfficeOption();
         AddShipyardOption();
+        AddShipyardUpgradeOption();
         AddBattleStationOption();
         AddStationDemolishOption();
         AddProbeOption(); // FactionBrain.Probes.cs
@@ -69,7 +71,18 @@ public partial class FactionBrain
         }
     }
 
-    private Ship ChooseShip()
+    // The best yard tier we own (Shipyards.cs).
+    private int BestYardTier()
+    {
+        int best = 0;
+        foreach (Planet planet in owned) best = Mathf.Max(best, planet.ShipyardTier);
+        return best;
+    }
+
+    // The ship we'd build next, among those our yards can build (maxTier: pretend we had yards up to this tier).
+    private Ship ChooseShip() => ChooseShip(BestYardTier());
+
+    private Ship ChooseShip(int maxTier)
     {
         List<Ship> candidates = new List<Ship>();
 
@@ -90,6 +103,11 @@ public partial class FactionBrain
         }
 
         if (candidates.Count == 0) return BuildShip;
+        if (maxTier > 0)
+        {
+            List<Ship> buildable = candidates.FindAll(ship => Shipyards.RequiredTier(ship) <= maxTier);
+            if (buildable.Count > 0) candidates = buildable;
+        }
 
         Dictionary<FleetRole, float> desired = DesiredComposition();
         Dictionary<FleetRole, float> current = OwnComposition(out float ownTotal);
@@ -306,12 +324,16 @@ public partial class FactionBrain
 
     private bool QueueShip()
     {
+        Ship wanted = ChooseShip();
+        if (wanted == null || !Manpower.CanAfford(faction, wanted)) wanted = BuildShip;
+
         Planet best = null;
         float bestScore = float.MinValue;
 
         foreach (Planet planet in owned)
         {
             if (!planet.hasCapitalShipyard || planet.shipBuildQueue.Count >= personality.shipsQueuedPerShipyard) continue;
+            if (!Shipyards.CanBuild(planet, wanted)) continue;
             if (planet.FindFreeSlot() < 0 && !HasOwnFleetInSlot(planet)) continue;
 
             int depth = HostileDepth(planet);
@@ -325,8 +347,7 @@ public partial class FactionBrain
 
         if (best == null) return false;
 
-        Ship ship = ChooseShip();
-        if (ship == null || !Manpower.CanAfford(faction, ship)) ship = BuildShip;
+        Ship ship = wanted;
         if (!Manpower.CanAfford(faction, ship)) return false;
 
         int difference = ship.cost - BuildShip.cost;
@@ -416,9 +437,43 @@ public partial class FactionBrain
         economyOptions.Add(new EconomyOption
         {
             label = $"Shipyard @ {target.planetName}",
-            cost = Planet.CapitalShipyardCost,
+            cost = Shipyards.BuildCost,
             score = shipyards == 0 ? 8f : 2.5f,
-            execute = () => Build(target, "Capital Shipyard", p => p.hasCapitalShipyard = true, p => !p.hasCapitalShipyard)
+            execute = () => Build(target, Shipyards.Name(1), p => p.SetShipyard(1), p => !p.hasCapitalShipyard)
+        });
+    }
+
+    // Upgrading a yard a tier. Urgent when the ship we'd most like needs a yard we don't have; otherwise a
+    // steady investment, the safest and most advanced yard first.
+    private void AddShipyardUpgradeOption()
+    {
+        Planet best = null;
+        float bestScore = float.MinValue;
+        foreach (Planet planet in owned)
+        {
+            int tier = planet.ShipyardTier;
+            if (tier == 0 || tier >= Shipyards.MaxTier) continue;
+            int depth = HostileDepth(planet);
+            float score = tier * 2f + (depth == int.MaxValue ? 2f : Mathf.Min(depth, 3)) - (ThreatAt(planet) > OwnPowerAt(planet) + Strength.Defenses(planet) ? 5f : 0f);
+            if (score > bestScore) { bestScore = score; best = planet; }
+        }
+        if (best == null) return;
+
+        Ship ideal = ChooseShip(Shipyards.MaxTier);
+        bool needed = ideal != null && Shipyards.RequiredTier(ideal) > BestYardTier();
+        // Without that need, only keep about half the yards at the next tier: lower yards still turn out the
+        // escorts and strike craft, and the money is better spent on ships.
+        int yards = owned.Count(p => p.ShipyardTier > 0);
+        int above = owned.Count(p => p.ShipyardTier > best.ShipyardTier);
+        if (!needed && above * 2 >= yards) return;
+        Planet target = best;
+        int from = target.ShipyardTier;
+        economyOptions.Add(new EconomyOption
+        {
+            label = $"Upgrade @ {target.planetName} to {Shipyards.Name(from + 1)}",
+            cost = Shipyards.UpgradeCost(from),
+            score = needed ? 3.5f : 0.8f * personality.economy,
+            execute = () => Build(target, Shipyards.Name(from + 1), p => p.SetShipyard(from + 1), p => p.ShipyardTier == from)
         });
     }
 

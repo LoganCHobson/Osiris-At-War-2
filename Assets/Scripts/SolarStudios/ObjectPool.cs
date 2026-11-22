@@ -67,7 +67,16 @@ namespace SolarStudios //Logans Library
             return obj;
         }
 
+        private Unity.Profiling.ProfilerMarker spawnMarker;
+        private bool spawnMarkerMade;
+
         public GameObject Spawn(Vector3 position, Quaternion rotation = default)
+        {
+            if (!spawnMarkerMade) { spawnMarker = new Unity.Profiling.ProfilerMarker("Pool.Spawn " + (prefab != null ? prefab.name : name)); spawnMarkerMade = true; }
+            using (spawnMarker.Auto()) return SpawnInner(position, rotation);
+        }
+
+        private GameObject SpawnInner(Vector3 position, Quaternion rotation)
         {
             onSpawn.Invoke();
 

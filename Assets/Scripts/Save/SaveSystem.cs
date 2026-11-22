@@ -208,6 +208,7 @@ public static class SaveSystem
                 owner = SaveRegistry.FindFaction(planet.owner),
                 hasTaxOffice = planet.hasTaxOffice,
                 hasCapitalShipyard = planet.hasCapitalShipyard,
+                shipyardTier = planet.shipyardTier,
                 hasBattleStation = planet.hasBattleStation,
                 shipBuildQueue = planet.buildQueue
                     .Select(order => new ShipBuildOrder { ship = SaveRegistry.FindShip(order.ship), remainingTime = order.remainingTime, deliverTo = order.deliverTo })
@@ -331,6 +332,7 @@ public static class SaveSystem
                 owner = SaveRegistry.Id(planet.owner),
                 hasTaxOffice = planet.hasTaxOffice,
                 hasCapitalShipyard = planet.hasCapitalShipyard,
+                shipyardTier = planet.shipyardTier,
                 hasBattleStation = planet.hasBattleStation,
                 buildQueue = planet.shipBuildQueue
                     .Where(order => order.ship != null)

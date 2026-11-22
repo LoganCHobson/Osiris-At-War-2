@@ -63,20 +63,53 @@ public class HullDeformation : MonoBehaviour
             return m;
         }
 
-        // Splits every triangle within `reach` of `c` into four until its edges are under `target`, so there's
-        // metal enough to bend and to cut a hole in (the hulls are built of few, large triangles). Triangles
-        // that share an edge share its midpoint, so the finer mesh stays closed.
-        public void Subdivide(Vector3 c, float reach, float target, int budget = 12000)
+        // Takes the triangles within `reach` of `c` out of the mesh into their own lists (one per submesh), so
+        // the work below only ever touches the neighbourhood of the hit, not the whole hull. Merge puts them back.
+        public List<int>[] Region(Vector3 c, float reach)
+        {
+            float reachSqr = reach * reach;
+            List<int>[] near = new List<int>[tris.Length];
+            for (int s = 0; s < tris.Length; s++)
+            {
+                List<int> list = tris[s];
+                List<int> inside = new List<int>();
+                int write = 0;
+                for (int k = 0; k < list.Count; k += 3)
+                {
+                    int a = list[k], b = list[k + 1], d = list[k + 2];
+                    Vector3 pa = v[a], pb = v[b], pd = v[d];
+                    // Cheap box test first; the exact distance only for triangles whose box reaches the sphere.
+                    Vector3 lo = Vector3.Min(pa, Vector3.Min(pb, pd)), hi = Vector3.Max(pa, Vector3.Max(pb, pd));
+                    Vector3 nearest = Vector3.Max(lo, Vector3.Min(c, hi));
+                    bool close = (nearest - c).sqrMagnitude <= reachSqr && (MeshSlicer.ClosestOnTriangle(c, pa, pb, pd) - c).sqrMagnitude <= reachSqr;
+                    if (close) { inside.Add(a); inside.Add(b); inside.Add(d); }
+                    else { list[write++] = a; list[write++] = b; list[write++] = d; }
+                }
+                list.RemoveRange(write, list.Count - write);
+                near[s] = inside;
+            }
+            return near;
+        }
+
+        public void Merge(List<int>[] near)
+        {
+            for (int s = 0; s < tris.Length; s++) tris[s].AddRange(near[s]);
+        }
+
+        // Splits the region's triangles into four until their edges are under `target`, so there's metal enough to
+        // bend and to cut a hole in (the hulls are built of few, large triangles). Triangles that share an edge
+        // share its midpoint, so the finer mesh stays closed.
+        public void Subdivide(List<int>[] near, Vector3 c, float reach, float target, int budget = 12000)
         {
             float targetSqr = target * target, reachSqr = reach * reach;
             Dictionary<long, int> made = new Dictionary<long, int>();
             for (int pass = 0; pass < 7 && budget > 0; pass++)
             {
                 bool split = false;
-                for (int s = 0; s < tris.Length; s++)
+                for (int s = 0; s < near.Length; s++)
                 {
-                    List<int> src = tris[s];
-                    List<int> dst = new List<int>(src.Count + 64);
+                    List<int> src = near[s];
+                    List<int> dst = new List<int>(src.Count * 2);
                     for (int k = 0; k < src.Count; k += 3)
                     {
                         int a = src[k], b = src[k + 1], d = src[k + 2];
@@ -95,18 +128,22 @@ public class HullDeformation : MonoBehaviour
                         budget -= 3;
                         split = true;
                     }
-                    tris[s] = dst;
+                    near[s] = dst;
                 }
                 if (!split) break;
             }
         }
 
-        // Moves vertices by `offset` and drops the triangles `remove` picks; new normals only where it moved.
-        public bool Reshape(System.Func<Vector3, Vector3> offset, System.Func<Vector3, Vector3, Vector3, bool> remove)
+        // Moves the region's vertices by `offset`, drops the region's triangles `remove` picks, and gives the moved
+        // vertices new normals from their own triangles. (A vertex within reach only ever belongs to triangles
+        // within reach, so nothing outside the region needs touching.)
+        public bool Reshape(List<int>[] near, System.Func<Vector3, Vector3> offset, System.Func<Vector3, Vector3, Vector3, bool> remove)
         {
-            bool[] moved = new bool[v.Count];
+            HashSet<int> region = new HashSet<int>();
+            foreach (List<int> list in near) foreach (int i in list) region.Add(i);
+            Dictionary<int, bool> moved = new Dictionary<int, bool>(region.Count);
             bool any = false;
-            for (int i = 0; i < v.Count; i++)
+            foreach (int i in region)
             {
                 Vector3 o = offset(v[i]);
                 if (o.sqrMagnitude <= 0f) continue;
@@ -117,7 +154,7 @@ public class HullDeformation : MonoBehaviour
             bool cut = false;
             if (remove != null)
             {
-                foreach (List<int> list in tris)
+                foreach (List<int> list in near)
                 {
                     int write = 0;
                     for (int k = 0; k < list.Count; k += 3)
@@ -130,20 +167,49 @@ public class HullDeformation : MonoBehaviour
             }
             if (any && hasN)
             {
-                Vector3[] sum = new Vector3[v.Count];
-                foreach (List<int> list in tris)
+                Dictionary<int, Vector3> sum = new Dictionary<int, Vector3>(moved.Count);
+                foreach (List<int> list in near)
                 {
                     for (int k = 0; k < list.Count; k += 3)
                     {
                         int a = list[k], b = list[k + 1], d = list[k + 2];
-                        if (!moved[a] && !moved[b] && !moved[d]) continue;
+                        if (!moved.ContainsKey(a) && !moved.ContainsKey(b) && !moved.ContainsKey(d)) continue;
                         Vector3 face = Vector3.Cross(v[b] - v[a], v[d] - v[a]);
-                        sum[a] += face; sum[b] += face; sum[d] += face;
+                        foreach (int i in new[] { a, b, d })
+                        {
+                            if (!moved.ContainsKey(i)) continue;
+                            sum.TryGetValue(i, out Vector3 acc);
+                            sum[i] = acc + face;
+                        }
                     }
                 }
-                for (int i = 0; i < v.Count; i++) if (moved[i] && sum[i].sqrMagnitude > 0f) n[i] = sum[i].normalized;
+                foreach (KeyValuePair<int, Vector3> pair in sum) if (pair.Value.sqrMagnitude > 0f) n[pair.Key] = pair.Value.normalized;
             }
             return any || cut;
+        }
+
+        // The whole edit around one hit: carve out the neighbourhood, refine, reshape, put back.
+        private static readonly Unity.Profiling.ProfilerMarker RegionMarker = new Unity.Profiling.ProfilerMarker("HullDeformation.Region"),
+            SubdivideMarker = new Unity.Profiling.ProfilerMarker("HullDeformation.Subdivide"), ReshapeMarker = new Unity.Profiling.ProfilerMarker("HullDeformation.Reshape");
+
+        public bool Edit(Vector3 c, float reach, float target, int budget, System.Func<Vector3, Vector3> offset, System.Func<Vector3, Vector3, Vector3, bool> remove)
+        {
+            RegionMarker.Begin();
+            List<int>[] near = Region(c, reach);
+            RegionMarker.End();
+            bool changed = false;
+            foreach (List<int> list in near) if (list.Count > 0) { changed = true; break; }
+            if (changed)
+            {
+                SubdivideMarker.Begin();
+                Subdivide(near, c, reach, target, budget);
+                SubdivideMarker.End();
+                ReshapeMarker.Begin();
+                changed = Reshape(near, offset, remove);
+                ReshapeMarker.End();
+            }
+            Merge(near);
+            return changed;
         }
     }
 
@@ -196,7 +262,9 @@ public class HullDeformation : MonoBehaviour
     // outward (an explosion inside), and a burnt-out cavity behind it, glowing.
     public void Hole(MeshFilter filter, Vector3 point, Vector3 normal, float radius, bool blownOut, Material interior, Transform marks)
     {
-        if (holes >= MaxHoles) return;
+        HullDamage hullDamage = GetComponent<HullDamage>();
+        int maxHoles = hullDamage != null ? Mathf.RoundToInt(MaxHoles * Mathf.Clamp(hullDamage.Size / 27f, 1f, 2f)) : MaxHoles;
+        if (holes >= maxHoles) return;
         if (!Local(filter, point, normal, radius, out Vector3 c, out Vector3 n, out float r, out float scale)) return;
         holes++;
         HoleSpots.Add((transform.InverseTransformPoint(point), transform.InverseTransformDirection(normal)));
@@ -298,17 +366,30 @@ public class HullDeformation : MonoBehaviour
     // Refines the surface (and the decals laid on it) around `c` to edges of `target`, then moves every vertex
     // by `offset` (surface-local space) and drops the triangles `remove` picks. Vertices are moved by where they
     // are, so the mesh's split vertices (hard edges, UV seams) move together and nothing tears that shouldn't.
+    private static readonly Unity.Profiling.ProfilerMarker DisplaceMarker = new Unity.Profiling.ProfilerMarker("HullDeformation.Displace"),
+        GetMarker = new Unity.Profiling.ProfilerMarker("HullDeformation.Get"), EditMarker = new Unity.Profiling.ProfilerMarker("HullDeformation.Edit"),
+        WriteMarker = new Unity.Profiling.ProfilerMarker("HullDeformation.Write"), MarksMarker = new Unity.Profiling.ProfilerMarker("HullDeformation.Marks");
+
     private void Displace(MeshFilter filter, Transform marks, Vector3 c, float reach, float target,
         System.Func<Vector3, Vector3> offset, System.Func<Vector3, Vector3, Vector3, bool> remove = null)
     {
+        using var displaceTiming = DisplaceMarker.Auto();
+        GetMarker.Begin();
         Surface surface = Get(filter);
+        GetMarker.End();
         if (surface == null) return;
-        surface.edit.Subdivide(c, reach, target);
-        surface.edit.Reshape(offset, remove);
+        EditMarker.Begin();
+        bool edited = surface.edit.Edit(c, reach, target, 12000, offset, remove);
+        EditMarker.End();
+        if (!edited) return;
+        WriteMarker.Begin();
         surface.edit.Write(surface.mesh);
+        WriteMarker.End();
         HullScarring.Forget(surface.mesh);
 
-        // Decals cut from this surface share its transform and local space: bend (and cut) them with it.
+        // Decals cut from this surface share its transform and local space: bend (and cut) them with it - over the
+        // next few frames, two a frame, with a coarser refinement than the hull's (doing the twenty-odd decals
+        // round a hit at once was a 140 ms hitch).
         if (marks == null) return;
         foreach (MeshFilter mark in marks.GetComponentsInChildren<MeshFilter>())
         {
@@ -317,10 +398,22 @@ public class HullDeformation : MonoBehaviour
             Bounds near = mark.sharedMesh.bounds;
             near.Expand(reach * 2f);
             if (!near.Contains(c)) continue;
-            Editable e = Editable.Read(mark.sharedMesh);
-            e.Subdivide(c, reach, target, 4000);
-            if (e.Reshape(offset, remove)) e.Write(mark.sharedMesh);
+            pendingMarks.Enqueue(() =>
+            {
+                if (mark == null || mark.sharedMesh == null) return;
+                Editable e = Editable.Read(mark.sharedMesh);
+                if (e.Edit(c, reach, target * 2f, 800, offset, remove)) e.Write(mark.sharedMesh);
+            });
         }
+    }
+
+    private readonly Queue<System.Action> pendingMarks = new Queue<System.Action>();
+
+    private void Update()
+    {
+        if (pendingMarks.Count == 0) return;
+        using var marksTiming = MarksMarker.Auto();
+        for (int i = 0; i < 2 && pendingMarks.Count > 0; i++) pendingMarks.Dequeue()();
     }
 
     // The burnt-out space behind a hole: a dark cup set into the hull, its inside glowing, so a hole reads as
