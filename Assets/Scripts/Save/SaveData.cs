@@ -30,6 +30,8 @@ public class SaveData
     public List<FleetSave> fleets = new List<FleetSave>();
     public List<TreasurySave> treasuries = new List<TreasurySave>();
     public List<IntelSave> playerIntel = new List<IntelSave>();
+    public List<SpyProbes.Probe> probes = new List<SpyProbes.Probe>();       // every faction's spy probes
+    public List<SpyProbes.Order> probeOrders = new List<SpyProbes.Order>();
     public List<BrainSave> brains = new List<BrainSave>();
 }
 

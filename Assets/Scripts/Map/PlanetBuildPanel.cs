@@ -57,6 +57,7 @@ public class PlanetBuildPanel : MonoBehaviour
     private TMP_Text tooltipText;
     private RectTransform actions;
     private UIBits.PillButton yardOrderButton;
+    private UIBits.PillButton probeButton;
     private BuildCard tooltipCard;
 
     private class StructureRow
@@ -215,9 +216,24 @@ public class PlanetBuildPanel : MonoBehaviour
 
         actions.gameObject.SetActive(mine);
         yardOrderButton.button.gameObject.SetActive(mine && currentPlanet.hasCapitalShipyard);
+        RefreshProbeButton(mine);
         RefreshStructures(mine, known);
         RefreshCards(mine);
         RefreshQueue(mine);
+    }
+
+    // Spy probes are built at shipyards (SpyProbes.cs); the button shows the one in production, if any.
+    private void RefreshProbeButton(bool mine)
+    {
+        bool yard = mine && currentPlanet.hasCapitalShipyard;
+        probeButton.button.gameObject.SetActive(yard);
+        if (!yard) return;
+        float building = SpyProbes.BuildingAt(currentPlanet);
+        int queued = SpyProbes.QueuedAt(currentPlanet);
+        string text = building >= 0f
+            ? $"PROBE  {MapText.RealTime(building)}{(queued > 1 ? $"  (+{queued - 1})" : "")}"
+            : $"SPY PROBE  ${SpyProbes.Cost}";
+        probeButton.Set(text, SpyProbes.WhyNot(currentPlanet) == null);
     }
 
     private void RefreshStructures(bool mine, bool known)
@@ -273,9 +289,22 @@ public class PlanetBuildPanel : MonoBehaviour
         shipyardHint.gameObject.SetActive(mine);
     }
 
+    // Your own queue, or (with your spy probe parked over it) an enemy planet's, read-only.
+    private bool spied;
+
     private void RefreshQueue(bool mine)
     {
+        bool watching = !mine && SpyProbes.Watching(SpyProbes.Player, currentPlanet);
+        if (watching != spied) { spied = watching; shownQueueCount = -1; }
         List<ShipBuildOrder> queue = currentPlanet.shipBuildQueue;
+        if (!mine && !spied)
+        {
+            if (shownQueueCount != 0) { foreach (QueueRow row in queueRows) Destroy(row.root.gameObject); queueRows.Clear(); shownQueueCount = 0; }
+            queueSummary.text = "";
+            queueNotice.gameObject.SetActive(true);
+            queueNotice.text = "Not your planet";
+            return;
+        }
         if (queue.Count != shownQueueCount) RebuildQueueRows();
 
         float total = 0f;
@@ -294,8 +323,9 @@ public class PlanetBuildPanel : MonoBehaviour
         }
 
         queueSummary.text = queue.Count == 0 ? "" : $"{queue.Count}  ·  {ShipInfo.Time(total)}";
-        queueNotice.gameObject.SetActive(!mine || queue.Count == 0);
-        queueNotice.text = mine ? "Nothing in production" : "Not your planet";
+        queueNotice.gameObject.SetActive(queue.Count == 0);
+        queueNotice.text = spied ? "Spy probe: nothing in production" : "Nothing in production";
+        if (spied && queue.Count > 0) queueSummary.text = "SPY PROBE  ·  " + queueSummary.text;
     }
 
     // ---------------- Cards ----------------
@@ -403,11 +433,11 @@ public class PlanetBuildPanel : MonoBehaviour
         for (int i = 0; i < queue.Count; i++)
         {
             if (queue[i].ship == null) continue;
-            queueRows.Add(QueueRowFor(queue[i].ship, i));
+            queueRows.Add(QueueRowFor(queue[i].ship, i, !spied));
         }
     }
 
-    private QueueRow QueueRowFor(Ship ship, int index)
+    private QueueRow QueueRowFor(Ship ship, int index, bool cancellable = true)
     {
         QueueRow row = new QueueRow();
         row.root = UIKit.Rect("Order", queueContent, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), Vector2.zero, new Vector2(0f, 50f));
@@ -433,6 +463,7 @@ public class PlanetBuildPanel : MonoBehaviour
         row.progressFill = UIKit.Rect("Fill", row.progressTrack, Vector2.zero, new Vector2(0f, 1f), new Vector2(0f, 0.5f), Vector2.zero, Vector2.zero);
         UIKit.Image(row.progressFill, UIKit.Accent);
 
+        if (!cancellable) return row; // An enemy queue seen through a spy probe.
         RectTransform cancel = UIKit.Rect("Cancel", row.root, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-8f, 0f), new Vector2(36f, 36f));
         Image cancelBackground = UIKit.Image(cancel, new Color(1f, 1f, 1f, 0.06f), true);
         UIKit.Text(cancel, "×", 26f, Warning, TextAlignmentOptions.Center);
@@ -481,6 +512,11 @@ public class PlanetBuildPanel : MonoBehaviour
         send.background.color = UIKit.PanelColor;
         yardOrderButton = UIBits.Button(actions, "BUILD FLEET AT THIS YARD", 15f, new Vector2(280f, 42f), () => ProductionWindow.Open(currentPlanet, currentPlanet));
         yardOrderButton.background.color = UIKit.PanelColor;
+        probeButton = UIBits.Button(actions, "SPY PROBE", 15f, new Vector2(220f, 42f), () =>
+        {
+            if (SpyProbes.Queue(currentPlanet)) Refresh();
+        });
+        probeButton.background.color = UIKit.PanelColor;
     }
 
     // A full-height column pinned to the dock's left or right edge.

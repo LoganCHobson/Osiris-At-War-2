@@ -22,6 +22,15 @@ public static class ShowcaseRunner
         EditorApplication.EnterPlaymode();
     }
 
+    // Spy probes on the galactic map: build, drag, fly, park, spy on the enemy queue (Logs/ProbeTour).
+    public static void RunProbeTour()
+    {
+        EditorSceneManager.OpenScene("Assets/Scenes/MainMenu.unity", OpenSceneMode.Single);
+        new GameObject("ProbeTour").AddComponent<ProbeTour>();
+        Application.runInBackground = true;
+        EditorApplication.EnterPlaymode();
+    }
+
     private static void Run<T>() where T : MonoBehaviour
     {
         EditorSceneManager.OpenScene("Assets/Scenes/BattleScene.unity", OpenSceneMode.Single);

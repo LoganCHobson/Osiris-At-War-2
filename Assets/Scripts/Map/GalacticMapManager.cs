@@ -101,6 +101,11 @@ public class GalacticMapManager : MonoBehaviour
             new GameObject("RivalsPanel").AddComponent<RivalsPanel>();
         }
 
+        if (FindFirstObjectByType<SpyProbeLayer>() == null)
+        {
+            new GameObject("SpyProbes").AddComponent<SpyProbeLayer>();
+        }
+
         SaveSystem.PrepareLoad(GalacticState.Instance); // Loading a save: hand over the saved galaxy first.
         GalacticState.Instance?.ApplyToScene();
         ApplyPendingBattleResult();
@@ -406,6 +411,15 @@ public class GalacticMapManager : MonoBehaviour
     {
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
         {
+            return;
+        }
+
+        // A spy probe under the cursor takes the press (SpyProbeLayer drags it to another planet's spot).
+        if (SpyProbeLayer.Instance != null && SpyProbeLayer.Instance.TryBeginDrag(Input.mousePosition))
+        {
+            DeselectAll();
+            FleetPanel.Instance?.Hide();
+            PlanetBuildPanel.Instance?.Hide();
             return;
         }
 

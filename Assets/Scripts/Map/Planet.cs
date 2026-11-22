@@ -141,6 +141,10 @@ public class Planet : MonoBehaviour
         return other != null && connections.Contains(other);
     }
 
+    // The planet's own parking spot, just below it inside the ring of fleet spots: spy probes park here
+    // (SpyProbes.cs), and ground units will later.
+    public Vector3 PlanetSpotPosition => transform.position + Vector3.back * fleetSlotRadius * 0.62f;
+
     public Vector3 GetSlotPosition(int slot)
     {
         float angle = (360f / FleetSlotCount) * slot;

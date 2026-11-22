@@ -38,6 +38,8 @@ public class GalacticState : MonoBehaviour
     public List<FleetSnapshot> fleetSnapshots = new List<FleetSnapshot>();
     public List<TreasurySnapshot> treasuries = new List<TreasurySnapshot>();
     public readonly Dictionary<string, PlanetIntel> playerIntel = new Dictionary<string, PlanetIntel>();
+    public List<SpyProbes.Probe> probes = new List<SpyProbes.Probe>();      // SpyProbes.cs
+    public List<SpyProbes.Order> probeOrders = new List<SpyProbes.Order>();
 
     [Header("Economy")]
     public int startingCurrency = 500;

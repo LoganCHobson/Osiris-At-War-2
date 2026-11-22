@@ -24,6 +24,14 @@ public static class GalacticVisibility
                 AddWithNeighbors(fleet.currentPlanet, result);
             }
         }
+
+        // A parked spy probe sees its planet and the systems next to it, like a fleet would.
+        HashSet<string> watched = new HashSet<string>(SpyProbes.WatchedPlanets(faction));
+        if (watched.Count == 0) return;
+        foreach (Planet planet in planets)
+        {
+            if (planet != null && watched.Contains(planet.planetName)) AddWithNeighbors(planet, result);
+        }
     }
 
     public static bool CanSeeFleet(GalacticFleet fleet, Faction viewer, HashSet<Planet> visible)

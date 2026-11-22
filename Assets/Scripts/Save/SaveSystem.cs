@@ -155,6 +155,11 @@ public static class SaveSystem
         return true;
     }
 
+    private static SpyProbes.Probe Copy(SpyProbes.Probe p) => new SpyProbes.Probe
+    {
+        faction = p.faction, planet = p.planet, route = new List<string>(p.route ?? new List<string>()), x = p.x, y = p.y, z = p.z, lifeLeft = p.lifeLeft
+    };
+
     // Drops everything that outlives a scene so the next campaign (new or loaded) starts clean.
     public static void ClearCampaign()
     {
@@ -266,6 +271,9 @@ public static class SaveSystem
             state.playerIntel[saved.planet] = intel;
         }
 
+        state.probes = data.probes != null ? data.probes.ConvertAll(Copy) : new List<SpyProbes.Probe>();
+        state.probeOrders = data.probeOrders != null ? data.probeOrders.ConvertAll(o => new SpyProbes.Order { faction = o.faction, planet = o.planet, remaining = o.remaining }) : new List<SpyProbes.Order>();
+
         state.initialized = true;
     }
 
@@ -373,6 +381,9 @@ public static class SaveSystem
             }
             data.playerIntel.Add(intel);
         }
+
+        data.probes = state.probes.ConvertAll(Copy);
+        data.probeOrders = state.probeOrders.ConvertAll(o => new SpyProbes.Order { faction = o.faction, planet = o.planet, remaining = o.remaining });
 
         if (AIDirector.Instance != null)
         {
