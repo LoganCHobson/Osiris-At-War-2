@@ -431,7 +431,33 @@ public class FTLJump : MonoBehaviour
         return parts;
     }
 
+    // A streak's look as plain parts (saving a replay), and back.
+    public static void ReadLook(object look, out List<(Mesh mesh, Material[] materials, Matrix4x4 local, int layer)> parts)
+    {
+        parts = new List<(Mesh, Material[], Matrix4x4, int)>();
+        if (look is List<LookPart> list) foreach (LookPart p in list) parts.Add((p.mesh, p.materials, p.local, p.layer));
+    }
+
+    public static object MakeLook(List<(Mesh mesh, Material[] materials, Matrix4x4 local, int layer)> parts)
+    {
+        List<LookPart> list = new List<LookPart>(parts.Count);
+        foreach (var p in parts) if (p.mesh != null) list.Add(new LookPart { mesh = p.mesh, materials = p.materials, local = p.local, layer = p.layer });
+        return list;
+    }
+
+    // A streak frame kept by a battle replay, drawn again as it plays back.
+    public static void DrawRecordedLook(object look, Vector3 position, Quaternion rotation, Vector3 scale)
+    {
+        if (look is List<LookPart> parts) Draw(parts, position, rotation, scale);
+    }
+
     private static void DrawLook(List<LookPart> parts, Vector3 position, Quaternion rotation, Vector3 scale)
+    {
+        ReplayRecorder.Streak(parts, position, rotation, scale);
+        Draw(parts, position, rotation, scale);
+    }
+
+    private static void Draw(List<LookPart> parts, Vector3 position, Quaternion rotation, Vector3 scale)
     {
         Matrix4x4 root = Matrix4x4.TRS(position, rotation, scale);
         foreach (LookPart part in parts)

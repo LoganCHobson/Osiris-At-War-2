@@ -36,6 +36,11 @@ public static class DestructionFx
             main.stopAction = ParticleSystemStopAction.None;
         }
 
+        if (ReplayRecorder.Recording)
+        {
+            instance.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            ReplayRecorder.Seed(instance); // a pattern the battle replay can repeat
+        }
         instance.Play(true);
         return instance.gameObject;
     }
@@ -66,6 +71,7 @@ public static class DestructionFx
     {
         if (clips == null || clips.Length == 0) return;
 
+        if (!ReplayPlayer.Active) ReplayRecorder.Blast(clips, position, profile, pitch);
         AudioClip clip = clips[Random.Range(0, clips.Length)];
         if (clip == null) return;
 

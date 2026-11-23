@@ -58,6 +58,7 @@ public class HullDeformation : MonoBehaviour
 
         public void Write(Mesh mesh)
         {
+            ReplayRecorder.MeshWriting(mesh); // A battle replay keeps every version of the hull.
             if (v.Count > 65000) mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
             mesh.SetVertices(v);
             if (hasN) mesh.SetNormals(n);
@@ -67,6 +68,7 @@ public class HullDeformation : MonoBehaviour
             mesh.subMeshCount = tris.Length;
             for (int s = 0; s < tris.Length; s++) mesh.SetTriangles(tris[s], s, false);
             mesh.RecalculateBounds();
+            ReplayRecorder.MeshWritten(mesh, v, n, t, uv, col, tris, hasN, hasT, hasUV, hasCol);
         }
 
         private int Mid(int a, int b, Dictionary<long, int> made)
@@ -396,6 +398,7 @@ public class HullDeformation : MonoBehaviour
         Mesh copy = Instantiate(source);
         copy.name = source.name;
         copy.MarkDynamic();
+        ReplayRecorder.MeshCopied(copy, source);
         filter.sharedMesh = copy; // Not freed with the ship: its wreck's loose parts may still draw it (UnloadUnusedAssets does).
         surface = new Surface { mesh = copy, edit = Editable.Read(copy), weld = Mathf.Max(1e-6f, copy.bounds.size.magnitude * 1e-5f), filter = filter };
         surfaces[filter] = surface;
@@ -615,6 +618,6 @@ public class HullDeformation : MonoBehaviour
 
     private void OnDestroy()
     {
-        foreach (Mesh mesh in owned) if (mesh != null) Destroy(mesh);
+        foreach (Mesh mesh in owned) if (mesh != null && !ReplayRecorder.Keep(mesh)) Destroy(mesh);
     }
 }

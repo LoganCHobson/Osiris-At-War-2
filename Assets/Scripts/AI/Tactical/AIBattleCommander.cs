@@ -678,6 +678,7 @@ public partial class AIBattleCommander : MonoBehaviour
 
             Contact chosen = personality.canFocusFire ? PickFocusTarget(unit) : NearestContact(unit.health.transform.position);
             if (Random.value < Difficulty.targetMistakeChance) chosen = NearestContact(unit.health.transform.position); // Tunnel vision.
+            if (enemies.Count > 0 && Random.value < Difficulty.scatterFireChance) chosen = enemies[Random.Range(0, enemies.Count)]; // Distracted: whatever caught its eye.
             if (chosen == null) continue;
 
             chosen.incomingDps += unit.dps;
@@ -837,7 +838,7 @@ public partial class AIBattleCommander : MonoBehaviour
 
         // A shielded ship: knock out its shield generator first, and everything after hits the hull.
         HardpointHealth generator = ShieldGenerator.LiveGenerator(contact.health.gameObject);
-        if (generator != null && alive.Contains(generator) && Difficulty.level != DifficultyLevel.Cadet)
+        if (generator != null && alive.Contains(generator) && Difficulty.shieldGeneratorFirst)
         {
             if (unit.target == contact.health && unit.aimPoint == generator.transform) return;
             unit.target = contact.health;
@@ -994,7 +995,7 @@ public partial class AIBattleCommander : MonoBehaviour
 
     private float BlindSide(UnitHealthManager target, ShipAltitude self)
     {
-        if (target == null || Difficulty.level == DifficultyLevel.Cadet) return 0f;
+        if (target == null || !Difficulty.blindSide) return 0f;
         if (!target.TryGetComponent(out ShipAltitude theirs)) return 0f;
 
         float dorsal = theirs.DorsalFirepower;
@@ -1022,7 +1023,7 @@ public partial class AIBattleCommander : MonoBehaviour
     private void PlanAmbush()
     {
         ambushPlanned = true;
-        float chance = Difficulty.level == DifficultyLevel.Cadet ? 0f : Difficulty.level == DifficultyLevel.Captain ? 0.3f : 0.45f;
+        float chance = Difficulty.ambushChance;
         if (Random.value >= chance || BattleTerrain.Instance == null) return;
 
         List<Unit> candidates = units.FindAll(u => u.health != null && !u.health.IsFreeUnit
@@ -1165,7 +1166,7 @@ public partial class AIBattleCommander : MonoBehaviour
     // Fires abilities when they'd actually help. Cadets often forget to.
     private void UseAbilities()
     {
-        float reliability = Difficulty.level == DifficultyLevel.Cadet ? 0.3f : Difficulty.level == DifficultyLevel.Captain ? 0.75f : 1f;
+        float reliability = Difficulty.abilityReliability;
 
         foreach (Unit unit in units)
         {

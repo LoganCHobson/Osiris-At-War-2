@@ -98,6 +98,7 @@ public class MainMenuController : MonoBehaviour
         AddButton(menu.transform, "CONTINUE", ref y, latest != null, () => ContinueFrom(latest));
         AddButton(menu.transform, "LOAD GAME", ref y, SaveSystem.List().Count > 0, OpenLoad);
         AddButton(menu.transform, "SKIRMISH", ref y, true, OpenSkirmish);
+        AddButton(menu.transform, "REPLAYS", ref y, true, OpenReplays);
         AddButton(menu.transform, "OPTIONS", ref y, true, OpenOptions);
         AddButton(menu.transform, "CREDITS", ref y, true, OpenCredits);
         y -= 24f;
@@ -242,6 +243,18 @@ public class MainMenuController : MonoBehaviour
         }, scene =>
         {
             if (!leaving) StartCoroutine(LeaveTo(scene));
+        });
+    }
+
+    private void OpenReplays()
+    {
+        if (leaving || ReplayGallery.IsOpen) return;
+        menuGroup.alpha = 0f;
+        menuGroup.interactable = false;
+        ReplayGallery.Open(menuCanvas.transform, () =>
+        {
+            menuGroup.alpha = 1f;
+            menuGroup.interactable = true;
         });
     }
 

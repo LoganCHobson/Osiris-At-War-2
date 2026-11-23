@@ -7,11 +7,11 @@ public class ShieldGenerator : MonoBehaviour
 {
     private const int MaxHits = 8;
 
-    private static readonly int HitsId = Shader.PropertyToID("_Hits");
-    private static readonly int HitDataId = Shader.PropertyToID("_HitData");
-    private static readonly int BubbleScaleId = Shader.PropertyToID("_BubbleScale");
-    private static readonly int ShieldTimeId = Shader.PropertyToID("_ShieldTime");
-    private static readonly int FractionId = Shader.PropertyToID("_Fraction");
+    public static readonly int HitsId = Shader.PropertyToID("_Hits");
+    public static readonly int HitDataId = Shader.PropertyToID("_HitData");
+    public static readonly int BubbleScaleId = Shader.PropertyToID("_BubbleScale");
+    public static readonly int ShieldTimeId = Shader.PropertyToID("_ShieldTime");
+    public static readonly int FractionId = Shader.PropertyToID("_Fraction");
 
     private static int shieldLayer = -2;
     private static Mesh sphereMesh;
@@ -102,6 +102,12 @@ public class ShieldGenerator : MonoBehaviour
     private MaterialPropertyBlock block;
     private readonly Vector4[] hits = new Vector4[MaxHits];
     private readonly Vector4[] hitData = new Vector4[MaxHits];
+
+    // For battle replays: the bubble and the ripple data the shader is given.
+    public MeshRenderer BubbleRenderer => bubbleRenderer;
+    public Vector4[] Hits => hits;
+    public Vector4[] HitData => hitData;
+    public int RippleCount { get; private set; }
     private int nextHit;
     private float lastHitAt = float.NegativeInfinity;
     private float lastRippleAt = float.NegativeInfinity;
@@ -302,6 +308,7 @@ public class ShieldGenerator : MonoBehaviour
         hitData[nextHit] = new Vector4(Time.time, strength, reach, 0f);
         nextHit = (nextHit + 1) % MaxHits;
         lastRippleAt = Time.time;
+        RippleCount++;
     }
 
     private void Update()

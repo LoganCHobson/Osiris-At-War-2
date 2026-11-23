@@ -9,6 +9,8 @@ public class SaveData
 
     public int version = CurrentVersion;
     public string displayName;
+    public string campaignId;     // Which campaign this is (its battle replays are filed under it).
+    public string campaignStarted;
     public string savedAt;        // ISO 8601, local time.
     public string mapSignature;   // Detects saves from a different galaxy layout.
     public string playerFaction;

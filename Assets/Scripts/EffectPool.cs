@@ -53,6 +53,7 @@ public static class EffectPool
             }
             emitters[key] = systems;
         }
+        ReplayRecorder.Puff(key, template, position, scale, perSystem);
         ParticleSystem.EmitParams at = new ParticleSystem.EmitParams { position = position, applyShapeToPosition = true };
         foreach (ParticleSystem system in systems)
         {

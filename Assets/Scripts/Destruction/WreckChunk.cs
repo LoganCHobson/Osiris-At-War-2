@@ -309,7 +309,7 @@ public class WreckChunk : MonoBehaviour
         persistent.Remove(this);
         foreach (Mesh mesh in ownedMeshes)
         {
-            if (mesh != null) Destroy(mesh);
+            if (mesh != null && !ReplayRecorder.Keep(mesh)) Destroy(mesh);
         }
     }
 }

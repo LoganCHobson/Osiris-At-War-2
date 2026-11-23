@@ -17,6 +17,7 @@ public class PooledEffect : MonoBehaviour
     {
         returnAt = Time.time + lifetime;
         system.Clear(true);
+        ReplayRecorder.Seed(system);
         system.Play(true);
     }
 

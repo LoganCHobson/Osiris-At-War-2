@@ -309,6 +309,7 @@ public class SiegeRecording : MonoBehaviour
         startedAt = Time.time;
         wallStart = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000.0;
         if (HasFlag("-profile")) StartCoroutine(ProfileFight());
+        if (HasFlag("-replayTest")) StartCoroutine(ReplayTest());
         if (HasFlag("-lineCensus")) StartCoroutine(LineCensus());
         float overAt = -1f;
         float cutEndsAt = 0f;
@@ -321,6 +322,7 @@ public class SiegeRecording : MonoBehaviour
         float nextReportAt = 30f;
         while (Time.time - startedAt < duration)
         {
+            if (replaying) { yield return null; continue; } // -replayTest: the replay has the camera now.
             float t = Time.time - startedAt;
             if (t >= nextReportAt) // Keep the report on disk as we go, so a stopped run still has one.
             {
@@ -1199,6 +1201,79 @@ public class SiegeRecording : MonoBehaviour
 #else
         Application.Quit();
 #endif
+    }
+
+    // Dev check (-replayTest): at -replayAt seconds (default 90) the battle so far is replayed: cinematic and
+    // free cameras, normal and fast speed, jumps back and forward. Stills and timings go to the capture dir.
+    private bool replaying;
+
+    private IEnumerator ReplayTest()
+    {
+        float.TryParse(Argument("-replayAt", "90"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float at);
+        while (Time.time < startedAt + at) yield return null;
+        ReplayRecorder recorder = ReplayRecorder.Instance;
+        if (recorder == null) { report.AppendLine("replay test: no recorder"); Finish(); yield break; }
+        report.AppendLine($"replay test at t={Time.time - startedAt:F0}s fps-so-far recording avg {recorder.TotalMs / Mathf.Max(1, recorder.Frames):F2} ms worst {recorder.WorstMs:F1} ms");
+        replaying = true;
+        StartCoroutine(ReplayPlayer.Run());
+        yield return null;
+        yield return null;
+        ReplayPlayer player = ReplayPlayer.Instance;
+        report.AppendLine(recorder.Summary());
+        float span = player.End - player.Start0;
+
+        IEnumerator Watch(string label, float from, float seconds, float speed, ReplayCamera.Mode mode)
+        {
+            player.Camera.SetMode(mode);
+            player.SetSpeed(speed);
+            player.SetPaused(false);
+            player.Seek(player.Start0 + from);
+            float until = Time.unscaledTime + seconds;
+            float worst = 0f, total = 0f;
+            int frames = 0;
+            while (Time.unscaledTime < until)
+            {
+                yield return null;
+                float dt = Time.unscaledDeltaTime * 1000f;
+                if (frames > 3) { worst = Mathf.Max(worst, dt); total += dt; }
+                frames++;
+            }
+            int shown = 0;
+            foreach (ReplayItem item in player.Data.items) if (item.ghostOn) shown++;
+            ScreenCapture.CaptureScreenshot(Path.Combine(outputDir, $"replay_{label}.png"));
+            yield return null;
+            report.AppendLine($"replay {label}: t={player.Now - player.Start0:F1}s speed {speed} {mode} frame avg {total / Mathf.Max(1, frames - 4):F1} ms worst {worst:F0} ms ghosts shown {shown} shot '{player.Camera.ShotName}'");
+        }
+
+        yield return Watch("cinematic_early", Mathf.Min(20f, span * 0.2f), 6f, 1f, ReplayCamera.Mode.Cinematic);
+        yield return Watch("cinematic_mid_fast", span * 0.6f, 6f, 4f, ReplayCamera.Mode.Cinematic);
+        // Free camera: high over the middle of the fight, looking down at it.
+        player.Camera.SetMode(ReplayCamera.Mode.Free);
+        Transform eye = Camera.main.transform;
+        eye.position = eye.position - eye.forward * 250f + Vector3.up * 120f;
+        yield return Watch("free_late", span * 0.9f, 4f, 1f, ReplayCamera.Mode.Free);
+        yield return Watch("rewind_early", Mathf.Min(35f, span * 0.4f), 4f, 1f, ReplayCamera.Mode.Cinematic);
+        yield return Watch("forward_end", span - 3f, 5f, 1f, ReplayCamera.Mode.Cinematic);
+        player.Exit();
+        yield return null;
+
+        // Saved as the game saves it, timed; the file's path goes in the report (-watchReplay opens it).
+        float saveStarted = Time.realtimeSinceStartup;
+        System.DateTime before = System.DateTime.Now.AddSeconds(-1);
+        yield return ReplayFile.Save(recorder);
+        float mainThread = Time.realtimeSinceStartup - saveStarted;
+        string saved = null;
+        while (saved == null && Time.realtimeSinceStartup - saveStarted < 300f)
+        {
+            yield return new WaitForSecondsRealtime(1f);
+            if (!Directory.Exists(ReplayFile.Folder)) continue;
+            foreach (string f in Directory.GetFiles(ReplayFile.Folder, "*" + ReplayFile.Extension, SearchOption.AllDirectories))
+                if (File.GetLastWriteTime(f) > before) saved = f;
+        }
+        report.AppendLine(saved == null ? "replay save: no file after 300 s"
+            : $"replay save: {saved} {new FileInfo(saved).Length / 1048576f:F1} MB, main thread {mainThread:F1} s, written after {Time.realtimeSinceStartup - saveStarted:F0} s");
+        report.AppendLine(ReplayFile.LastSizes);
+        Finish();
     }
 
     // Development builds: -profile records Unity's profiler through the main engagement (-profileFrom seconds in,

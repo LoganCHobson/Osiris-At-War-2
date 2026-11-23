@@ -30,6 +30,14 @@ public static class GameSettings
 
     // Grand Admiral: upload anonymous battle records so the AI learns from everyone's games.
     public static bool ShareBattleData = true;
+    // Record every battle so it can be replayed afterwards (a few ms a frame in the biggest fights).
+    public static bool RecordReplays = true;
+    // Saved replays: 0 kept until deleted, 1 oldest removed past a total size, 2 removed after a number of days.
+    public static int ReplayPruneMode = 1;
+    public static float ReplayPruneGigabytes = 10f;
+    public static int ReplayPruneDays = 30;
+    public static readonly float[] ReplayPruneSizes = { 2f, 5f, 10f, 20f, 50f };
+    public static readonly int[] ReplayPruneAges = { 7, 30, 90, 365 };
 
     public static readonly int[] FrameCapOptions = { 0, 30, 60, 120, 144, 165, 240 };
 
@@ -63,6 +71,10 @@ public static class GameSettings
         ConfineCursor = PlayerPrefs.GetInt(Prefix + "confineCursor", 1) == 1;
         CursorSize = Mathf.Clamp(PlayerPrefs.GetInt(Prefix + "cursorSize", 1), 0, 2);
         ShareBattleData = PlayerPrefs.GetInt(Prefix + "shareBattleData", 1) == 1;
+        RecordReplays = PlayerPrefs.GetInt(Prefix + "recordReplays", 1) == 1;
+        ReplayPruneMode = Mathf.Clamp(PlayerPrefs.GetInt(Prefix + "replayPruneMode", 1), 0, 2);
+        ReplayPruneGigabytes = PlayerPrefs.GetFloat(Prefix + "replayPruneGigabytes", 10f);
+        ReplayPruneDays = PlayerPrefs.GetInt(Prefix + "replayPruneDays", 30);
         loaded = true;
     }
 
@@ -84,6 +96,10 @@ public static class GameSettings
         PlayerPrefs.SetInt(Prefix + "confineCursor", ConfineCursor ? 1 : 0);
         PlayerPrefs.SetInt(Prefix + "cursorSize", CursorSize);
         PlayerPrefs.SetInt(Prefix + "shareBattleData", ShareBattleData ? 1 : 0);
+        PlayerPrefs.SetInt(Prefix + "recordReplays", RecordReplays ? 1 : 0);
+        PlayerPrefs.SetInt(Prefix + "replayPruneMode", ReplayPruneMode);
+        PlayerPrefs.SetFloat(Prefix + "replayPruneGigabytes", ReplayPruneGigabytes);
+        PlayerPrefs.SetInt(Prefix + "replayPruneDays", ReplayPruneDays);
         PlayerPrefs.Save();
     }
 

@@ -37,10 +37,12 @@ public class GameManager : MonoBehaviour
     // The cap for one side right now.
     public int PopulationCapFor(bool attackerSide) => populationCap;
     public float battleEndDelay = 3f;
+    private const float ReplayOfferSeconds = 7f;
 
     public bool PlayerIsAttacker { get; private set; } = true;
 
     public static bool CombatOver => Instance != null && Instance.battleEnded;
+    public static int TerrainSeed { get; private set; }
 
     private bool battleEnded;
 
@@ -60,6 +62,14 @@ public class GameManager : MonoBehaviour
         Sfx.Preload(); // Every battle sound loaded now, not from disk mid-fight.
         SkyPlanet.Create(); // The planet being fought over, below the fleets.
         CreateTerrain();
+        if (ReplayLaunch.Active)
+        {
+            // A saved replay from the main menu: the stage without the battle, and the recording played on it.
+            battleEnded = true;
+            StartCoroutine(ReplayLaunch.Play());
+            return;
+        }
+        ReplayRecorder.Begin(); // From here on, everything that happens can be replayed.
 
         bool hasBattleContext = BattleContext.Instance != null && BattleContext.Instance.hasPendingBattle;
 
@@ -145,7 +155,9 @@ public class GameManager : MonoBehaviour
         Vector3 defenderStart = defenderShipSpawnPoint != null ? defenderShipSpawnPoint.position : Vector3.zero;
 
         string planet = BattleContext.Instance != null ? BattleContext.Instance.destinationPlanetName : null;
-        int seed = string.IsNullOrEmpty(planet) ? Random.Range(1, int.MaxValue) : PlanetArchetypes.StableHash(planet) + 17;
+        int seed = ReplayLaunch.Active ? ReplayLaunch.Header.terrainSeed
+            : string.IsNullOrEmpty(planet) ? Random.Range(1, int.MaxValue) : PlanetArchetypes.StableHash(planet) + 17;
+        TerrainSeed = seed; // Kept with the battle's replay, which rebuilds the same field.
         BattleTerrain.Create(attackerStart, defenderStart, seed);
     }
 
@@ -215,9 +227,23 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator EndBattle(bool playerWon, string subtitle)
     {
-        BattleEndBanner.Instance?.Show(playerWon, subtitle);
+        bool replay = ReplayRecorder.Available && BattleEndBanner.Instance != null;
+        BattleEndBanner.Instance?.Show(playerWon, subtitle, replay);
 
-        yield return new WaitForSecondsRealtime(battleEndDelay);
+        // With a replay recorded, the banner offers it for a while before the game moves on.
+        float until = Time.unscaledTime + battleEndDelay + (replay ? ReplayOfferSeconds : 0f);
+        while (Time.unscaledTime < until)
+        {
+            if (replay && BattleEndBanner.Instance != null && BattleEndBanner.Instance.ReplayRequested)
+            {
+                BattleEndBanner.Instance.Hide();
+                yield return ReplayPlayer.Run();
+                break;
+            }
+            yield return null;
+        }
+        // Kept for the replay gallery (written in the background).
+        if (ReplayRecorder.Instance != null) yield return ReplayFile.Save(ReplayRecorder.Instance);
 
         GameSpeed.Reset();
         BattleContext context = BattleContext.Instance;

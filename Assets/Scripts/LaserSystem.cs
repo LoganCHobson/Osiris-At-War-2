@@ -109,6 +109,7 @@ public class LaserSystem : MonoBehaviour
             if (speed < 0.01f) continue;
             Vector3 dir = v / speed;
             Vector3 head = laser.transform.position;
+            if (laser.replayId == 0 && ReplayRecorder.Recording) laser.replayId = ReplayRecorder.BoltFired(head, v, laser.BoltColor, laser.BoltWidth);
             // Thick enough to read at any distance: never thinner on screen than a few pixels (the bolt models
             // are only ~0.05 across, a pixel or two at battle range).
             float distance = Vector3.Distance(eye, head);
@@ -150,6 +151,18 @@ public class LaserSystem : MonoBehaviour
     }
 
     private int lastQuads;
+
+    // The bolts' look, for battle replays.
+    public static Material StreakMaterial()
+    {
+        Material source = Resources.Load<Material>("FTL/FTLGlow");
+        if (source == null) return null;
+        Material material = new Material(source);
+        material.SetTexture("_MainTex", LongStreaks ? streakTexture ??= StreakTexture() : boltTexture ??= BoltTexture());
+        material.SetColor("_Color", Color.white);
+        material.SetFloat("_Intensity", 1f);
+        return material;
+    }
 
     private void Quad(ref int q, Vector3 head, Vector3 tail, Vector3 halfWidth, Color color)
     {

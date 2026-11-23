@@ -30,6 +30,7 @@ public class CIWSTracers : MonoBehaviour
         public float fighterRadius;
         public int shipMask;      // non-zero: aimed at a warship, hit-tested against colliders on these layers
         public bool attackerSide; // the shooter's side, so its own ships and shields don't stop the round
+        public int replayId;      // its shot in the battle replay
     }
 
     private const float HullDamageMultiplier = 0.35f; // as Laser: a round in bare hull does less than one in a hardpoint
@@ -57,6 +58,24 @@ public class CIWSTracers : MonoBehaviour
     {
         if (instance == null && !Create()) return;
         instance.Add(position, velocity, life, damage, missile, fighter, source, weapon);
+    }
+
+    // Soft streak across its width, like the FTL lines.
+    private static Texture2D tracerTexture;
+    public static Texture2D TracerTexture()
+    {
+        if (tracerTexture != null) return tracerTexture;
+        Texture2D texture = new Texture2D(4, 64, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, name = "CIWSTracer" };
+        Color32[] pixels = new Color32[4 * 64];
+        for (int y = 0; y < 64; y++)
+        {
+            float across = Mathf.Abs((y + 0.5f) / 64f * 2f - 1f);
+            byte alpha = (byte)(Mathf.Pow(Mathf.Clamp01(1f - across), 1.6f) * 255f);
+            for (int x = 0; x < 4; x++) pixels[y * 4 + x] = new Color32(255, 255, 255, alpha);
+        }
+        texture.SetPixels32(pixels);
+        texture.Apply(false, true);
+        return tracerTexture = texture;
     }
 
     private static bool Create()
@@ -95,20 +114,8 @@ public class CIWSTracers : MonoBehaviour
         meshRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         meshRenderer.receiveShadows = false;
 
-        // Soft streak across its width, like the FTL lines.
-        Texture2D texture = new Texture2D(4, 64, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, name = "CIWSTracer" };
-        Color32[] pixels = new Color32[4 * 64];
-        for (int y = 0; y < 64; y++)
-        {
-            float across = Mathf.Abs((y + 0.5f) / 64f * 2f - 1f);
-            byte alpha = (byte)(Mathf.Pow(Mathf.Clamp01(1f - across), 1.6f) * 255f);
-            for (int x = 0; x < 4; x++) pixels[y * 4 + x] = new Color32(255, 255, 255, alpha);
-        }
-        texture.SetPixels32(pixels);
-        texture.Apply(false, true);
-
         MaterialPropertyBlock block = new MaterialPropertyBlock();
-        block.SetTexture("_MainTex", texture);
+        block.SetTexture("_MainTex", TracerTexture());
         block.SetColor("_Color", TracerColor);
         block.SetFloat("_Intensity", TracerIntensity);
         meshRenderer.SetPropertyBlock(block);
@@ -138,12 +145,17 @@ public class CIWSTracers : MonoBehaviour
             weapon = weapon,
             shipMask = shipMask,
             attackerSide = source != null && source.isAttackerSide,
+            replayId = ReplayRecorder.TracerFired(position, velocity),
         };
     }
 
     private void Update()
     {
-        if (GameManager.CombatOver) count = 0;
+        if (GameManager.CombatOver)
+        {
+            for (int i = 0; i < count; i++) ReplayRecorder.TracerEnded(rounds[i].replayId);
+            count = 0;
+        }
 
         float dt = Time.deltaTime;
         for (int i = count - 1; i >= 0; i--)
@@ -157,6 +169,7 @@ public class CIWSTracers : MonoBehaviour
             if (round.life <= 0f && round.shipMask != 0) Laser.Count(TallyKey(round), 4); // a strafing round that hit nothing
             if (round.life <= 0f || Hit(ref round, from, to))
             {
+                ReplayRecorder.TracerEnded(round.replayId);
                 rounds[i] = rounds[--count];
             }
         }

@@ -174,6 +174,35 @@ public class SettingsPanel : MonoBehaviour
             GameSettings.QualityLevel = i;
             GameSettings.Apply();
         });
+
+        // Recording costs a little every frame of a battle; off, battles can't be replayed.
+        UIKit.Selector(UIKit.Row(content, "Battle Replays"), new[] { "Off", "On" }, GameSettings.RecordReplays ? 1 : 0, i =>
+        {
+            GameSettings.RecordReplays = i == 1;
+            GameSettings.Apply();
+        });
+
+        // Saved replays: when old ones are cleared out (oldest first; any marked to keep in the gallery never are).
+        string[] limits = new string[GameSettings.ReplayPruneSizes.Length + GameSettings.ReplayPruneAges.Length + 1];
+        int choice = 0, n = 0;
+        limits[n++] = "Keep all";
+        foreach (float gb in GameSettings.ReplayPruneSizes)
+        {
+            if (GameSettings.ReplayPruneMode == 1 && Mathf.Approximately(gb, GameSettings.ReplayPruneGigabytes)) choice = n;
+            limits[n++] = $"Up to {gb:0} GB";
+        }
+        foreach (int days in GameSettings.ReplayPruneAges)
+        {
+            if (GameSettings.ReplayPruneMode == 2 && days == GameSettings.ReplayPruneDays) choice = n;
+            limits[n++] = $"Last {days} days";
+        }
+        UIKit.Selector(UIKit.Row(content, "Saved Replays"), limits, choice, i =>
+        {
+            if (i == 0) GameSettings.ReplayPruneMode = 0;
+            else if (i <= GameSettings.ReplayPruneSizes.Length) { GameSettings.ReplayPruneMode = 1; GameSettings.ReplayPruneGigabytes = GameSettings.ReplayPruneSizes[i - 1]; }
+            else { GameSettings.ReplayPruneMode = 2; GameSettings.ReplayPruneDays = GameSettings.ReplayPruneAges[i - 1 - GameSettings.ReplayPruneSizes.Length]; }
+            GameSettings.Apply();
+        });
     }
 
     private void BuildControls()

@@ -24,6 +24,8 @@ public class DifficultyProfile
     public bool focusFire = true;
     [Tooltip("Chance per decision that a ship fixates on the nearest enemy instead of the best target.")]
     [Range(0f, 1f)] public float targetMistakeChance;
+    [Tooltip("Chance per decision that a ship picks any enemy it can see at random - spreading fire thin and chasing far-off targets.")]
+    [Range(0f, 1f)] public float scatterFireChance;
     public bool manageStance = true;
     public bool pickDropZones = true;
     [Tooltip("Fields only what the fight needs and keeps the rest in reserve (undeployed ships escape for free). Off = throws everything in.")]
@@ -32,6 +34,14 @@ public class DifficultyProfile
     [Range(0, 2)] public int priorityMoveSkill = 2;
     [Tooltip("Multiplier on the force ratio at which it decides to retreat (lower = holds on too long).")]
     public float retreatJudgement = 1f;
+    [Tooltip("Aims at a shielded ship's shield generator first, so later fire reaches the hull.")]
+    public bool shieldGeneratorFirst = true;
+    [Tooltip("Takes station on the side of a target with fewer guns (above or below).")]
+    public bool blindSide = true;
+    [Tooltip("Chance per battle of hiding corvettes and craft in an asteroid field for an ambush.")]
+    [Range(0f, 1f)] public float ambushChance = 0.45f;
+    [Tooltip("Chance it remembers to fire a ship ability when one would help.")]
+    [Range(0f, 1f)] public float abilityReliability = 1f;
 
     [Header("Galactic map")]
     [Tooltip("Multiplier on time between strategic decisions.")]
@@ -53,15 +63,20 @@ public class DifficultyProfile
                 return new DifficultyProfile
                 {
                     level = level,
-                    decisionInterval = 2.2f,
-                    reinforcementDelayScale = 2.5f,
+                    decisionInterval = 3.2f,
+                    reinforcementDelayScale = 3f,
                     focusFire = false,
-                    targetMistakeChance = 0.35f,
+                    targetMistakeChance = 0f,
+                    scatterFireChance = 0.45f,
                     manageStance = false,
                     pickDropZones = false,
                     holdReserves = false,
                     priorityMoveSkill = 0,
                     retreatJudgement = 0.5f,
+                    shieldGeneratorFirst = false,
+                    blindSide = false,
+                    ambushChance = 0f,
+                    abilityReliability = 0.15f,
                     thinkIntervalScale = 2.5f,
                     attackMarginScale = 0.8f,
                     switchCampaigns = false,
@@ -100,6 +115,8 @@ public class DifficultyProfile
                     pickDropZones = true,
                     priorityMoveSkill = 1,
                     retreatJudgement = 0.8f,
+                    ambushChance = 0.3f,
+                    abilityReliability = 0.75f,
                     thinkIntervalScale = 1.4f,
                     attackMarginScale = 1f,
                     switchCampaigns = true,

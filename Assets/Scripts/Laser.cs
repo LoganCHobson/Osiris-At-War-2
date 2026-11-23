@@ -118,9 +118,12 @@ public class Laser : MonoBehaviour
         return effectsThisFrame++ < MaxHitEffectsPerFrame;
     }
 
+    [System.NonSerialized] public int replayId; // its shot in the battle replay (0: not yet seen)
+
     private void OnDisable()
     {
         LaserSystem.Unregister(this);
+        if (replayId != 0) { ReplayRecorder.BoltEnded(replayId); replayId = 0; }
     }
 
     // How LaserSystem draws this bolt: an energy streak in the bolt's colour, as thick as its model was. The

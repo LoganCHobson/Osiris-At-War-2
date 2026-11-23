@@ -150,6 +150,7 @@ public static class SaveSystem
 
         pendingLoad = data;
         ClearCampaign();
+        Campaign.Resume(string.IsNullOrEmpty(data.campaignId) ? "save-" + slot : data.campaignId, data.campaignStarted);
         GameSpeed.Reset();
         SceneManager.LoadScene(GalacticScene);
         return true;
@@ -172,6 +173,7 @@ public static class SaveSystem
         HeroForces.Clear();
         Rivals.Clear();
         ShipNames.ResetForNewCampaign();
+        Campaign.Clear();
     }
 
     public static void ReturnToMainMenu()
@@ -312,6 +314,8 @@ public static class SaveSystem
             savedAt = System.DateTime.Now.ToString("o", CultureInfo.InvariantCulture),
             mapSignature = MapSignature(),
             playerFaction = SaveRegistry.Id(player),
+            campaignId = Campaign.Id,
+            campaignStarted = Campaign.Started,
             difficulty = (int)Difficulty.Current,
             defensePlans = DefensePlans.Capture(),
             standingOrders = StandingOrders.Capture(),

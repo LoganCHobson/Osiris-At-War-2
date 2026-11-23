@@ -80,6 +80,7 @@ public class Sfx : MonoBehaviour
 
     public static void Play(Cue cue, Vector3 position, float volume = 1f, float pitch = 1f)
     {
+        if (!ReplayPlayer.Active) ReplayRecorder.Sound(cue, position, volume, pitch);
         if (instance == null)
         {
             instance = new GameObject("Sfx").AddComponent<Sfx>(); // Lives in the current scene.
