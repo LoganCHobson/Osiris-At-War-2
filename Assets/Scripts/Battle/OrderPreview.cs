@@ -38,6 +38,15 @@ public class OrderPreview : MonoBehaviour
         marker.stalk.enabled = Mathf.Abs(altitude) > 0.5f; // Nothing to show at plane level.
     }
 
+    // PlayerSpaceManager (which drives these) is switched off in the cinematic camera, so markers drawn just
+    // before entering would otherwise stay up: they're cleared here instead.
+    private void LateUpdate()
+    {
+        if (!CinematicCamera.Active) return;
+        used = 0;
+        EndFrame();
+    }
+
     public void EndFrame()
     {
         for (int i = used; i < pool.Count; i++)

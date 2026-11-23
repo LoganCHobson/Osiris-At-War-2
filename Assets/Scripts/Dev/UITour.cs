@@ -13,6 +13,20 @@ public class UITour : MonoBehaviour
 
     private const BindingFlags Any = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
+    // A standalone player launched with -skirmishTour [-tourDir <dir>]: off to the main menu, then the skirmish pass.
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    private static void BootFromCommandLine()
+    {
+        string[] args = System.Environment.GetCommandLineArgs();
+        if (Application.isEditor || System.Array.IndexOf(args, "-skirmishTour") < 0) return;
+        string dir = Path.Combine(Application.persistentDataPath, "SkirmishTour");
+        for (int i = 0; i < args.Length - 1; i++) if (args[i] == "-tourDir") dir = args[i + 1];
+        UITour tour = new GameObject("UITour").AddComponent<UITour>();
+        tour.outputDir = dir;
+        DontDestroyOnLoad(tour.gameObject); // before the switch to the main menu, which would take it with the old scene
+        if (SceneManager.GetActiveScene().name != "MainMenu") SceneManager.LoadScene("MainMenu");
+    }
+
     private IEnumerator Start()
     {
         DontDestroyOnLoad(gameObject);
@@ -92,6 +106,8 @@ public class UITour : MonoBehaviour
         PlayerPrefs.DeleteKey("osiris.skirmish.enemyMode");
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.Exit(0);
+#else
+        Application.Quit(0);
 #endif
     }
 

@@ -676,7 +676,7 @@ public partial class AIBattleCommander : MonoBehaviour
                 continue; // Nothing for its role: it screens the fleet (DirectCraft) and fights what it meets.
             }
 
-            Contact chosen = personality.canFocusFire ? PickFocusTarget() : NearestContact(unit.health.transform.position);
+            Contact chosen = personality.canFocusFire ? PickFocusTarget(unit) : NearestContact(unit.health.transform.position);
             if (Random.value < Difficulty.targetMistakeChance) chosen = NearestContact(unit.health.transform.position); // Tunnel vision.
             if (chosen == null) continue;
 
@@ -775,16 +775,22 @@ public partial class AIBattleCommander : MonoBehaviour
         return priority;
     }
 
-    private Contact PickFocusTarget()
+    // The highest-priority target this ship can actually shoot now (within its own reach) that isn't already
+    // getting enough fire to die inside the focus window. Nothing in reach: the nearest enemy. (It used to send
+    // every ship after the fleet's one top target wherever it was, so ships out of reach sat silent or chased it
+    // across the map while the enemies in front of them shot freely - focus fire lost to plain nearest-target.)
+    private Contact PickFocusTarget(Unit unit)
     {
+        Vector3 at = unit.health.transform.position;
+        float range = unit.spaceUnit != null && unit.spaceUnit.maxRange > 0f ? unit.spaceUnit.maxRange : defaultRange;
+        float reachSqr = range * range * 1.2f * 1.2f;
         foreach (Contact contact in enemies)
         {
-            if (contact.incomingDps * focusFireWindow < contact.health.currentHealth * 1.2f)
-            {
-                return contact;
-            }
+            if (contact.health == null || contact.health.IsDead) continue;
+            if ((contact.health.transform.position - at).sqrMagnitude > reachSqr) continue;
+            if (contact.incomingDps * focusFireWindow < contact.health.currentHealth * 1.2f) return contact;
         }
-        return enemies[0];
+        return NearestContact(at);
     }
 
     private Contact NearestContact(Vector3 position)

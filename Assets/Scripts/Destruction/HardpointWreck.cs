@@ -86,12 +86,16 @@ public class HardpointWreck : MonoBehaviour
 
         Fate fate = PickFate(housing.Count > 0, barrels.Count > 0, size);
 
-        // The blast, on the turret itself.
+        // The blast, on the turret itself (the mount's own, or the shared template sized as the mount's was).
         if (ownBlast != null)
         {
             ownBlast.transform.position = centre;
             ownBlast.transform.rotation = Quaternion.FromToRotation(Vector3.up, outward);
             ownBlast.Play(true);
+        }
+        else if (Template("TurretBlast") is ParticleSystem blast)
+        {
+            EffectPool.Play("TurretBlast", blast, centre, Quaternion.FromToRotation(Vector3.up, outward), 5f, blast.transform.localScale * transform.lossyScale.x);
         }
         DestructionProfile profile = hull != null ? hull.profile : null;
         if (profile != null)
@@ -173,7 +177,8 @@ public class HardpointWreck : MonoBehaviour
         {
             WreckChunk chunk = debris.AddComponent<WreckChunk>();
             chunk.Launch(profile, shipVelocity + direction.normalized * speed * Mathf.Sqrt(size), Random.insideUnitSphere * Random.Range(120f, 320f), size * 0.4f, false, Random.Range(3f, 6f) * life, false);
-            if (ownFire != null) DestructionFx.Attach(ownFire, debris.transform, debris.transform.position, 0.6f);
+            ParticleSystem fire = ownFire != null ? ownFire : Template("TurretFire");
+            if (fire != null) DestructionFx.Attach(fire, debris.transform, debris.transform.position, 0.6f);
         }
         else
         {
@@ -258,11 +263,29 @@ public class HardpointWreck : MonoBehaviour
     // The mount's fire, moved onto the wreck and pointed out of the hull.
     private void Burn(Vector3 point, Vector3 outward, float scale)
     {
-        if (ownFire == null) return;
+        if (ownFire == null)
+        {
+            // No fire of its own on the mount (they come from Resources/TurretFx now): the shared one, placed as
+            // the mount's own was (a child of the mount, at its scale).
+            ParticleSystem template = Template("TurretFire");
+            if (template != null) DestructionFx.Attach(template, transform, point, scale, outward);
+            return;
+        }
         ownFire.transform.position = point;
         ownFire.transform.rotation = Quaternion.FromToRotation(Vector3.up, outward);
         ownFire.transform.localScale *= scale;
         ownFire.Play(true);
+    }
+
+    private static readonly Dictionary<string, ParticleSystem> templates = new Dictionary<string, ParticleSystem>();
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetTemplates() => templates.Clear();
+
+    private static ParticleSystem Template(string name)
+    {
+        if (!templates.TryGetValue(name, out ParticleSystem template)) templates[name] = template = Resources.Load<ParticleSystem>("TurretFx/" + name);
+        return template;
     }
 
     private void Sparks(Vector3 point, Vector3 outward, float size, DestructionProfile profile)

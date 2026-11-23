@@ -6819,6 +6819,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
+      propertyPath: fireMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: rotationSpeed
       value: 25
       objectReference: {fileID: 0}
@@ -7689,6 +7693,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
+      propertyPath: fireMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: rotationSpeed
       value: 25
       objectReference: {fileID: 0}
@@ -8262,6 +8270,10 @@ PrefabInstance:
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: targetFilter
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
+      propertyPath: fireMode
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: rotationSpeed
@@ -8847,6 +8859,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
+      propertyPath: fireMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: rotationSpeed
       value: 25
       objectReference: {fileID: 0}
@@ -9058,6 +9074,10 @@ PrefabInstance:
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: targetFilter
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
+      propertyPath: fireMode
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: rotationSpeed
@@ -10572,6 +10592,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
+      propertyPath: fireMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: rotationSpeed
       value: 25
       objectReference: {fileID: 0}
@@ -10785,6 +10809,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
+      propertyPath: fireMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: rotationSpeed
       value: 25
       objectReference: {fileID: 0}
@@ -10996,6 +11024,10 @@ PrefabInstance:
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: targetFilter
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
+      propertyPath: fireMode
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: rotationSpeed

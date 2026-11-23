@@ -77,12 +77,25 @@ public static class EffectPool
         Play(key, template, position, rotation, lifetime, template.transform.localScale);
     }
 
+    public const int MaxPlaysPerFrame = 12;
+    private static int playsFrame = -1, playsThisFrame;
+
     private static readonly Dictionary<string, Unity.Profiling.ProfilerMarker> markers = new Dictionary<string, Unity.Profiling.ProfilerMarker>();
 
     public static void Play(string key, ParticleSystem template, Vector3 position, Quaternion rotation, float lifetime, Vector3 scale)
     {
         if (!markers.TryGetValue(key, out Unity.Profiling.ProfilerMarker marker)) markers[key] = marker = new Unity.Profiling.ProfilerMarker("Effect " + key);
         using var effectTiming = marker.Auto();
+        // Switching an effect on wakes its whole hierarchy (a fighter's death alone was ~4 ms a frame in a big
+        // fight). Past MaxPlaysPerFrame in one frame, across every kind of effect, the rest are emitted as puffs
+        // from the one live copy instead - no objects switched on.
+        if (playsFrame != Time.frameCount) { playsFrame = Time.frameCount; playsThisFrame = 0; }
+        if (++playsThisFrame > MaxPlaysPerFrame)
+        {
+            float templateScale = Mathf.Max(1e-4f, Mathf.Abs(template.transform.localScale.x));
+            Puff(key, template, position, Mathf.Abs(scale.x) / templateScale, 3);
+            return;
+        }
         PooledEffect effect = Take(key, template);
         effect.transform.SetPositionAndRotation(position, rotation);
         effect.transform.localScale = scale;

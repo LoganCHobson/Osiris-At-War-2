@@ -48,6 +48,15 @@ public partial class FactionBrain
         public OrderKind kind;
         public string planetName;
         public float since;
+        // When the fleet reached its post (-1 while still on the way).
+        public float arrivedAt = -1f;
+    }
+
+    // Minimum time a fleet stays committed to its order after reaching the post.
+    private bool Committed(GalacticFleet fleet, Assignment assignment)
+    {
+        if (fleet.IsTraveling) return true;
+        return assignment.arrivedAt >= 0f && now - assignment.arrivedAt < personality.commitmentTime;
     }
 
     public const string RallyKey = "Rally";
@@ -422,10 +431,13 @@ public partial class FactionBrain
         {
             if (neededThisThink.Contains(task.key)) continue;
 
+            // Hysteresis: a task that stops being needed stays on the books for taskMemory while it still makes
+            // sense, so a flicker in the threat picture doesn't cancel orders already being carried out. Strikes
+            // don't linger - launching one is a fresh decision each time.
             Planet planet = world.FindPlanet(task.planetName);
-            bool lingers = (task.kind == OrderKind.Defend || task.kind == OrderKind.Garrison)
-                && planet != null && ownedSet.Contains(planet)
-                && now - task.lastNeededAt < personality.taskMemory;
+            bool stillValid = planet != null && task.targetName == null
+                && (task.kind == OrderKind.Expand ? planet.owner != faction : ownedSet.Contains(planet));
+            bool lingers = stillValid && now - task.lastNeededAt < personality.taskMemory;
 
             if (!lingers)
             {
@@ -608,12 +620,21 @@ public partial class FactionBrain
                 }
                 else if (assignment.taskKey != RallyKey)
                 {
+                    bool atPost = !fleet.IsTraveling && fleet.currentPlanet != null && fleet.currentPlanet.planetName == assignment.planetName;
+                    if (atPost && assignment.arrivedAt < 0f) assignment.arrivedAt = now;
+
                     if (taskBook.TryGetValue(assignment.taskKey, out MilitaryTask task) && (busy || ReachOrStay(fleet, assignment)))
                     {
                         task.assigned += Strength.Of(fleet);
                         continue;
                     }
+                    // Its job lapsed: it still holds the post for its minimum commitment before being re-tasked.
+                    if (atPost && Committed(fleet, assignment)) continue;
                     assignments.Remove(fleetName);
+                }
+                else if (!busy && fleet.currentPlanet != null && fleet.currentPlanet.planetName == assignment.planetName && assignment.arrivedAt < 0f)
+                {
+                    assignment.arrivedAt = now; // Reached the rally point (still free for any real task).
                 }
             }
 
@@ -639,7 +660,9 @@ public partial class FactionBrain
         if (fleet.currentPlanet != null && fleet.currentPlanet.planetName == assignment.planetName) return true;
 
         Planet target = world.FindPlanet(assignment.planetName);
-        return target != null && IsRouteSafe(fleet.currentPlanet, target) && fleet.TrySetDestination(target);
+        bool sent = target != null && IsRouteSafe(fleet.currentPlanet, target) && fleet.TrySetDestination(target);
+        if (sent) NoteMove(fleet, "Resend " + assignment.kind);
+        return sent;
     }
 
     private void ReleaseSurplus()
@@ -780,6 +803,7 @@ public partial class FactionBrain
             if (fleet == null || fleet.ships.Count == 0 || fleet.IsTraveling || fleet.IsHolding) continue;
             if (!assignments.TryGetValue(fleet.gameObject.name, out Assignment assignment)) continue;
             if (!taskBook.TryGetValue(assignment.taskKey, out MilitaryTask current) || current == task) continue;
+            if (!task.critical && (assignment.arrivedAt < 0f || now - assignment.arrivedAt < personality.commitmentTime)) continue;
 
             // A raid in our territory may take from posts that outrank it, but only what they can spare above
             // their deterrent; a critical guard always keeps its deterrent.
@@ -877,15 +901,37 @@ public partial class FactionBrain
         return true;
     }
 
+    // Dev measurement (GalacticSim report): every hyperspace departure the brain orders, and how many of them
+    // set off again soon after the fleet's previous order - the "can't make up its mind" moves.
+    public int MovesOrdered { get; private set; }
+    public readonly Dictionary<string, int> QuickMoves = new Dictionary<string, int>();
+    private readonly Dictionary<string, (float at, string what)> lastMove = new Dictionary<string, (float, string)>();
+    public const float QuickMoveWindow = 90f;
+
+    private void NoteMove(GalacticFleet fleet, string what)
+    {
+        if (fleet == null || !fleet.IsTraveling) return;
+        MovesOrdered++;
+        string fleetName = fleet.gameObject.name;
+        if (lastMove.TryGetValue(fleetName, out (float at, string what) previous) && now - previous.at < QuickMoveWindow)
+        {
+            string key = previous.what + " -> " + what;
+            QuickMoves[key] = QuickMoves.TryGetValue(key, out int n) ? n + 1 : 1;
+        }
+        lastMove[fleetName] = (now, what);
+    }
+
     private void Assign(GalacticFleet fleet, string taskKey, OrderKind kind, Planet planet)
     {
         string fleetName = fleet.gameObject.name;
+        NoteMove(fleet, kind.ToString());
         if (assignments.TryGetValue(fleetName, out Assignment existing) && existing.taskKey == taskKey && existing.planetName == planet.planetName)
         {
             return;
         }
 
-        assignments[fleetName] = new Assignment { taskKey = taskKey, kind = kind, planetName = planet.planetName, since = now };
+        bool alreadyThere = !fleet.IsTraveling && fleet.currentPlanet == planet;
+        assignments[fleetName] = new Assignment { taskKey = taskKey, kind = kind, planetName = planet.planetName, since = now, arrivedAt = alreadyThere ? now : -1f };
     }
 
     private GalacticFleet SplitOff(GalacticFleet source, int count)
@@ -968,6 +1014,15 @@ public partial class FactionBrain
         foreach (GalacticFleet fleet in idle)
         {
             if (fleet.ships.Count == 0) continue;
+
+            // Just reached the previous rally point (still ours): it waits there out its commitment rather than
+            // chasing a rally point that has moved.
+            if (fleet.currentPlanet != rally && assignments.TryGetValue(fleet.gameObject.name, out Assignment previous)
+                && previous.taskKey == RallyKey && previous.planetName == fleet.currentPlanet.planetName
+                && ownedSet.Contains(fleet.currentPlanet) && Committed(fleet, previous))
+            {
+                continue;
+            }
 
             if (fleet.currentPlanet != rally)
             {

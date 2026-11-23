@@ -863,8 +863,11 @@ public class Fighter : MonoBehaviour
 
     // Steer clear of warship hulls: each ship is treated as a capsule along its length; if the next ~1.2s of
     // flight would take us inside one, push the nose out away from its spine (harder the deeper we'd go).
+    private static readonly Unity.Profiling.ProfilerMarker AvoidMarker = new Unity.Profiling.ProfilerMarker("Fighter.AvoidHulls");
+
     private Vector3 AvoidHulls(Vector3 forward)
     {
+        using var avoidTiming = AvoidMarker.Auto();
         Vector3 push = Vector3.zero;
         Vector3 here = transform.position;
         Vector3 ahead = here + forward * Mathf.Max(currentSpeed, speed) * 1.2f;

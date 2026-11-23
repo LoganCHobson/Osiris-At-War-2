@@ -233,7 +233,7 @@ public class SiegeRecording : MonoBehaviour
 
         if (balance != "") { yield return BalanceRun(); Finish(); yield break; }
         if (HasFlag("-gridTest")) { yield return GridTest(); Finish(); yield break; }
-        if (HasFlag("-hitTest")) { yield return HitTest(); Finish(); yield break; }
+        if (HasFlag("-hitTest")) { Laser.DiagnoseMisses = true; yield return HitTest(); Finish(); yield break; }
         if (HasFlag("-craftStills")) { yield return CraftStills(); Finish(); yield break; }
         if (HasFlag("-openingTest")) { yield return OpeningTest(); Finish(); yield break; }
         if (HasFlag("-reel")) yield return DestructionReel();

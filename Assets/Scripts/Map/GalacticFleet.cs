@@ -145,6 +145,7 @@ public class GalacticFleet : MonoBehaviour
     private int routeIndex;
     private int finalSlot = -1;
     private bool isStoppedOver;
+    public bool IsStoppedOver => isStoppedOver;
     private float stopoverTimer;
 
     private static readonly int BaseColorID = Shader.PropertyToID("_BaseColor");
@@ -254,7 +255,7 @@ public class GalacticFleet : MonoBehaviour
             // Re-parking at the same planet - just claim a fresh slot, no travel needed.
             currentPlanet.ReleaseSlot(this);
             int slot = currentPlanet.ClaimSlot(this, preferredSlot);
-            transform.position = slot >= 0 ? currentPlanet.GetSlotPosition(slot) : currentPlanet.transform.position;
+            transform.position = slot >= 0 ? currentPlanet.GetSlotPosition(slot) : currentPlanet.GetOverflowPosition(this);
             return true;
         }
 
@@ -432,7 +433,7 @@ public class GalacticFleet : MonoBehaviour
         {
             // Brief stopover parking while passing through - on the slot, not the planet itself.
             int stopoverSlot = planet.ClaimSlotOnArrival(this);
-            if (stopoverSlot >= 0) transform.position = planet.GetSlotPosition(stopoverSlot);
+            transform.position = stopoverSlot >= 0 ? planet.GetSlotPosition(stopoverSlot) : planet.GetOverflowPosition(this);
         }
 
         if (TryStartBattle(planet))
@@ -458,6 +459,7 @@ public class GalacticFleet : MonoBehaviour
             {
                 return; // Absorbed into one of our fleets already parked there - this fleet object is gone.
             }
+            if (finalSlot < 0) transform.position = planet.GetOverflowPosition(this); // Not on the planet itself.
 
             IsTraveling = false;
             route.Clear();
@@ -603,6 +605,42 @@ public class GalacticFleet : MonoBehaviour
         return haven;
     }
 
+    // The world this fleet is bound for has just fallen. Unless it is already on the final lane in, it heads
+    // for the nearest world its side still holds (never through the lost one). Nowhere to go: it carries on.
+    public void RedirectFromLost(Planet lost)
+    {
+        if (!IsTraveling || AwaitingBattle || route.Count < 2 || Destination != lost) return;
+        if (routeIndex >= route.Count - 1 && !isStoppedOver) return; // On the final lane: too late to turn.
+
+        bool Friendly(Planet p) => p != null && p != lost && p.owner == faction;
+        Planet next = route[routeIndex]; // Where it is stopped over, or the end of the lane it's on.
+        List<Planet> onward = Friendly(next) ? new List<Planet> { next } : GalacticPathfinder.FindNearest(next, Friendly, p => p == lost);
+        if (onward.Count == 0) return;
+
+        Planet haven = onward[onward.Count - 1];
+        lost.ReleaseSlot(this);
+
+        if (isStoppedOver && onward.Count == 1)
+        {
+            HaltAt(haven); // Stopped over at a world of its own: stays there.
+        }
+        else
+        {
+            List<Planet> rerouted = new List<Planet>();
+            if (!isStoppedOver) rerouted.Add(route[routeIndex - 1]); // The lane it's on: finish it.
+            rerouted.AddRange(onward);
+            route = rerouted;
+            routeIndex = isStoppedOver ? 0 : 1; // A stopover moves on to index + 1 when it departs.
+            finalSlot = haven.ClaimSlot(this);
+        }
+
+        if (!string.IsNullOrEmpty(deliveringTo)) deliveringTo = haven.planetName;
+        if (faction != null && faction.isPlayerFaction)
+        {
+            Toast.Show($"{lost.planetName} has fallen - {name} turns back for {haven.planetName}");
+        }
+    }
+
     // Ends any journey and parks the fleet at this planet (used after a battle it fought in).
     public void HaltAt(Planet planet)
     {
@@ -620,7 +658,7 @@ public class GalacticFleet : MonoBehaviour
 
         currentPlanet = planet;
         int slot = planet.ClaimSlot(this);
-        transform.position = slot >= 0 ? planet.GetSlotPosition(slot) : planet.transform.position;
+        transform.position = slot >= 0 ? planet.GetSlotPosition(slot) : planet.GetOverflowPosition(this);
     }
 
     public GalacticFleet FindOpposingFleet(Planet planet)
@@ -664,7 +702,7 @@ public class GalacticFleet : MonoBehaviour
     private void SnapToPlanet(Planet planet)
     {
         int slot = planet.ClaimSlot(this);
-        transform.position = slot >= 0 ? planet.GetSlotPosition(slot) : planet.transform.position;
+        transform.position = slot >= 0 ? planet.GetSlotPosition(slot) : planet.GetOverflowPosition(this);
     }
 
     private void OnDestroy()

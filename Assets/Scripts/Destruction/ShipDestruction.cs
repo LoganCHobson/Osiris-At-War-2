@@ -92,6 +92,7 @@ public class ShipDestruction : MonoBehaviour
         // Decide now where the hull will break, so the seams can be seen giving way during the death throes.
         plannedPieces = Mathf.Clamp(profile.PickPieceCount(sizeT), 1, 8);
         PlanCuts(plannedPieces);
+        PrepareSlices();
         seamGlowsPlaced = 0;
         nextSeamAt = Time.time + 0.2f;
         nextVentAt = Time.time + Random.Range(0.2f, 0.6f);
@@ -221,6 +222,92 @@ public class ShipDestruction : MonoBehaviour
         agent.updateRotation = false;
     }
 
+    // ---------------- Slicing ahead of the breakup ----------------
+    // Cutting a big hull's meshes along the break planes took up to half a second, all in the breakup frame. The
+    // cuts are known as soon as the ship starts dying, seconds before it breaks, so the cutting runs then on a
+    // worker thread; the breakup only turns the finished pieces into meshes (and cuts on the spot if they aren't
+    // ready). The meshes are read as they are at that moment.
+    private class PreparedSlice
+    {
+        public MeshSlicer.MeshData data;
+        public System.Threading.Tasks.Task<MeshSlicer.Sliced> task;
+        public Plane[] planes; // the planned cuts in this renderer's space
+    }
+    private readonly Dictionary<MeshRenderer, PreparedSlice> prepared = new Dictionary<MeshRenderer, PreparedSlice>();
+
+    private void PrepareSlices()
+    {
+        if (cutPointsLocal.Length == 0 || hull == null) return;
+        float largest = 0f;
+        foreach (MeshRenderer renderer in hull.LodZero) if (Usable(renderer)) largest = Mathf.Max(largest, renderer.bounds.size.magnitude);
+        foreach (MeshRenderer renderer in hull.LodZero)
+        {
+            if (!Usable(renderer) || renderer.bounds.size.magnitude < largest * profile.largePartFraction) continue;
+            MeshFilter filter = renderer.GetComponent<MeshFilter>();
+            MeshSlicer.MeshData data = MeshSlicer.MeshData.Read(filter.sharedMesh);
+            if (data == null) continue;
+            // The planned planes (ship space) in this renderer's own space.
+            Matrix4x4 toRenderer = renderer.transform.worldToLocalMatrix * transform.localToWorldMatrix;
+            Plane[] planes = new Plane[cutPointsLocal.Length];
+            for (int i = 0; i < planes.Length; i++)
+                planes[i] = new Plane(toRenderer.inverse.transpose.MultiplyVector(cutNormalsLocal[i]).normalized, toRenderer.MultiplyPoint3x4(cutPointsLocal[i]));
+            Vector3 up = (renderer.transform.worldToLocalMatrix * transform.localToWorldMatrix).MultiplyVector(Vector3.up);
+            prepared[renderer] = new PreparedSlice { data = data, task = System.Threading.Tasks.Task.Run(() => MeshSlicer.SliceData(data, planes, true, up)), planes = planes };
+        }
+        PreparePlating();
+    }
+
+    // The plating that tears off each seam: the spots and sizes picked now (main thread), the plates cut on a
+    // worker thread during the death throes. SeamPlating used to cut them all in the breakup frame (150-350 ms).
+    private MeshRenderer platingSource;
+    private System.Threading.Tasks.Task<List<(int seam, MeshSlicer.PlateCut cut)>> platingTask;
+
+    private void PreparePlating()
+    {
+        platingSource = null;
+        float best = 0f;
+        foreach (KeyValuePair<MeshRenderer, PreparedSlice> pair in prepared)
+        {
+            float extent = pair.Key.bounds.size.magnitude;
+            if (extent > best) { best = extent; platingSource = pair.Key; }
+        }
+        if (platingSource == null) return;
+        PreparedSlice source = prepared[platingSource];
+        MeshFilter filter = platingSource.GetComponent<MeshFilter>();
+        float localScale = Mathf.Max(0.0001f, platingSource.transform.lossyScale.x);
+        int seams = source.planes.Length;
+        int perSeam = Mathf.Max(2, Mathf.RoundToInt(Mathf.Lerp(profile.plateShards.x, profile.plateShards.y, hull.SizeT) / seams * 1.5f));
+        float band = hull.Size * 0.14f / localScale;
+        var jobs = new List<(int seam, Vector3 local, Vector3 normal, float radius, float thickness, int sides, int seed)>();
+        for (int i = 0; i < seams; i++)
+        {
+            for (int n = 0; n < perSeam; n++)
+            {
+                Vector3 local = default, localNormal = default;
+                bool found = false;
+                for (int tries = 0; tries < 16 && !found; tries++)
+                {
+                    if (!HullSurface.SampleLocal(filter, out local, out localNormal)) break;
+                    found = Mathf.Abs(source.planes[i].GetDistanceToPoint(local)) < band;
+                }
+                if (!found) continue;
+                float radius = hull.Size * Random.Range(profile.plateShardRadius.x, profile.plateShardRadius.y) / localScale;
+                jobs.Add((i, local, localNormal, radius, radius * Random.Range(0.18f, 0.32f), Random.Range(4, 7), Random.Range(int.MinValue, int.MaxValue)));
+            }
+        }
+        MeshSlicer.MeshData data = source.data;
+        platingTask = System.Threading.Tasks.Task.Run(() =>
+        {
+            var cuts = new List<(int seam, MeshSlicer.PlateCut cut)>();
+            foreach (var job in jobs)
+            {
+                MeshSlicer.PlateCut cut = MeshSlicer.ExtractPlateCut(data, job.local, job.normal, job.radius, job.thickness, job.sides, new System.Random(job.seed));
+                if (cut != null) cuts.Add((job.seam, cut));
+            }
+            return cuts;
+        });
+    }
+
     private void Update()
     {
         if (!dying || brokenUp) return;
@@ -283,6 +370,11 @@ public class ShipDestruction : MonoBehaviour
         hull.gfxRoot.localPosition = gfxRestPosition + Random.insideUnitSphere * amplitude;
     }
 
+    private static readonly Unity.Profiling.ProfilerMarker BreakHullMarker = new Unity.Profiling.ProfilerMarker("Breakup.BreakHull"),
+        AttachmentsMarker = new Unity.Profiling.ProfilerMarker("Breakup.Attachments"),
+        SeamPlatingMarker = new Unity.Profiling.ProfilerMarker("Breakup.Plating"),
+        StagesMarker = new Unity.Profiling.ProfilerMarker("Breakup.Stages");
+
     private void Breakup()
     {
         brokenUp = true;
@@ -306,23 +398,33 @@ public class ShipDestruction : MonoBehaviour
             containers[k] = chunks[k].transform;
         }
 
+        BreakHullMarker.Begin();
         BreakHull(planes, containers, chunks, center, out MeshRenderer shardSource, out MeshSlicer.MeshData shardData);
+        BreakHullMarker.End();
+        AttachmentsMarker.Begin();
         MoveAttachments(planes, containers);
         for (int k = 0; k < pieceCount; k++) Repivot(containers[k]);
+        AttachmentsMarker.End();
 
         if (!intact)
         {
             // Comes apart in stages (WreckBreakup): the keel goes first, the other seams after it, each with its
             // own blast, torn plating and burning ends. Nothing big goes off at the centre to hide it.
+            SeamPlatingMarker.Begin();
             List<WreckChunk>[] plating = SeamPlating(shardSource, shardData, planes, cutPoints);
+            SeamPlatingMarker.End();
+            StagesMarker.Begin();
             WreckBreakup.Begin(profile, chunks, planes, cutPoints, plating, Velocity, transform.TransformDirection(angularVelocity),
                 scale, sizeT, hull.Size);
+            StagesMarker.End();
             DestructionFx.Explode(profile.smallExplosion, center, profile.smallExplosionScale * scale, profile.explosionLifetime);
         }
         else
         {
             // Dies whole: a gutted hulk, burning, rolling on.
+            SeamPlatingMarker.Begin();
             ThrowPlating(shardSource, shardData, center, 0.6f);
+            SeamPlatingMarker.End();
             foreach (ParticleSystem blast in profile.breakupExplosions)
             {
                 hull.Explode(blast, center, profile.breakupExplosionScale * profile.breakupBlastScale);
@@ -354,6 +456,22 @@ public class ShipDestruction : MonoBehaviour
         List<WreckChunk>[] plating = new List<WreckChunk>[planes.Length];
         for (int i = 0; i < planes.Length; i++) plating[i] = new List<WreckChunk>();
         if (source == null || data == null || planes.Length == 0) return plating;
+
+        // Cut during the death throes (PreparePlating): just build them.
+        if (source == platingSource && platingTask != null && platingTask.IsCompleted && !platingTask.IsFaulted && prepared.TryGetValue(source, out PreparedSlice ready) && ready.planes.Length == planes.Length)
+        {
+            foreach ((int seam, MeshSlicer.PlateCut cut) in platingTask.Result)
+            {
+                Mesh plate = MeshSlicer.PlateMesh(cut, "Plating");
+                if (plate == null) continue;
+                WreckChunk shard = NewChunk("Plating", source.transform.TransformPoint(cut.center));
+                CopyRenderer(source, plate, plate.subMeshCount > ready.data.submeshes.Length, shard.transform);
+                shard.Own(plate);
+                shard.gameObject.SetActive(false);
+                plating[seam].Add(shard);
+            }
+            return plating;
+        }
 
         MeshFilter filter = source.GetComponent<MeshFilter>();
         float localScale = Mathf.Max(0.0001f, source.transform.lossyScale.x);
@@ -449,7 +567,7 @@ public class ShipDestruction : MonoBehaviour
             MeshFilter filter = renderer.GetComponent<MeshFilter>();
             float extent = renderer.bounds.size.magnitude;
             bool large = extent >= largest * profile.largePartFraction;
-            MeshSlicer.MeshData data = large ? MeshSlicer.MeshData.Read(filter.sharedMesh) : null;
+            MeshSlicer.MeshData data = !large ? null : prepared.TryGetValue(renderer, out PreparedSlice ready) ? ready.data : MeshSlicer.MeshData.Read(filter.sharedMesh);
 
             if (data != null)
             {
@@ -496,7 +614,9 @@ public class ShipDestruction : MonoBehaviour
         }
 
         Vector3 localUp = toLocal.MultiplyVector(transform.up);
-        MeshSlicer.Result[] results = MeshSlicer.Slice(data, localPlanes, true, filter.sharedMesh.name, localUp);
+        MeshSlicer.Result[] results = prepared.TryGetValue(renderer, out PreparedSlice ready) && ready.task.IsCompleted && !ready.task.IsFaulted && ready.task.Result.Count == localPlanes.Length + 1
+            ? MeshSlicer.BuildMeshes(ready.task.Result, filter.sharedMesh.name)
+            : MeshSlicer.Slice(data, localPlanes, true, filter.sharedMesh.name, localUp);
         for (int k = 0; k < results.Length; k++)
         {
             if (results[k].mesh == null) continue;

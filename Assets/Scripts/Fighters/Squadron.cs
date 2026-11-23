@@ -289,6 +289,13 @@ public class Squadron : MonoBehaviour
         {
             fighters[i].Bind(this, FormationOffset(i));
             if (Avanti && CraftRole == Role.Fighter) FighterShield.Fit(fighters[i]); // Avanti fighters carry shields.
+            // Each craft moves on its own every frame: a kinematic body makes moving its collider cheap.
+            if (fighters[i].GetComponent<Rigidbody>() == null)
+            {
+                Rigidbody body = fighters[i].gameObject.AddComponent<Rigidbody>();
+                body.isKinematic = true;
+                body.useGravity = false;
+            }
             if (!Avanti && CraftRole == Role.Interceptor) CraftEvasion.Fit(fighters[i]); // Human interceptors jink.
         }
 

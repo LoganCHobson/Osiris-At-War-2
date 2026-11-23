@@ -65,11 +65,11 @@ public class HardpointApproach : MonoBehaviour
         bool blockedByHull = false;
         foreach (RaycastHit hit in hits)
         {
-            if (hit.transform.root == transform.root || hit.distance >= nearest) continue;
-            if (hit.transform.root != owner.transform.root) continue;
+            if (hit.collider.transform.root == transform.root || hit.distance >= nearest) continue;
+            if (hit.collider.transform.root != owner.transform.root) continue;
 
             nearest = hit.distance;
-            blockedByHull = !hit.transform.IsChildOf(target) && hit.collider.GetComponentInParent<HardpointHealth>() == null;
+            blockedByHull = !hit.collider.transform.IsChildOf(target) && hit.collider.GetComponentInParent<HardpointHealth>() == null;
         }
         return blockedByHull;
     }

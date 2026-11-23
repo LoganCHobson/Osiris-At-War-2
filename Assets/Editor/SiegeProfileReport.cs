@@ -36,6 +36,7 @@ public static class SiegeProfileReport
 
             Dictionary<string, Dictionary<string, Stat>> byThread = new Dictionary<string, Dictionary<string, Stat>>();
             List<double> frameTimes = new List<double>();
+            List<(double ms, int frame, Dictionary<string, Stat> stats)> slowest = new List<(double, int, Dictionary<string, Stat>)>();
 
             for (int frame = first; frame <= last; frame++)
             {
@@ -46,7 +47,16 @@ public static class SiegeProfileReport
                         if (view == null || !view.valid) break;
                         string name = view.threadName;
                         if (name != "Main Thread" && name != "Render Thread") continue;
-                        if (name == "Main Thread") frameTimes.Add(view.frameTimeMs);
+                        if (name == "Main Thread")
+                        {
+                            frameTimes.Add(view.frameTimeMs);
+                            if (view.frameTimeMs > 150f)
+                            {
+                                Dictionary<string, Stat> own = new Dictionary<string, Stat>();
+                                Walk(view, view.GetRootItemID(), own, 0);
+                                slowest.Add((view.frameTimeMs, frame, own));
+                            }
+                        }
                         if (!byThread.TryGetValue(name, out Dictionary<string, Stat> stats)) byThread[name] = stats = new Dictionary<string, Stat>();
                         Walk(view, view.GetRootItemID(), stats, 0);
                     }
@@ -56,6 +66,13 @@ public static class SiegeProfileReport
             frameTimes.Sort();
             if (frameTimes.Count > 0)
                 text.AppendLine($"main thread frame ms: avg {frameTimes.Average():F1}  median {frameTimes[frameTimes.Count / 2]:F1}  p95 {frameTimes[(int)(frameTimes.Count * 0.95f)]:F1}");
+
+            text.AppendLine($"frames over 150 ms: {slowest.Count}");
+            foreach (var slow in slowest.OrderByDescending(f => f.ms).Take(12))
+            {
+                text.AppendLine($"-- frame {slow.frame}: {slow.ms:F0} ms; top self: " + string.Join(", ",
+                    slow.stats.Where(e => e.Key != "Semaphore.WaitForSignal").OrderByDescending(e => e.Value.self).Take(7).Select(e => $"{e.Key} {e.Value.self:F0}")));
+            }
 
             foreach (KeyValuePair<string, Dictionary<string, Stat>> thread in byThread)
             {

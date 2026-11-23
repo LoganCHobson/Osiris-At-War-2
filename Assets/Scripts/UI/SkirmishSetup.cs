@@ -264,7 +264,15 @@ public class SkirmishSetup : MonoBehaviour
     private static IEnumerable<Ship> Roster(Faction faction) =>
         faction == null ? Enumerable.Empty<Ship>() : faction.roster.Where(s => s != null).Distinct().OrderByDescending(s => s.cost);
 
-    private static string ShipName(Ship ship) => string.IsNullOrEmpty(ship.displayName) ? ship.name : ship.displayName;
+    // The ship's display name, or its asset name made readable ("Human_BomberSquadron" -> "Bomber Squadron").
+    private static string ShipName(Ship ship)
+    {
+        if (!string.IsNullOrEmpty(ship.displayName)) return ship.displayName;
+        string name = ship.name;
+        int underscore = name.IndexOf('_');
+        if (underscore >= 0) name = name.Substring(underscore + 1);
+        return System.Text.RegularExpressions.Regex.Replace(name, "(?<=[a-z])(?=[A-Z])", " ");
+    }
 
     private static void Button(RectTransform footer, string label, float anchorX, float width, UnityAction onClick)
     {

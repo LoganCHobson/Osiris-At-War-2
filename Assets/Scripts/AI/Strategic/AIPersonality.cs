@@ -25,8 +25,10 @@ public class AIPersonality : ScriptableObject
     public int minDetachmentShips = 3;
     public int strikeMinShips = 4;
     public int responseRadiusHops = 3;
-    public float commitmentTime = 45f;
-    public float taskMemory = 30f;
+    [Tooltip("Galactic seconds a fleet holds its post after arriving before it may be re-tasked.")]
+    public float commitmentTime = 60f;
+    [Tooltip("Galactic seconds a task stays on the books after it stops being needed.")]
+    public float taskMemory = 60f;
     [Range(0.1f, 1f)] public float maxDefenseShare = 0.5f;
     public float emergencyPriorityRatio = 2.5f;
     public float criticalPlanetValue = 4f;

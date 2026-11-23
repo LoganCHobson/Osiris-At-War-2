@@ -76,8 +76,35 @@ public class GalacticSim : MonoBehaviour
 
     // For each faction: the share of its navy assigned to its single biggest guard post, and which guards are
     // in a standoff. Also how long each guard post has held its current threat.
+    private int parkedSamples, parkedNoSlot, parkedOffSlot, stopoverNoSlot, stopoverSamples;
+    private readonly Dictionary<string, int> offSlotCases = new Dictionary<string, int>();
+
+    // Fleets at rest (or stopped over) that aren't sitting on one of their planet's parking spots.
+    private void SampleParking()
+    {
+        foreach (GalacticFleet fleet in GalacticFleet.All)
+        {
+            if (fleet == null || fleet.ships.Count == 0 || fleet.currentPlanet == null) continue;
+            if (fleet.IsTraveling && !fleet.IsStoppedOver) continue;
+            Planet planet = fleet.currentPlanet;
+            int held = -1;
+            for (int i = 0; i < Planet.FleetSlotCount; i++) if (planet.GetFleetInSlot(i) == fleet) held = i;
+            bool onSpot = held >= 0 && Vector3.Distance(fleet.transform.position, planet.GetSlotPosition(held)) < 0.1f;
+            if (fleet.IsStoppedOver) { stopoverSamples++; if (held < 0) stopoverNoSlot++; }
+            else { parkedSamples++; if (held < 0) parkedNoSlot++; else if (!onSpot) parkedOffSlot++; }
+            if (!onSpot)
+            {
+                int others = 0;
+                for (int i = 0; i < Planet.FleetSlotCount; i++) if (planet.GetFleetInSlot(i) != null && planet.GetFleetInSlot(i) != fleet) others++;
+                string key = $"{(fleet.IsStoppedOver ? "stopover" : "parked")} {(held < 0 ? "no slot" : "off its slot")}, {others} slots taken by others, {Vector3.Distance(fleet.transform.position, planet.transform.position):F0} from planet";
+                offSlotCases[key] = offSlotCases.TryGetValue(key, out int n) ? n + 1 : 1;
+            }
+        }
+    }
+
     private void Sample()
     {
+        SampleParking();
         foreach (FactionBrain brain in AIDirector.Instance.brains)
         {
             if (brain.TotalPower <= 0f) continue;
@@ -112,8 +139,15 @@ public class GalacticSim : MonoBehaviour
         if (AIDirector.Instance != null)
         {
             foreach (FactionBrain brain in AIDirector.Instance.brains)
+            {
                 sb.AppendLine($"  spy probes {brain.faction.name}: ordered {brain.ProbesOrdered}, sent {brain.ProbesSent}, now {SpyProbes.CountFor(brain.faction)} {brain.ProbeIntent}");
+                int quick = brain.QuickMoves.Values.Sum();
+                sb.AppendLine($"  fleet moves {brain.faction.name}: {brain.MovesOrdered} ordered, {quick} within {FactionBrain.QuickMoveWindow:F0}s of the fleet's previous order");
+                foreach (KeyValuePair<string, int> q in brain.QuickMoves.OrderByDescending(q => q.Value).Take(8)) sb.AppendLine($"    {q.Key}: {q.Value}");
+            }
         }
+        sb.AppendLine($"parking: at rest {parkedSamples} (no slot {parkedNoSlot}, off slot {parkedOffSlot}); stopped over {stopoverSamples} (no slot {stopoverNoSlot})");
+        foreach (KeyValuePair<string, int> c in offSlotCases.OrderByDescending(c => c.Value).Take(6)) sb.AppendLine($"    {c.Key}: {c.Value}");
         foreach (KeyValuePair<string, float> guard in longestGuard.OrderByDescending(g => g.Value).Take(5))
         {
             sb.AppendLine($"  longest-held guard: {guard.Key}  {guard.Value:F0}s");

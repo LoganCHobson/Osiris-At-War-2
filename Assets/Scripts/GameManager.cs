@@ -57,6 +57,7 @@ public class GameManager : MonoBehaviour
         }
 
         Veterancy.BattleStarted();
+        Sfx.Preload(); // Every battle sound loaded now, not from disk mid-fight.
         SkyPlanet.Create(); // The planet being fought over, below the fleets.
         CreateTerrain();
 
@@ -415,6 +416,17 @@ public class GameManager : MonoBehaviour
     }
 
 
+    private static readonly Unity.Profiling.ProfilerMarker
+        Fit_MissileLauncher_Fit = new Unity.Profiling.ProfilerMarker("Spawn.MissileLauncher.Fit"),
+        Fit_HardpointWreck_Fit = new Unity.Profiling.ProfilerMarker("Spawn.HardpointWreck.Fit"),
+        Fit_HullScarring_Fit = new Unity.Profiling.ProfilerMarker("Spawn.HullScarring.Fit"),
+        Fit_Kinematic = new Unity.Profiling.ProfilerMarker("Spawn.Kinematic"),
+        Fit_CombatFacing_Fit = new Unity.Profiling.ProfilerMarker("Spawn.CombatFacing.Fit"),
+        Fit_ShipAltitude_Fit = new Unity.Profiling.ProfilerMarker("Spawn.ShipAltitude.Fit"),
+        Fit_ShipAbility_Fit = new Unity.Profiling.ProfilerMarker("Spawn.ShipAbility.Fit"),
+        Fit_HardpointApproach_Fit = new Unity.Profiling.ProfilerMarker("Spawn.HardpointApproach.Fit"),
+        Fit_ShipStance_Fit = new Unity.Profiling.ProfilerMarker("Spawn.ShipStance.Fit");
+
     public void ApplyAllegiance(GameObject spawned, bool attackerSide)
     {
         bool playerSide = attackerSide == PlayerIsAttacker;
@@ -441,32 +453,29 @@ public class GameManager : MonoBehaviour
             squadron.SetAllegiance(1 << hostileLayer, projectile, playerSide);
         }
 
-        MissileLauncher.Fit(spawned, 1 << hostileLayer); // Destroyers and corvettes.
-        HardpointWreck.Fit(spawned); // Destroyed turrets are wrecked in place, not just switched off.
-        HullScarring.Fit(spawned);   // Sustained fire scores, scorches, cracks and finally breaches the hull.
+        { using var _m = Fit_MissileLauncher_Fit.Auto(); MissileLauncher.Fit(spawned, 1 << hostileLayer); } // Destroyers and corvettes.
+        { using var _m = Fit_HardpointWreck_Fit.Auto(); HardpointWreck.Fit(spawned); } // Destroyed turrets are wrecked in place, not just switched off.
+        { using var _m = Fit_HullScarring_Fit.Auto(); HullScarring.Fit(spawned); }   // Sustained fire scores, scorches, cracks and finally breaches the hull.
+        { using var _m = Fit_Kinematic.Auto(); Kinematic(spawned); }
         FleetDoctrine.Apply(spawned, IsAvanti(spawned, faction), spawned.TryGetComponent(out UnitHealthManager unitHealth) && unitHealth.isShipyardBonus);
 
         // Avanti: shields, point-defence beams, and they turn bow-on to their target to bring every gun to bear.
         // Humans: CIWS gatlings, and they turn broadside on, which brings the most guns to bear.
-        bool avantiTech = spawned.GetComponent<ShieldGenerator>() != null;
+        bool avantiTech = IsAvanti(spawned, faction);
         bool warship = spawned.TryGetComponent(out SpaceUnit spaceUnit) && spaceUnit.shipType != ShipType.Station && spawned.GetComponent<Squadron>() == null;
         foreach (TurretController turret in spawned.GetComponentsInChildren<TurretController>(true))
         {
-            if (turret.targetFilter == TurretController.TargetFilter.FightersOnly)
-            {
-                if (avantiTech) turret.MakeBeam();
-                else turret.MakeGatling();
-            }
-            else
-            {
+            // How the gun shoots is the hardpoint's own setting.
+            if (turret.fireMode == TurretController.FireMode.Beam) turret.MakeBeam();
+            else if (turret.fireMode == TurretController.FireMode.Gatling) turret.MakeGatling();
+            if (turret.fireMode == TurretController.FireMode.Bolts && turret.targetFilter != TurretController.TargetFilter.FightersOnly)
                 turret.ApplyBatteryCadence(avantiTech); // Heavy guns fire slowly (same damage per second).
-            }
         }
-        if (warship) CombatFacing.Fit(spawned, avantiTech, 1 << hostileLayer);
-        ShipAltitude.Fit(spawned, playerSide); // Height, pitch/roll and 3D spacing (warships and squadrons).
-        if (warship) ShipAbility.Fit(spawned);  // One active ability per class.
-        if (warship && playerSide) HardpointApproach.Fit(spawned); // Repositions to expose a targeted hidden hardpoint.
-        if (warship && playerSide) ShipStance.Fit(spawned);        // Hold / aggressive / skirmish between orders.
+        if (warship) { using var _m = Fit_CombatFacing_Fit.Auto(); CombatFacing.Fit(spawned, avantiTech, 1 << hostileLayer); }
+        { using var _m = Fit_ShipAltitude_Fit.Auto(); ShipAltitude.Fit(spawned, playerSide); } // Height, pitch/roll and 3D spacing (warships and squadrons).
+        if (warship) { using var _m = Fit_ShipAbility_Fit.Auto(); ShipAbility.Fit(spawned); }  // One active ability per class.
+        if (warship && playerSide) { using var _m = Fit_HardpointApproach_Fit.Auto(); HardpointApproach.Fit(spawned); } // Repositions to expose a targeted hidden hardpoint.
+        if (warship && playerSide) { using var _m = Fit_ShipStance_Fit.Auto(); ShipStance.Fit(spawned); }        // Hold / aggressive / skirmish between orders.
 
         if (faction != null && faction.shipMaterial != null)
         {
@@ -479,9 +488,23 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    // A moving warship is a kinematic rigidbody: its hundreds of hull and hardpoint colliders move as one body,
+    // instead of the physics engine treating each as static scenery that moved (much dearer every frame).
+    // Moved by its agent and scripts exactly as before; gravity off, no physics response.
+    public static void Kinematic(GameObject unit)
+    {
+        if (unit.GetComponent<Squadron>() != null) return; // Strike craft: each fighter gets its own (Squadron).
+        if (unit.TryGetComponent(out SpaceUnit su) && su.shipType == ShipType.Station) return;
+        if (unit.TryGetComponent(out UnitHealthManager h) && h.IsDefense) return;
+        if (unit.GetComponent<Rigidbody>() != null) return;
+        Rigidbody body = unit.AddComponent<Rigidbody>();
+        body.isKinematic = true;
+        body.useGravity = false;
+        body.interpolation = RigidbodyInterpolation.None;
+    }
+
     private static bool IsAvanti(GameObject spawned, Faction faction) =>
-        spawned.GetComponent<ShieldGenerator>() != null
-        || (faction != null && faction.factionName != null && faction.factionName.IndexOf("Avanti", System.StringComparison.OrdinalIgnoreCase) >= 0)
+        (faction != null && faction.factionName != null && faction.factionName.IndexOf("Avanti", System.StringComparison.OrdinalIgnoreCase) >= 0)
         || spawned.name.IndexOf("Avanti", System.StringComparison.OrdinalIgnoreCase) >= 0;
 
     private void Repaint(GameObject spawned, Material material)

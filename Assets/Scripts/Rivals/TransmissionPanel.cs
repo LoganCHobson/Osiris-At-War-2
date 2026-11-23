@@ -3,7 +3,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-// "INCOMING TRANSMISSION": a warlord admiral speaking, at the top of the screen for a few seconds.
+// "INCOMING TRANSMISSION": a warlord admiral speaking, at the lower left of the screen for a few seconds.
 // Queues if several arrive at once; click to dismiss. Survives scene loads (a line queued just before
 // the battle scene opens still plays), like Toast.
 public class TransmissionPanel : MonoBehaviour, IPointerClickHandler
@@ -38,7 +38,8 @@ public class TransmissionPanel : MonoBehaviour, IPointerClickHandler
     {
         UIKit.EnsureEventSystem();
         Canvas canvas = UIKit.Canvas("TransmissionCanvas", 985, transform);
-        RectTransform box = UIKit.Rect("Box", canvas.transform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -40f), new Vector2(900f, 150f));
+        // Lower left: at the top it covered the battle prompt's Auto-resolve and Battle-now buttons.
+        RectTransform box = UIKit.Rect("Box", canvas.transform, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(40f, 40f), new Vector2(760f, 150f));
         UIKit.Image(box, UIKit.PanelColor, true);
         box.gameObject.AddComponent<ClickRelay>().owner = this;
         RectTransform stripe = UIKit.Rect("Stripe", box, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), Vector2.zero, new Vector2(6f, 0f));

@@ -134,6 +134,17 @@ public class Planet : MonoBehaviour
 
         shipBuildQueue.Clear();
         SetOwnership(newOwner);
+
+        // The losing side's fleets and convoys still on their way here turn for a world they hold instead
+        // (player and AI alike); only those already on the last lane in carry on.
+        if (previousOwner != null)
+        {
+            foreach (GalacticFleet fleet in GalacticFleet.All.ToArray())
+            {
+                if (fleet != null && fleet.faction == previousOwner) fleet.RedirectFromLost(this);
+            }
+        }
+
         GalacticEvents.RaisePlanetCaptured(this, previousOwner, newOwner);
     }
 
@@ -161,6 +172,24 @@ public class Planet : MonoBehaviour
         float angle = (360f / FleetSlotCount) * slot;
         Vector3 offset = Quaternion.Euler(0f, angle, 0f) * Vector3.forward * fleetSlotRadius;
         return transform.position + offset;
+    }
+
+    // Where a fleet waits when every parking slot is taken: outside the ring of slots, between them, never on
+    // the planet (or its ownership ring). Each such fleet here gets its own spot.
+    public Vector3 GetOverflowPosition(GalacticFleet fleet)
+    {
+        int index = 0;
+        foreach (GalacticFleet other in GalacticFleet.All)
+        {
+            if (other == fleet) break;
+            if (other == null || other.ships.Count == 0 || other.currentPlanet != this || !other.IsPresentAt(this)) continue;
+            bool slotted = false;
+            for (int i = 0; i < fleetSlots.Length; i++) if (fleetSlots[i] == other) slotted = true;
+            if (!slotted) index++;
+        }
+        float angle = 180f / FleetSlotCount + (360f / FleetSlotCount) * (index % FleetSlotCount);
+        float radius = fleetSlotRadius * (1.4f + 0.4f * (index / FleetSlotCount));
+        return transform.position + Quaternion.Euler(0f, angle, 0f) * Vector3.forward * radius;
     }
 
     public int ClaimSlot(GalacticFleet fleet, int preferredSlot = -1)

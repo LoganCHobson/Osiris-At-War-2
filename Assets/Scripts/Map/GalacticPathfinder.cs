@@ -87,7 +87,8 @@ public static class GalacticPathfinder
         return path;
     }
 
-    public static List<Planet> FindNearest(Planet start, System.Func<Planet, bool> isMatch)
+    // avoid: systems the search may not pass through.
+    public static List<Planet> FindNearest(Planet start, System.Func<Planet, bool> isMatch, System.Func<Planet, bool> avoid = null)
     {
         List<Planet> path = new List<Planet>();
         if (start == null || isMatch == null) return path;
@@ -118,6 +119,7 @@ public static class GalacticPathfinder
             foreach (Planet neighbor in current.connections)
             {
                 if (neighbor == null || closed.Contains(neighbor)) continue;
+                if (avoid != null && avoid(neighbor)) continue;
 
                 float newCost = bestCost[current] + Vector3.Distance(current.transform.position, neighbor.transform.position);
                 if (!bestCost.TryGetValue(neighbor, out float existing) || newCost < existing)

@@ -45,6 +45,8 @@ public class Laser : MonoBehaviour
     }
 
     // Dev diagnosis of misses: what each shot was fired at and how close it came.
+    // Off in play: only the dev hit test (SiegeRecording -hitTest) tracks what each bolt was aimed at.
+    public static bool DiagnoseMisses;
     [System.NonSerialized] public Transform intended;
     [System.NonSerialized] public bool intendedIsCraft;
     [System.NonSerialized] public float fireDistance, targetSpeed, shooterSpeed;

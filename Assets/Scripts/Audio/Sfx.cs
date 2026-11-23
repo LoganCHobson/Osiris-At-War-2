@@ -62,6 +62,22 @@ public class Sfx : MonoBehaviour
         }
     }
 
+    // Loads every cue's clips now (battle start) rather than on first play: loading a sound mid-battle read it
+    // from disk in that frame.
+    public static void Preload()
+    {
+        if (instance == null)
+        {
+            instance = new GameObject("Sfx").AddComponent<Sfx>();
+            instance.Build();
+        }
+        foreach (Setting setting in settings.Values)
+        {
+            setting.clips ??= LoadClips(setting.prefix);
+            foreach (AudioClip clip in setting.clips) if (clip != null && clip.loadState == AudioDataLoadState.Unloaded) clip.LoadAudioData();
+        }
+    }
+
     public static void Play(Cue cue, Vector3 position, float volume = 1f, float pitch = 1f)
     {
         if (instance == null)

@@ -36,6 +36,26 @@ public class HullDeformation : MonoBehaviour
             return e;
         }
 
+        // The same mesh as MeshSlicer.MeshData (what HullScarring cuts its decals from), straight from these lists.
+        public MeshSlicer.MeshData ToMeshData(float weldTolerance)
+        {
+            MeshSlicer.MeshData data = new MeshSlicer.MeshData
+            {
+                positions = v.ToArray(),
+                hasNormals = hasN,
+                hasTangents = hasT,
+                hasUVs = hasUV,
+            };
+            data.normals = hasN ? n.ToArray() : new Vector3[v.Count];
+            data.tangents = hasT ? t.ToArray() : new Vector4[v.Count];
+            data.uvs = hasUV ? uv.ToArray() : new Vector2[v.Count];
+            data.submeshes = new int[tris.Length][];
+            for (int s = 0; s < tris.Length; s++) data.submeshes[s] = tris[s].ToArray();
+            data.weldTolerance = weldTolerance;
+            data.grid = MeshSlicer.TriangleGrid.Build(data);
+            return data;
+        }
+
         public void Write(Mesh mesh)
         {
             if (v.Count > 65000) mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
@@ -217,7 +237,25 @@ public class HullDeformation : MonoBehaviour
     {
         public Mesh mesh;
         public Editable edit;
+        public float weld;
+        public MeshFilter filter;
+        // The edit being worked on (off the main thread) and the ones waiting their turn: one at a time per
+        // surface, since they all change the same lists.
+        public System.Threading.Tasks.Task<MeshSlicer.MeshData> running;
+        public Pending current;
+        public readonly Queue<Pending> waiting = new Queue<Pending>();
     }
+
+    private class Pending
+    {
+        public Transform marks;
+        public Vector3 c;
+        public float reach, target;
+        public System.Func<Vector3, Vector3> offset;
+        public System.Func<Vector3, Vector3, Vector3, bool> remove;
+    }
+
+    private readonly List<Surface> busy = new List<Surface>();
 
     private readonly Dictionary<MeshFilter, Surface> surfaces = new Dictionary<MeshFilter, Surface>();
     private readonly List<Mesh> owned = new List<Mesh>(); // the cavities
@@ -243,7 +281,7 @@ public class HullDeformation : MonoBehaviour
         if (!Local(filter, point, normal, radius, out Vector3 c, out Vector3 n, out float r, out float scale)) return;
         float d = depth / scale;
         float seed = Random.value * 100f;
-        Displace(filter, marks, c, r * 1.05f, r / 7f, p =>
+        DeferredWork.Enqueue(this, () => Displace(filter, marks, c, r * 1.05f, r / 7f, p =>
         {
             Vector3 offset = p - c;
             float along = Vector3.Dot(offset, n);
@@ -253,9 +291,9 @@ public class HullDeformation : MonoBehaviour
             float bowl = (1f - t * t) * (1f - t * t);
             // Buckles: rings of plating that crumpled as the middle went in, uneven round the hit.
             float buckle = Mathf.Sin(t * Mathf.PI * 3f) * 0.22f * (1f - t);
-            float uneven = 0.75f + 0.5f * Mathf.PerlinNoise(seed + p.x * 3f / r, seed + p.z * 3f / r);
+            float uneven = 0.75f + 0.5f * Noise(seed + p.x * 3f / r, seed + p.z * 3f / r);
             return -n * d * (bowl + buckle) * uneven;
-        });
+        }));
     }
 
     // A shell hole: plating cut out in a ragged ring, the edges round it petalled inward (a shell going in) or
@@ -278,33 +316,36 @@ public class HullDeformation : MonoBehaviour
         {
             Vector3 o = p - c;
             float angle = Mathf.Atan2(Vector3.Dot(o, v), Vector3.Dot(o, u));
-            return r * (0.75f + 0.5f * Mathf.PerlinNoise(seed + Mathf.Cos(angle) * 1.7f, seed + Mathf.Sin(angle) * 1.7f));
+            return r * (0.75f + 0.5f * Noise(seed + Mathf.Cos(angle) * 1.7f, seed + Mathf.Sin(angle) * 1.7f));
         }
 
         // The petals: plating round the hole bent in (or out), most at the edge of the hole, in torn tongues.
-        Displace(filter, marks, c, r * 2.5f, r / 6f, p =>
+        DeferredWork.Enqueue(this, () =>
         {
-            Vector3 o = p - c;
-            float along = Vector3.Dot(o, n);
-            Vector3 flat = o - n * along;
-            float across = flat.magnitude;
-            float edge = Ragged(p);
-            if (across > edge * 1.9f || Mathf.Abs(along) > r) return Vector3.zero;
-            float t = Mathf.Clamp01((edge * 1.9f - across) / (edge * 0.9f)); // 1 at the hole's edge, 0 out at the rim
-            float angle = Mathf.Atan2(Vector3.Dot(o, v), Vector3.Dot(o, u));
-            float tongue = 0.55f + 0.45f * Mathf.Cos(angle * petals + twist);
-            float bend = t * t * tongue * r * 0.55f;
-            Vector3 radial = across > 1e-5f ? flat / across : Vector3.zero;
-            return (blownOut ? n : -n) * bend + radial * bend * (blownOut ? 0.25f : -0.15f);
-        }, (a, b, cc) =>
-        {
-            Vector3 centroid = (a + b + cc) / 3f;
-            Vector3 o = centroid - c;
-            float along = Vector3.Dot(o, n);
-            return Mathf.Abs(along) < r * 0.8f && (o - n * along).magnitude < Ragged(centroid) * 0.62f;
-        });
+            Displace(filter, marks, c, r * 2.5f, r / 6f, p =>
+            {
+                Vector3 o = p - c;
+                float along = Vector3.Dot(o, n);
+                Vector3 flat = o - n * along;
+                float across = flat.magnitude;
+                float edge = Ragged(p);
+                if (across > edge * 1.9f || Mathf.Abs(along) > r) return Vector3.zero;
+                float t = Mathf.Clamp01((edge * 1.9f - across) / (edge * 0.9f)); // 1 at the hole's edge, 0 out at the rim
+                float angle = Mathf.Atan2(Vector3.Dot(o, v), Vector3.Dot(o, u));
+                float tongue = 0.55f + 0.45f * Mathf.Cos(angle * petals + twist);
+                float bend = t * t * tongue * r * 0.55f;
+                Vector3 radial = across > 1e-5f ? flat / across : Vector3.zero;
+                return (blownOut ? n : -n) * bend + radial * bend * (blownOut ? 0.25f : -0.15f);
+            }, (a, b, cc) =>
+            {
+                Vector3 centroid = (a + b + cc) / 3f;
+                Vector3 o = centroid - c;
+                float along = Vector3.Dot(o, n);
+                return Mathf.Abs(along) < r * 0.8f && (o - n * along).magnitude < Ragged(centroid) * 0.62f;
+            });
 
-        Cavity(filter, c, n, r * 0.6f, scale, interior);
+            Cavity(filter, c, n, r * 0.6f, scale, interior);
+        });
     }
 
     // A plate blown loose and folded back on its seam: a strip of hull hinged along one edge and bent out.
@@ -317,7 +358,7 @@ public class HullDeformation : MonoBehaviour
         float width = s * Random.Range(0.5f, 0.8f), length = s * Random.Range(0.8f, 1.2f);
         float angle = Random.Range(35f, 75f) * Mathf.Deg2Rad;
         Vector3 hinge = c - outDir * length * 0.5f;
-        Displace(filter, marks, c, Mathf.Max(width, length) * 1.3f, s / 7f, p =>
+        DeferredWork.Enqueue(this, () => Displace(filter, marks, c, Mathf.Max(width, length) * 1.3f, s / 7f, p =>
         {
             Vector3 o = p - hinge;
             float along = Vector3.Dot(o, n);
@@ -329,7 +370,7 @@ public class HullDeformation : MonoBehaviour
             float taper = Mathf.Clamp01((width - Mathf.Abs(x)) / (width * 0.25f));
             Vector3 target = hinge + hingeDir * x + (outDir * Mathf.Cos(bent) + n * Mathf.Sin(bent)) * y + n * along;
             return (target - p) * taper;
-        });
+        }));
     }
 
     // ---------------- Mesh work ----------------
@@ -338,9 +379,7 @@ public class HullDeformation : MonoBehaviour
     {
         c = n = default;
         r = scale = 1f;
-        if (!Enabled || filter == null || filter.sharedMesh == null) return false;
-        Surface surface = Get(filter);
-        if (surface == null) return false;
+        if (!Enabled || filter == null || filter.sharedMesh == null || !filter.sharedMesh.isReadable) return false;
         Transform t = filter.transform;
         scale = Mathf.Max(1e-5f, t.lossyScale.x);
         c = t.InverseTransformPoint(point);
@@ -358,7 +397,7 @@ public class HullDeformation : MonoBehaviour
         copy.name = source.name;
         copy.MarkDynamic();
         filter.sharedMesh = copy; // Not freed with the ship: its wreck's loose parts may still draw it (UnloadUnusedAssets does).
-        surface = new Surface { mesh = copy, edit = Editable.Read(copy) };
+        surface = new Surface { mesh = copy, edit = Editable.Read(copy), weld = Mathf.Max(1e-6f, copy.bounds.size.magnitude * 1e-5f), filter = filter };
         surfaces[filter] = surface;
         return surface;
     }
@@ -370,6 +409,9 @@ public class HullDeformation : MonoBehaviour
         GetMarker = new Unity.Profiling.ProfilerMarker("HullDeformation.Get"), EditMarker = new Unity.Profiling.ProfilerMarker("HullDeformation.Edit"),
         WriteMarker = new Unity.Profiling.ProfilerMarker("HullDeformation.Write"), MarksMarker = new Unity.Profiling.ProfilerMarker("HullDeformation.Marks");
 
+    // The mesh work - finding the hit's neighbourhood, refining it, bending and cutting it, and rebuilding the data
+    // the scorch marks are cut from - runs on a worker thread (it was 100-200 ms on a big, much-dented hull).
+    // The main thread only uploads the finished mesh (Update), and the decals are bent after it.
     private void Displace(MeshFilter filter, Transform marks, Vector3 c, float reach, float target,
         System.Func<Vector3, Vector3> offset, System.Func<Vector3, Vector3, Vector3, bool> remove = null)
     {
@@ -378,42 +420,95 @@ public class HullDeformation : MonoBehaviour
         Surface surface = Get(filter);
         GetMarker.End();
         if (surface == null) return;
-        EditMarker.Begin();
-        bool edited = surface.edit.Edit(c, reach, target, 12000, offset, remove);
-        EditMarker.End();
-        if (!edited) return;
-        WriteMarker.Begin();
-        surface.edit.Write(surface.mesh);
-        WriteMarker.End();
-        HullScarring.Forget(surface.mesh);
+        Pending edit = new Pending { marks = marks, c = c, reach = reach, target = target, offset = offset, remove = remove };
+        if (surface.running == null) StartEdit(surface, edit);
+        else surface.waiting.Enqueue(edit);
+    }
 
-        // Decals cut from this surface share its transform and local space: bend (and cut) them with it - over the
-        // next few frames, two a frame, with a coarser refinement than the hull's (doing the twenty-odd decals
-        // round a hit at once was a 140 ms hitch).
-        if (marks == null) return;
-        foreach (MeshFilter mark in marks.GetComponentsInChildren<MeshFilter>())
+    private void StartEdit(Surface surface, Pending edit)
+    {
+        surface.current = edit;
+        Editable lists = surface.edit;
+        float weld = surface.weld;
+        surface.running = System.Threading.Tasks.Task.Run(() =>
+            lists.Edit(edit.c, edit.reach, edit.target, 12000, edit.offset, edit.remove) ? lists.ToMeshData(weld) : null);
+        if (!busy.Contains(surface)) busy.Add(surface);
+    }
+
+    private readonly List<(MeshFilter mark, Editable edit, System.Threading.Tasks.Task<bool> task)> markEdits = new List<(MeshFilter, Editable, System.Threading.Tasks.Task<bool>)>();
+
+    private void Update()
+    {
+        for (int i = markEdits.Count - 1; i >= 0; i--)
+        {
+            var (mark, e, task) = markEdits[i];
+            if (!task.IsCompleted) continue;
+            markEdits.RemoveAt(i);
+            if (task.IsFaulted) { Debug.LogException(task.Exception); continue; }
+            if (task.Result && mark != null && mark.sharedMesh != null) e.Write(mark.sharedMesh);
+        }
+        for (int i = busy.Count - 1; i >= 0; i--)
+        {
+            Surface surface = busy[i];
+            if (surface.running != null && !surface.running.IsCompleted) continue;
+            if (surface.running != null)
+            {
+                if (surface.running.IsFaulted) Debug.LogException(surface.running.Exception);
+                else if (surface.running.Result != null && surface.mesh != null)
+                {
+                    WriteMarker.Begin();
+                    surface.edit.Write(surface.mesh);
+                    WriteMarker.End();
+                    HullScarring.Refresh(surface.mesh, surface.running.Result);
+                    BendMarks(surface, surface.current);
+                }
+                surface.running = null;
+            }
+            if (surface.waiting.Count > 0) StartEdit(surface, surface.waiting.Dequeue());
+            else busy.RemoveAt(i);
+        }
+    }
+
+    // Decals cut from this surface share its transform and local space: bend (and cut) them with it - over the
+    // next few frames, through the shared budget, with a coarser refinement than the hull's.
+    private void BendMarks(Surface surface, Pending edit)
+    {
+        MeshFilter filter = surface.filter;
+        if (edit.marks == null || filter == null) return;
+        foreach (MeshFilter mark in edit.marks.GetComponentsInChildren<MeshFilter>())
         {
             if (mark.name != "Mark" || mark.sharedMesh == null || !mark.sharedMesh.isReadable) continue;
             if ((mark.transform.position - filter.transform.position).sqrMagnitude > 1e-4f || Quaternion.Angle(mark.transform.rotation, filter.transform.rotation) > 0.1f) continue;
             Bounds near = mark.sharedMesh.bounds;
-            near.Expand(reach * 2f);
-            if (!near.Contains(c)) continue;
-            pendingMarks.Enqueue(() =>
+            near.Expand(edit.reach * 2f);
+            if (!near.Contains(edit.c)) continue;
+            // Read here, bend on a worker, written back when it's done (Update).
+            DeferredWork.Enqueue(mark, () =>
             {
-                if (mark == null || mark.sharedMesh == null) return;
+                if (mark.sharedMesh == null) return;
                 Editable e = Editable.Read(mark.sharedMesh);
-                if (e.Edit(c, reach, target * 2f, 800, offset, remove)) e.Write(mark.sharedMesh);
+                markEdits.Add((mark, e, System.Threading.Tasks.Task.Run(() => e.Edit(edit.c, edit.reach, edit.target * 2f, 800, edit.offset, edit.remove))));
             });
         }
     }
 
-    private readonly Queue<System.Action> pendingMarks = new Queue<System.Action>();
-
-    private void Update()
+    // 2D gradient noise in [0, 1] (as Mathf.PerlinNoise, but plain managed code, safe on a worker thread).
+    private static float Noise(float x, float y)
     {
-        if (pendingMarks.Count == 0) return;
-        using var marksTiming = MarksMarker.Auto();
-        for (int i = 0; i < 2 && pendingMarks.Count > 0; i++) pendingMarks.Dequeue()();
+        int xi = Mathf.FloorToInt(x), yi = Mathf.FloorToInt(y);
+        float xf = x - xi, yf = y - yi;
+        float u = xf * xf * xf * (xf * (xf * 6f - 15f) + 10f), v = yf * yf * yf * (yf * (yf * 6f - 15f) + 10f);
+        float Grad(int ix, int iy, float dx, float dy)
+        {
+            uint h = (uint)(ix * 374761393 + iy * 668265263);
+            h = (h ^ (h >> 13)) * 1274126177u;
+            float angle = (h & 0xFFFF) / 65535f * Mathf.PI * 2f;
+            return Mathf.Cos(angle) * dx + Mathf.Sin(angle) * dy;
+        }
+        float n00 = Grad(xi, yi, xf, yf), n10 = Grad(xi + 1, yi, xf - 1f, yf);
+        float n01 = Grad(xi, yi + 1, xf, yf - 1f), n11 = Grad(xi + 1, yi + 1, xf - 1f, yf - 1f);
+        float n = Mathf.Lerp(Mathf.Lerp(n00, n10, u), Mathf.Lerp(n01, n11, u), v);
+        return Mathf.Clamp01(n * 0.7071f + 0.5f);
     }
 
     // The burnt-out space behind a hole: a dark cup set into the hull, its inside glowing, so a hole reads as

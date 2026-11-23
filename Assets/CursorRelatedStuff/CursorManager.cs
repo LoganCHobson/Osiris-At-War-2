@@ -143,6 +143,14 @@ public class CursorManager : MonoBehaviour
         if (type == applied && size == appliedSize) return;
         applied = type;
         appliedSize = size;
+        // The plain pointer is the game's own cursor (Player Settings), the same as in the menus and on the galactic
+        // map; only the attack crosshair and the no-entry sign are drawn here. (The selectable/walkable states show
+        // through the plane marker under the pointer.)
+        if (type != CursorType.Attackable && type != CursorType.UnAvailable)
+        {
+            Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
+            return;
+        }
         (Texture2D texture, Vector2 hotspot) = Pointer(type, size);
         Cursor.SetCursor(texture, hotspot, CursorMode.Auto);
     }

@@ -16,6 +16,11 @@ public static class MeshSlicer
         public bool hasUVs;
         public float weldTolerance;
 
+        // Triangles bucketed by position (built once per data, on demand or on a worker thread), so a query
+        // around one point - a scorch mark - looks at the triangles near it, not the whole hull.
+        public TriangleGrid grid;
+        public TriangleGrid Grid => grid ??= TriangleGrid.Build(this);
+
         public static MeshData Read(Mesh mesh)
         {
             if (mesh == null || !mesh.isReadable) return null;
@@ -136,6 +141,65 @@ public static class MeshSlicer
         }
     }
 
+    public sealed class TriangleGrid
+    {
+        private readonly Dictionary<long, List<int>> cells = new Dictionary<long, List<int>>();
+        private readonly float cell;
+        // Flat triangle ids: submesh << 26 | first index.
+        public static int Id(int submesh, int k) => (submesh << 26) | k;
+        public static int Submesh(int id) => id >> 26;
+        public static int First(int id) => id & ((1 << 26) - 1);
+
+        private TriangleGrid(float cell) { this.cell = cell; }
+
+        private long Key(int x, int y, int z) => ((long)(x & 0x1FFFFF) << 42) | ((long)(y & 0x1FFFFF) << 21) | (long)(z & 0x1FFFFF);
+
+        public static TriangleGrid Build(MeshData data)
+        {
+            Vector3 lo = Vector3.positiveInfinity, hi = Vector3.negativeInfinity;
+            foreach (Vector3 p in data.positions) { lo = Vector3.Min(lo, p); hi = Vector3.Max(hi, p); }
+            float size = data.positions.Length > 0 ? Mathf.Max(hi.x - lo.x, Mathf.Max(hi.y - lo.y, hi.z - lo.z)) : 1f;
+            TriangleGrid grid = new TriangleGrid(Mathf.Max(1e-4f, size / 32f));
+            for (int s = 0; s < data.submeshes.Length; s++)
+            {
+                int[] tris = data.submeshes[s];
+                for (int k = 0; k + 2 < tris.Length; k += 3)
+                {
+                    Vector3 a = data.positions[tris[k]], b = data.positions[tris[k + 1]], c = data.positions[tris[k + 2]];
+                    Vector3 tlo = Vector3.Min(a, Vector3.Min(b, c)), thi = Vector3.Max(a, Vector3.Max(b, c));
+                    int x0 = Mathf.FloorToInt(tlo.x / grid.cell), y0 = Mathf.FloorToInt(tlo.y / grid.cell), z0 = Mathf.FloorToInt(tlo.z / grid.cell);
+                    int x1 = Mathf.FloorToInt(thi.x / grid.cell), y1 = Mathf.FloorToInt(thi.y / grid.cell), z1 = Mathf.FloorToInt(thi.z / grid.cell);
+                    // A huge triangle goes in a capped block of cells around its middle (rare: hulls are mostly small tris).
+                    if ((long)(x1 - x0 + 1) * (y1 - y0 + 1) * (z1 - z0 + 1) > 512) { x0 = x1 = (x0 + x1) / 2; y0 = y1 = (y0 + y1) / 2; z0 = z1 = (z0 + z1) / 2; grid.Add(grid.Key(x0, y0, z0), Id(s, k), true); continue; }
+                    for (int x = x0; x <= x1; x++) for (int y = y0; y <= y1; y++) for (int z = z0; z <= z1; z++) grid.Add(grid.Key(x, y, z), Id(s, k), false);
+                }
+            }
+            return grid;
+        }
+
+        private readonly List<int> huge = new List<int>();
+
+        private void Add(long key, int id, bool isHuge)
+        {
+            if (isHuge) { huge.Add(id); return; }
+            if (!cells.TryGetValue(key, out List<int> list)) cells[key] = list = new List<int>();
+            list.Add(id);
+        }
+
+        // Every triangle that may come within `radius` of `centre` (each once).
+        public void Near(Vector3 centre, float radius, List<int> results, HashSet<int> seen)
+        {
+            results.Clear(); seen.Clear();
+            int x0 = Mathf.FloorToInt((centre.x - radius) / cell), x1 = Mathf.FloorToInt((centre.x + radius) / cell);
+            int y0 = Mathf.FloorToInt((centre.y - radius) / cell), y1 = Mathf.FloorToInt((centre.y + radius) / cell);
+            int z0 = Mathf.FloorToInt((centre.z - radius) / cell), z1 = Mathf.FloorToInt((centre.z + radius) / cell);
+            if ((long)(x1 - x0 + 1) * (y1 - y0 + 1) * (z1 - z0 + 1) > 4096) { foreach (List<int> l in cells.Values) foreach (int id in l) if (seen.Add(id)) results.Add(id); }
+            else for (int x = x0; x <= x1; x++) for (int y = y0; y <= y1; y++) for (int z = z0; z <= z1; z++)
+                if (cells.TryGetValue(Key(x, y, z), out List<int> list)) foreach (int id in list) if (seen.Add(id)) results.Add(id);
+            foreach (int id in huge) if (seen.Add(id)) results.Add(id);
+        }
+    }
+
     public struct Result
     {
         public Mesh mesh;
@@ -156,6 +220,32 @@ public static class MeshSlicer
 
         int last = planes.Length;
         results[last].mesh = rest.ToMesh(name + "_" + last, out results[last].capped);
+        return results;
+    }
+
+    // The same slice in two halves, so the heavy part can run off the main thread: SliceData does the cutting
+    // (pure maths on MeshData - safe on a worker thread), BuildMeshes turns the pieces into Meshes (main thread).
+    public sealed class Sliced { private Piece[] pieces; internal Sliced(object p) { pieces = (Piece[])p; } public int Count => pieces.Length; internal object Pieces => pieces; }
+
+    public static Sliced SliceData(MeshData data, Plane[] planes, bool cap, Vector3 referenceUp)
+    {
+        Piece rest = FromData(data);
+        Piece[] pieces = new Piece[planes.Length + 1];
+        for (int i = 0; i < planes.Length; i++)
+        {
+            Split(rest, planes[i], cap, data.weldTolerance, referenceUp, out Piece back, out Piece front);
+            pieces[i] = back;
+            rest = front;
+        }
+        pieces[planes.Length] = rest;
+        return new Sliced(pieces);
+    }
+
+    public static Result[] BuildMeshes(Sliced sliced, string name)
+    {
+        Piece[] pieces = (Piece[])sliced.Pieces;
+        Result[] results = new Result[pieces.Length];
+        for (int i = 0; i < pieces.Length; i++) results[i].mesh = pieces[i].ToMesh(name + "_" + i, out results[i].capped);
         return results;
     }
 
@@ -221,8 +311,14 @@ public static class MeshSlicer
     // `sides` straight edges (so it comes away as a plate, not as whatever long triangles happen to reach the
     // point - on the Human hulls those made long spikes) and given `thickness`: the outer face, a back face and
     // edge walls, all in the hull's own material, so the plate reads as a solid slab of metal.
-    public static Mesh ExtractPlate(MeshData data, Vector3 center, Vector3 normal, float halfSize, float thickness, int sides, string name, out Vector3 plateCenter)
+    // A plate's cut, as pure maths (safe on a worker thread when given its own `rng`); PlateMesh builds it.
+    public sealed class PlateCut { internal object solid; public Vector3 center; }
+
+    public static PlateCut ExtractPlateCut(MeshData data, Vector3 center, Vector3 normal, float halfSize, float thickness, int sides, System.Random rng)
     {
+        float Value() => rng != null ? (float)rng.NextDouble() : Random.value;
+        float Range(float lo, float hi) => lo + (hi - lo) * Value();
+        Vector3 plateCenter;
         plateCenter = center;
         normal = normal.sqrMagnitude > 1e-8f ? normal.normalized : Vector3.up;
         Piece piece = new Piece(data.submeshes.Length, data.hasNormals, data.hasTangents, data.hasUVs, 256);
@@ -256,12 +352,12 @@ public static class MeshSlicer
         // Cut to the polygon: each side a plane facing out from the centre; keep what's inside.
         Vector3 across = Vector3.Cross(normal, Mathf.Abs(normal.y) < 0.9f ? Vector3.up : Vector3.right).normalized;
         Vector3 along = Vector3.Cross(normal, across);
-        float turn = Random.value * Mathf.PI * 2f;
+        float turn = Value() * Mathf.PI * 2f;
         for (int i = 0; i < sides; i++)
         {
-            float angle = turn + (i + Random.Range(-0.2f, 0.2f)) * Mathf.PI * 2f / sides;
+            float angle = turn + (i + Range(-0.2f, 0.2f)) * Mathf.PI * 2f / sides;
             Vector3 outward = across * Mathf.Cos(angle) + along * Mathf.Sin(angle);
-            Split(piece, new Plane(outward, center + outward * halfSize * Random.Range(0.7f, 1.1f)), false, data.weldTolerance, normal, out Piece inside, out _);
+            Split(piece, new Plane(outward, center + outward * halfSize * Range(0.7f, 1.1f)), false, data.weldTolerance, normal, out Piece inside, out _);
             piece = inside;
             if (!piece.HasTriangles) return null;
         }
@@ -322,7 +418,16 @@ public static class MeshSlicer
             else { walls.Add(wa); walls.Add(wc); walls.Add(wb); walls.Add(wa); walls.Add(wd); walls.Add(wc); }
         }
 
-        return solid.ToMesh(name, out _);
+        return new PlateCut { solid = solid, center = plateCenter };
+    }
+
+    public static Mesh PlateMesh(PlateCut cut, string name) => cut == null ? null : ((Piece)cut.solid).ToMesh(name, out _);
+
+    public static Mesh ExtractPlate(MeshData data, Vector3 center, Vector3 normal, float halfSize, float thickness, int sides, string name, out Vector3 plateCenter)
+    {
+        PlateCut cut = ExtractPlateCut(data, center, normal, halfSize, thickness, sides, null);
+        plateCenter = cut != null ? cut.center : center;
+        return PlateMesh(cut, name);
     }
 
     private static int Back(Piece solid, Piece source, int index, Vector3 inset)

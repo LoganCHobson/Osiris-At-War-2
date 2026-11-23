@@ -171,7 +171,7 @@ public class PlayerSpaceManager : MonoBehaviour
 
         foreach (RaycastHit candidate in Physics.RaycastAll(ray, Mathf.Infinity, uiLayer))
         {
-            if (candidate.distance >= bestDistance || !candidate.transform.CompareTag("TargetUI")) continue;
+            if (candidate.distance >= bestDistance || !candidate.collider.transform.CompareTag("TargetUI")) continue;
 
             UnitHealthManager owner = candidate.collider.GetComponentInParent<UnitHealthManager>();
             if (owner == null || owner.IsDead || (enemyUnitLayer.value & (1 << owner.gameObject.layer)) == 0) continue;
@@ -420,6 +420,13 @@ public class PlayerSpaceManager : MonoBehaviour
         return true;
     }
 
+    // Switched off by the cinematic camera: nothing this draws may stay on screen.
+    private void OnDisable()
+    {
+        heightPicking = false;
+        if (heightPreview != null) heightPreview.enabled = false;
+    }
+
     private void ShowHeightPreview(bool visible)
     {
         if (heightPreview == null)
@@ -559,7 +566,7 @@ public class PlayerSpaceManager : MonoBehaviour
             if (aimPoint == null) continue;
 
             ShipGuard.Cancel(unit);
-            bool wholeShip = !hit.transform.gameObject.CompareTag("TargetUI") && !hit.collider.gameObject.CompareTag("Hardpoint"); // Clicked the hull, not a hardpoint.
+            bool wholeShip = !hit.collider.transform.gameObject.CompareTag("TargetUI") && !hit.collider.gameObject.CompareTag("Hardpoint"); // Clicked the hull, not a hardpoint.
             unit.GetComponent<HardpointManager>().AssignTarget(aimPoint, wholeShip);
             if (unit.IsMobile) attackers.Add(unit);
         }
@@ -641,7 +648,7 @@ public class PlayerSpaceManager : MonoBehaviour
 
     private static Transform ResolveAimPoint(RaycastHit hit, HardpointManager targetManager)
     {
-        if (hit.transform.gameObject.CompareTag("TargetUI")) return hit.transform.parent.parent;
+        if (hit.collider.transform.gameObject.CompareTag("TargetUI")) return hit.collider.transform.parent.parent;
         if (hit.collider.gameObject.CompareTag("Hardpoint")) return hit.collider.transform;
         return targetManager != null ? targetManager.GetRandomHardpoint() : null;
     }

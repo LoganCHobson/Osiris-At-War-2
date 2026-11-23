@@ -59,13 +59,26 @@ public class HullScarring : MonoBehaviour
     private static MaterialPropertyBlock block;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-    private static void ResetStatics() => meshData.Clear();
+    private static void ResetStatics() { meshData.Clear(); gridBuilds.Clear(); }
 
     // A mesh that has been reshaped (HullDeformation): marks are cut from it afresh next time.
     public static void Forget(Mesh mesh) => meshData.Remove(mesh);
 
+    // The reshaped mesh's data, handed over by HullDeformation (it has it already): no read back from the Mesh.
+    public static void Refresh(Mesh mesh, MeshSlicer.MeshData data)
+    {
+        if (mesh == null) return;
+        if (data == null) meshData.Remove(mesh);
+        else meshData[mesh] = data;
+    }
+
+    // Headless (the self-play farm, -nographics sims): nobody sees the marks or the bent metal, and building them
+    // cost memory enough to get the farm's players killed. Battle damage is skipped there.
+    public static bool Headless => Application.isBatchMode && SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null;
+
     public static void Fit(GameObject ship)
     {
+        if (Headless) return;
         if (ship.GetComponent<HullDamage>() != null && ship.GetComponent<HullScarring>() == null) ship.AddComponent<HullScarring>();
     }
 
@@ -125,21 +138,31 @@ public class HullScarring : MonoBehaviour
         cell.lastLocalDirection = transform.InverseTransformDirection(direction);
         if (marks >= markLimit) return;
 
-        // Carbon scoring: one streak each time the patch soaks up another slice of damage.
-        if (Mathf.FloorToInt(cell.damage / ScoreEvery) > Mathf.FloorToInt(before / ScoreEvery) && cell.scores < MaxScoresPerCell && cell.stage < 2)
-        {
-            cell.scores++;
-            Mark(scoreMaterial ??= MakeMaterial(ScoreTexture(), new Color(0.02f, 0.017f, 0.014f, 1f)), surface, surfacePoint, normal, direction, hull.Size * Random.Range(0.028f, 0.04f), 2.4f, 0f);
-        }
+        // The bookkeeping above happens on the hit; the marks themselves (cutting decals from the hull mesh, a few
+        // ms each and far more in a burst) go through DeferredWork's per-frame budget. They're placed in the ship's
+        // own space, so a mark laid a few frames late still lands where the shot hit.
+        bool score = Mathf.FloorToInt(cell.damage / ScoreEvery) > Mathf.FloorToInt(before / ScoreEvery) && cell.scores < MaxScoresPerCell && cell.stage < 2;
+        if (score) cell.scores++;
         int stage = cell.damage >= BreachedAt ? 3 : cell.damage >= ScarredAt ? 2 : cell.damage >= BlackenedAt ? 1 : 0;
-        int stageBefore = cell.stage;
-        Advance(cell, stage, surface, surfacePoint, normal, direction);
-        if (cell.stage >= 1 && cell.stage == stageBefore) Reheat(cell, surface, surfacePoint, normal, direction);
-        if (!cell.gutted && cell.damage >= GuttedAt)
+        bool gut = !cell.gutted && cell.damage >= GuttedAt;
+        if (gut) cell.gutted = true;
+        Vector3 localPoint = local, localNormal = transform.InverseTransformDirection(normal), localDirection = transform.InverseTransformDirection(direction);
+        System.Action job = null;
+        job = () =>
         {
-            cell.gutted = true;
-            HullDeformation.For(gameObject).Peel(surface, surfacePoint, normal, hull.Size * Random.Range(0.06f, 0.09f), marksRoot);
-        }
+            if (surface == null || health == null || health.IsDead) return;
+            // The surface's triangle grid is built on a worker the first time it's needed (it was 80-100 ms on a big
+            // hull, all in one frame): until it's ready, the mark waits its turn again.
+            if (!GridReady(surface.sharedMesh)) { DeferredWork.Enqueue(this, job); return; }
+            Vector3 at = transform.TransformPoint(localPoint), up = transform.TransformDirection(localNormal), along = transform.TransformDirection(localDirection);
+            // Carbon scoring: one streak each time the patch soaks up another slice of damage.
+            if (score) Mark(scoreMaterial ??= MakeMaterial(ScoreTexture(), new Color(0.02f, 0.017f, 0.014f, 1f)), surface, at, up, along, hull.Size * Random.Range(0.028f, 0.04f), 2.4f, 0f);
+            int stageBefore = cell.stage;
+            Advance(cell, stage, surface, at, up, along);
+            if (cell.stage >= 1 && cell.stage == stageBefore) Reheat(cell, surface, at, up, along);
+            if (gut) HullDeformation.For(gameObject).Peel(surface, at, up, hull.Size * Random.Range(0.06f, 0.09f), marksRoot);
+        };
+        DeferredWork.Enqueue(this, job);
     }
 
     // Bring a patch up to `stage`, showing each stage it passes through.
@@ -369,9 +392,18 @@ public class HullScarring : MonoBehaviour
 
     // The hull's triangles within `radius` of the point that face the same way as the struck surface,
     // projected-UV'd around the point (stretched along the shot) and lifted along their normals.
+    private static readonly Unity.Profiling.ProfilerMarker DataMarker = new Unity.Profiling.ProfilerMarker("HullScarring.Data"),
+        ScanMarker = new Unity.Profiling.ProfilerMarker("HullScarring.Scan");
+
+    private static readonly List<int> nearTriangles = new List<int>();
+    private static readonly HashSet<int> nearSeen = new HashSet<int>();
+
     private Mesh Patch(MeshFilter surface, Vector3 point, Vector3 normal, Vector3 direction, float radius, float stretch, float lift)
     {
+        DataMarker.Begin();
         MeshSlicer.MeshData data = Data(surface.sharedMesh);
+        DataMarker.End();
+        using var scanTiming = ScanMarker.Auto();
         if (data == null) return null;
 
         Transform t = surface.transform;
@@ -398,9 +430,13 @@ public class HullScarring : MonoBehaviour
         Dictionary<int, int> remap = new Dictionary<int, int>();
         float reachSqr = Mathf.Max(ru, rv) * Mathf.Max(ru, rv) * 1.2f;
 
-        foreach (int[] tris in data.submeshes)
+        // Only the triangles near the mark (the grid), not the whole hull - big hulls are hundreds of thousands
+        // of triangles once dented.
+        data.Grid.Near(c, Mathf.Sqrt(reachSqr) * 1.5f, nearTriangles, nearSeen);
+        foreach (int id in nearTriangles)
         {
-            for (int k = 0; k < tris.Length; k += 3)
+            int[] tris = data.submeshes[MeshSlicer.TriangleGrid.Submesh(id)];
+            int k = MeshSlicer.TriangleGrid.First(id);
             {
                 Vector3 a = data.positions[tris[k]], b = data.positions[tris[k + 1]], d = data.positions[tris[k + 2]];
                 Vector3 centroid = (a + b + d) / 3f;
@@ -453,6 +489,55 @@ public class HullScarring : MonoBehaviour
             minV = Mathf.Min(minV, v); maxV = Mathf.Max(maxV, v);
         }
         return maxU >= -ru && minU <= ru && maxV >= -rv && minV <= rv;
+    }
+
+    private static readonly Dictionary<Mesh, (Mesh.MeshDataArray source, System.Threading.Tasks.Task<MeshSlicer.MeshData> task)> gridBuilds = new Dictionary<Mesh, (Mesh.MeshDataArray, System.Threading.Tasks.Task<MeshSlicer.MeshData>)>();
+
+    // Whether the mesh's data and triangle grid are ready for cutting marks; if not, starts getting them ready on a
+    // worker: the mesh is read through Unity's read-only mesh data (safe off the main thread) and its triangle grid
+    // built there too. Reading a big hull here, then building its grid, was 80-100 ms in one frame.
+    private static bool GridReady(Mesh mesh)
+    {
+        if (mesh == null) return true;
+        if (meshData.TryGetValue(mesh, out MeshSlicer.MeshData cached) && cached != null && cached.grid != null) return true;
+        if (gridBuilds.TryGetValue(mesh, out var build))
+        {
+            if (!build.task.IsCompleted) return false;
+            gridBuilds.Remove(mesh);
+            build.source.Dispose();
+            if (build.task.IsFaulted) { Debug.LogException(build.task.Exception); return true; } // Falls back to Data().
+            if (build.task.Result != null && !meshData.ContainsKey(mesh)) meshData[mesh] = build.task.Result;
+            else if (meshData.TryGetValue(mesh, out MeshSlicer.MeshData data) && data != null && data.grid == null && build.task.Result != null) data.grid = build.task.Result.grid;
+            return true;
+        }
+        if (!mesh.isReadable) return true;
+        Mesh.MeshDataArray source = Mesh.AcquireReadOnlyMeshData(mesh);
+        float weld = Mathf.Max(1e-6f, mesh.bounds.size.magnitude * 1e-5f);
+        Mesh.MeshData readable = source[0];
+        gridBuilds[mesh] = (source, System.Threading.Tasks.Task.Run(() => ReadOffMain(readable, weld)));
+        return false;
+    }
+
+    private static MeshSlicer.MeshData ReadOffMain(Mesh.MeshData mesh, float weld)
+    {
+        int count = mesh.vertexCount;
+        MeshSlicer.MeshData data = new MeshSlicer.MeshData { weldTolerance = weld };
+        using (var v = new Unity.Collections.NativeArray<Vector3>(count, Unity.Collections.Allocator.Persistent)) { mesh.GetVertices(v); data.positions = v.ToArray(); }
+        data.hasNormals = mesh.HasVertexAttribute(UnityEngine.Rendering.VertexAttribute.Normal);
+        using (var n = new Unity.Collections.NativeArray<Vector3>(count, Unity.Collections.Allocator.Persistent)) { if (data.hasNormals) mesh.GetNormals(n); data.normals = n.ToArray(); }
+        data.hasTangents = mesh.HasVertexAttribute(UnityEngine.Rendering.VertexAttribute.Tangent);
+        using (var t = new Unity.Collections.NativeArray<Vector4>(count, Unity.Collections.Allocator.Persistent)) { if (data.hasTangents) mesh.GetTangents(t); data.tangents = t.ToArray(); }
+        data.hasUVs = mesh.HasVertexAttribute(UnityEngine.Rendering.VertexAttribute.TexCoord0);
+        using (var uv = new Unity.Collections.NativeArray<Vector2>(count, Unity.Collections.Allocator.Persistent)) { if (data.hasUVs) mesh.GetUVs(0, uv); data.uvs = uv.ToArray(); }
+        data.submeshes = new int[mesh.subMeshCount][];
+        for (int s = 0; s < mesh.subMeshCount; s++)
+        {
+            using var indices = new Unity.Collections.NativeArray<int>(mesh.GetSubMesh(s).indexCount, Unity.Collections.Allocator.Persistent);
+            mesh.GetIndices(indices, s);
+            data.submeshes[s] = indices.ToArray();
+        }
+        data.grid = MeshSlicer.TriangleGrid.Build(data);
+        return data;
     }
 
     private static MeshSlicer.MeshData Data(Mesh mesh)

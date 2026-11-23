@@ -93,7 +93,14 @@ public class TurretController : MonoBehaviour
     public float gatlingMuzzleSpeed = 170f;
     public float gatlingRoundDamage;
 
+    // How this hardpoint shoots - set on the hardpoint (prefab), not decided by whose ship it's on.
+    public enum FireMode { Bolts, Gatling, Beam }
+    [Header("Fire mode")]
+    [Tooltip("Bolts: laser bolts. Gatling: CIWS tracer rounds. Beam: a continuous beam that sweeps onto its target.")]
+    public FireMode fireMode = FireMode.Bolts;
+
     [Header("Point-defence beam")]
+
     [Tooltip("Continuous point-defence beam that sweeps slowly onto its target.")]
     public bool beam;
     [Tooltip("Degrees per second the beam can swing - slow to come to bear.")]
@@ -209,7 +216,7 @@ public class TurretController : MonoBehaviour
     public void ApplyBatteryCadence(bool avanti)
     {
         if (cadenceSet || gatling || beam || targetFilter == TargetFilter.FightersOnly) return;
-        SpaceUnit mountUnit = GetComponentInParent<SpaceUnit>();
+        SpaceUnit mountUnit = MountUnit;
         if (mountUnit == null) return;
         float interval = mountUnit.shipType switch
         {
@@ -242,7 +249,7 @@ public class TurretController : MonoBehaviour
             if (targetFilter == TargetFilter.FightersOnly || gatling || beam) return true;
             if (shipsOnly) return false;
             if (leadFighters) return true;
-            SpaceUnit mountUnit = GetComponentInParent<SpaceUnit>();
+            SpaceUnit mountUnit = MountUnit;
             ShipType type = mountUnit != null ? mountUnit.shipType : ShipType.Station;
             return type == ShipType.Corvette || type == ShipType.Destroyer || type == ShipType.Fighter;
         }
@@ -291,14 +298,23 @@ public class TurretController : MonoBehaviour
         }
     }
 
+    private static readonly Unity.Profiling.ProfilerMarker ValidateMarker = new Unity.Profiling.ProfilerMarker("Turret.Validate"),
+        AcquireMarker = new Unity.Profiling.ProfilerMarker("Turret.Acquire"), TraverseMarker = new Unity.Profiling.ProfilerMarker("Turret.Traverse"),
+        LosMarker = new Unity.Profiling.ProfilerMarker("Turret.LineOfSight"), ShootMarker = new Unity.Profiling.ProfilerMarker("Turret.Shoot"),
+        MissileScanMarker = new Unity.Profiling.ProfilerMarker("Turret.MissileScan");
+
     void Update()
     {
+        ValidateMarker.Begin();
         ValidateTarget();
+        ValidateMarker.End();
 
         if (targetFilter == TargetFilter.FightersOnly && !ordered && (target == null || targetMissile == null) && Time.time >= nextMissileScanAt)
         {
             nextMissileScanAt = Time.time + targetSearchInterval * Random.Range(0.8f, 1.2f);
+            MissileScanMarker.Begin();
             Missile incoming = Missile.NearestHostile(transform.position, Range * Missile.InterceptRangeFraction, targetLayer, this); // Missiles before fighters.
+            MissileScanMarker.End();
             if (incoming != null) target = incoming.transform;
             ValidateTarget();
         }
@@ -341,25 +357,41 @@ public class TurretController : MonoBehaviour
         if (target == null && Time.time >= nextSearchAt)
         {
             nextSearchAt = Time.time + targetSearchInterval * Random.Range(0.8f, 1.2f);
+            AcquireMarker.Begin();
             AcquireTarget();
+            AcquireMarker.End();
         }
 
         if (target != null)
         {
+            TraverseMarker.Begin();
             TrackTargetVelocity();
             Traverse();
+            TraverseMarker.End();
 
             if (target != lineOfSightTarget || Time.time >= nextLineOfSightAt)
             {
                 lineOfSightTarget = target;
                 nextLineOfSightAt = Time.time + lineOfSightInterval * Random.Range(0.8f, 1.2f);
-                hasLineOfSight = (targetMissile != null ? HasClearShot(firingPoints[0]) : HasLineOfSight(firingPoints[0]));  //I would use one of the middle guns but I don't want to adjust this for single use guns. Wont matter much anyway.
+                LosMarker.Begin();
+                // Missiles (no collider): a quick linecast here. Ships and craft: queued into the batch of every
+                // gun's line-of-sight rays, cast across the worker threads while the frame renders and read back
+                // at the start of the next (TurretSightBatch). A new target waits for its answer before firing.
+                if (targetMissile != null) hasLineOfSight = HasClearShot(firingPoints[0]);
+                else
+                {
+                    if (target != sightAnsweredFor) hasLineOfSight = false;
+                    TurretSightBatch.Request(this, firingPoints[0].position, (AimCentre() - firingPoints[0].position).normalized, Range, target);
+                }
+                LosMarker.End();  //I would use one of the middle guns but I don't want to adjust this for single use guns. Wont matter much anyway.
             }
 
             if (hasLineOfSight)
             {
                 timeOutOfLOS = 0f;
+                ShootMarker.Begin();
                 if (OnTarget) Shoot(); // Still swinging onto it: hold fire.
+                ShootMarker.End();
 
             }
             else
@@ -504,15 +536,26 @@ public class TurretController : MonoBehaviour
         HardpointManager closestShip = null;
         HardpointManager closestSquadron = null;
 
+        // A ship has dozens of colliders in the sphere: what it is (and whether this gun takes it, and can see it)
+        // is worked out once per ship per search, not per collider.
+        searchVerdicts.Clear();
         for (int i = 0; i < count; i++)
         {
             Transform potentialTarget = overlapBuffer[i].transform;
-            if (!potentialTarget.root.TryGetComponent(out HardpointManager manager) || !AcceptsShip(manager.gameObject)) continue;
-            if (manager.TryGetComponent(out UnitHealthManager seen) && !BattleSensors.CanSee(this, seen)) continue; // Hidden by sensors/asteroids.
+            Transform root = potentialTarget.root;
+            if (!searchVerdicts.TryGetValue(root, out bool takes))
+            {
+                ShipInfo info = InfoFor(root);
+                takes = info.manager != null && AcceptsShip(info.manager.gameObject) && (info.unit == null || BattleSensors.CanSee(this, info.unit));
+                searchVerdicts[root] = takes;
+            }
+            if (!takes) continue;
             if (!CanBear(potentialTarget.position)) continue; // Above or below what the barrels can reach.
 
+            ShipInfo ship = InfoFor(root);
+            HardpointManager manager = ship.manager;
             float distanceSqr = (potentialTarget.position - transform.position).sqrMagnitude;
-            if (manager.TryGetComponent(out Squadron _))
+            if (ship.isSquadron)
             {
                 if (distanceSqr < closestSquadronSqr)
                 {
@@ -537,6 +580,36 @@ public class TurretController : MonoBehaviour
 
         target = chosen != null ? chosen.GetRandomHardpoint() : null;
         ordered = false;
+        // Nothing in reach: look again in a second rather than four times a second (a quarter of all guns are out
+        // of range at any moment, and each search sweeps every collider in range).
+        if (target == null) nextSearchAt = Time.time + Random.Range(0.8f, 1.2f);
+    }
+
+    private struct ShipInfo
+    {
+        public HardpointManager manager;
+        public UnitHealthManager unit;
+        public bool isSquadron;
+    }
+
+    // What each unit's root is, looked up once for the battle (shared by every gun).
+    private static readonly Dictionary<Transform, ShipInfo> shipInfo = new Dictionary<Transform, ShipInfo>();
+    private readonly Dictionary<Transform, bool> searchVerdicts = new Dictionary<Transform, bool>();
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetShipInfo() => shipInfo.Clear();
+
+    private static ShipInfo InfoFor(Transform root)
+    {
+        if (shipInfo.TryGetValue(root, out ShipInfo info) && info.manager != null) return info;
+        info = new ShipInfo();
+        if (root.TryGetComponent(out info.manager))
+        {
+            info.manager.TryGetComponent(out info.unit);
+            info.isSquadron = info.manager.TryGetComponent(out Squadron _);
+        }
+        shipInfo[root] = info;
+        return info;
     }
     private bool restCaptured;
     private Quaternion baseRest;
@@ -558,7 +631,7 @@ public class TurretController : MonoBehaviour
             if (traverseRate >= 0f) return traverseRate;
             if (traverseDegreesPerSecond > 0f) return traverseRate = traverseDegreesPerSecond;
             if (gatling || targetFilter == TargetFilter.FightersOnly) return traverseRate = 150f;
-            SpaceUnit mountUnit = GetComponentInParent<SpaceUnit>();
+            SpaceUnit mountUnit = MountUnit;
             ShipType type = mountUnit != null ? mountUnit.shipType : ShipType.Station;
             traverseRate = type switch
             {
@@ -638,6 +711,7 @@ public class TurretController : MonoBehaviour
         if (Time.time - lastFiredTime >= fireRate)
         {
             onFire.Invoke();
+            MuzzleFlash();
             lastFiredTime = Time.time;
             avantiGuns ??= GetComponentInParent<ShieldGenerator>() != null;
             Sfx.Play(avantiGuns.Value ? Sfx.Cue.LaserAvanti : Sfx.Cue.LaserHeavy, firingPoints[0].position);
@@ -678,6 +752,37 @@ public class TurretController : MonoBehaviour
         return aimCollider != null && aimCollider.enabled ? aimCollider.bounds.center : target.position;
     }
 
+    // The answer to a batched line-of-sight ray (hits nearest first), if it's still about the same target.
+    private Transform sightAnsweredFor;
+
+    internal void ApplySight(Transform askedAbout, RaycastHit[] hits, int count)
+    {
+        if (this == null || askedAbout != target) return;
+        sightAnsweredFor = askedAbout;
+        hasLineOfSight = Judge(hits, count);
+    }
+
+    // The same rules as HasLineOfSight, over hits already sorted nearest first.
+    private bool Judge(RaycastHit[] hits, int count)
+    {
+        for (int i = 0; i < count; i++)
+        {
+            RaycastHit hit = hits[i];
+            if (hit.collider == null) continue;
+            if (hit.collider.transform.root == transform.root && hit.collider.GetComponentInParent<HardpointHealth>() != null) continue;
+            if (hit.collider.gameObject.layer == ShieldGenerator.Layer)
+            {
+                ShieldGenerator shield = hit.collider.GetComponentInParent<ShieldGenerator>();
+                if (shield != null && ((1 << shield.gameObject.layer) & targetLayer) != 0) return true;
+                continue;
+            }
+            return hit.collider.transform == target || ((1 << hit.collider.transform.gameObject.layer) & targetLayer) != 0;
+        }
+        return false;
+    }
+
+    internal static int SightMask => LosMask;
+
     bool HasLineOfSight(Transform firingPoint)
     {
         Vector3 direction = (AimCentre() - firingPoint.position).normalized;
@@ -688,14 +793,14 @@ public class TurretController : MonoBehaviour
         for (int i = 0; i < count; i++)
         {
             RaycastHit hit = losBuffer[i];
-            if (hit.transform.root == transform.root && hit.collider.GetComponentInParent<HardpointHealth>() != null) continue;
+            if (hit.collider.transform.root == transform.root && hit.collider.GetComponentInParent<HardpointHealth>() != null) continue;
             if (hit.collider.gameObject.layer == ShieldGenerator.Layer)
             {
                 ShieldGenerator shield = hit.collider.GetComponentInParent<ShieldGenerator>();
                 if (shield != null && ((1 << shield.gameObject.layer) & targetLayer) != 0) return true;
                 continue;
             }
-            return hit.transform == target || ((1 << hit.transform.gameObject.layer) & targetLayer) != 0;
+            return hit.collider.transform == target || ((1 << hit.collider.transform.gameObject.layer) & targetLayer) != 0;
         }
         return false;
     }
@@ -710,9 +815,9 @@ public class TurretController : MonoBehaviour
         for (int i = 0; i < count; i++)
         {
             RaycastHit hit = losBuffer[i];
-            if (hit.transform.root == transform.root && hit.collider.GetComponentInParent<HardpointHealth>() != null) continue;
+            if (hit.collider.transform.root == transform.root && hit.collider.GetComponentInParent<HardpointHealth>() != null) continue;
             if (hit.collider.gameObject.layer == ShieldGenerator.Layer) { ShieldGenerator sg = hit.collider.GetComponentInParent<ShieldGenerator>(); if (sg != null && ((1 << sg.gameObject.layer) & targetLayer) != 0) return "?"; continue; }
-            if (hit.transform.root == transform.root) return "own hull (" + LayerMask.LayerToName(hit.collider.gameObject.layer) + ")";
+            if (hit.collider.transform.root == transform.root) return "own hull (" + LayerMask.LayerToName(hit.collider.gameObject.layer) + ")";
             UnitHealthManager other = hit.collider.GetComponentInParent<UnitHealthManager>();
             if (other != null && owner != null && other.isAttackerSide == owner.isAttackerSide) return other.GetComponent<Squadron>() != null ? "friendly craft" : "friendly ship";
             if (other != null) return "other enemy unit (layer " + LayerMask.LayerToName(hit.collider.gameObject.layer) + ")";
@@ -773,13 +878,57 @@ public class TurretController : MonoBehaviour
         laser.source = owner;
         laser.weapon = targetFilter == TargetFilter.FightersOnly ? DamageLedger.Weapon.PointDefence : DamageLedger.Weapon.Battery;
         DamageLedger.Fired(owner, laser.weapon);
-        laser.intended = target;
-        laser.intendedIsCraft = targetFighter != null || targetMissile != null || target.GetComponentInParent<Squadron>() != null;
-        laser.fireDistance = Vector3.Distance(firingPoint.position, target.position);
-        laser.targetSpeed = laser.intendedIsCraft ? (targetFighter != null ? targetFighter.Velocity.magnitude : 0f) : targetVelocity.magnitude;
-        UnityEngine.AI.NavMeshAgent ownAgent = GetComponentInParent<UnityEngine.AI.NavMeshAgent>();
-        laser.shooterSpeed = ownAgent != null ? ownAgent.velocity.magnitude : 0f;
+        if (Laser.DiagnoseMisses) // Dev hit test only: what each bolt was aimed at, for the miss report.
+        {
+            laser.intended = target;
+            laser.intendedIsCraft = targetFighter != null || targetMissile != null || target.GetComponentInParent<Squadron>() != null;
+            laser.fireDistance = Vector3.Distance(firingPoint.position, target.position);
+            laser.targetSpeed = laser.intendedIsCraft ? (targetFighter != null ? targetFighter.Velocity.magnitude : 0f) : targetVelocity.magnitude;
+            UnityEngine.AI.NavMeshAgent ownAgent = GetComponentInParent<UnityEngine.AI.NavMeshAgent>();
+            laser.shooterSpeed = ownAgent != null ? ownAgent.velocity.magnitude : 0f;
+        }
         laser.Launch(temp.transform.forward * laser.speed + finalDirection * projectileSpeed);
+    }
+
+    // Muzzle flashes come from one shared ring of flash rigs (made from Resources/TurretFx/MuzzleFlash) instead of
+    // each mount carrying four of its own - those made spawning a warship 85-90% slower. The rigs stay switched
+    // on and are just moved to the barrel and replayed (switching effects on is the expensive part). The template
+    // keeps the pose it had on its firing point. Past a few flashes a frame (point-defence gatlings flash 14 times
+    // a second each) the rest are skipped: a 0.1 s flash isn't worth a frame drop.
+    private const int MuzzleFlashRigs = 48;
+    private const int MuzzleFlashesPerFrame = 8;
+    private static ParticleSystem muzzleTemplate;
+    private static ParticleSystem[] muzzleRigs;
+    private static int nextMuzzleRig, muzzleFrame = -1, muzzleThisFrame;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetMuzzleFlashes() { muzzleTemplate = null; muzzleRigs = null; }
+
+    private void MuzzleFlash()
+    {
+        if (muzzleRigs == null || muzzleRigs.Length == 0 || muzzleRigs[0] == null)
+        {
+            muzzleTemplate = Resources.Load<ParticleSystem>("TurretFx/MuzzleFlash");
+            if (muzzleTemplate == null) { muzzleRigs = new ParticleSystem[0]; return; }
+            Transform holder = new GameObject("MuzzleFlashes").transform;
+            muzzleRigs = new ParticleSystem[MuzzleFlashRigs];
+            for (int i = 0; i < MuzzleFlashRigs; i++)
+            {
+                muzzleRigs[i] = Instantiate(muzzleTemplate, holder);
+                foreach (CFX_AutoDestructShuriken autoDestruct in muzzleRigs[i].GetComponentsInChildren<CFX_AutoDestructShuriken>(true)) Destroy(autoDestruct);
+            }
+        }
+        if (muzzleRigs.Length == 0) return;
+        if (muzzleFrame != Time.frameCount) { muzzleFrame = Time.frameCount; muzzleThisFrame = 0; }
+        Transform pose = muzzleTemplate.transform;
+        foreach (Transform point in firingPoints)
+        {
+            if (point == null || ++muzzleThisFrame > MuzzleFlashesPerFrame) return;
+            ParticleSystem rig = muzzleRigs[nextMuzzleRig++ % muzzleRigs.Length];
+            rig.transform.SetPositionAndRotation(point.TransformPoint(pose.localPosition), point.rotation * pose.localRotation);
+            rig.transform.localScale = pose.localScale * point.lossyScale.x;
+            rig.Play(true);
+        }
     }
 
     // Whether the gun has a clear shot at its target right now (its own hull can block it).
@@ -926,6 +1075,7 @@ public class TurretController : MonoBehaviour
         if (now >= gatlingNextFlashAt)
         {
             onFire.Invoke();
+            MuzzleFlash();
             gatlingNextFlashAt = now + 0.07f;
         }
 
@@ -956,6 +1106,18 @@ public class TurretController : MonoBehaviour
         HardpointHealth fighter = tracked && targetFighter != null ? targetHardpoint : null;
         CIWSTracers.Fire(firingPoint.position, direction * gatlingMuzzleSpeed, life, gatlingRoundDamage, tracked ? targetMissile : null, fighter, owner, DamageLedger.Weapon.Gatling);
         DamageLedger.Fired(owner, DamageLedger.Weapon.Gatling);
+    }
+
+    // The ship this gun is mounted on (looked up once: target searches asked for it per candidate).
+    private SpaceUnit mountUnitCache;
+    private bool mountUnitLooked;
+    private SpaceUnit MountUnit
+    {
+        get
+        {
+            if (!mountUnitLooked) { mountUnitCache = GetComponentInParent<SpaceUnit>(); mountUnitLooked = true; }
+            return mountUnitCache;
+        }
     }
 
     float GetAccuracyMultiplier(Transform target)

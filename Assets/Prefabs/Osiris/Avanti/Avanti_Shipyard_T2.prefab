@@ -3042,6 +3042,7 @@ GameObject:
   - component: {fileID: 3889555694881727919}
   - component: {fileID: 5696386418431199568}
   - component: {fileID: 3115798831569939154}
+  - component: {fileID: 5430266494744816054}
   m_Layer: 8
   m_Name: Avanti_Shipyard_T2
   m_TagString: Untagged
@@ -6428,6 +6429,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
+      propertyPath: fireMode
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: rotationSpeed
       value: 25
       objectReference: {fileID: 0}
@@ -6995,6 +7000,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
+      propertyPath: fireMode
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: rotationSpeed
       value: 25
       objectReference: {fileID: 0}
@@ -7208,6 +7217,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
+      propertyPath: fireMode
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: rotationSpeed
       value: 25
       objectReference: {fileID: 0}
@@ -7418,6 +7431,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: targetFilter
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
+      propertyPath: fireMode
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
@@ -7988,6 +8005,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
+      propertyPath: fireMode
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: rotationSpeed
       value: 25
       objectReference: {fileID: 0}
@@ -8198,6 +8219,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: targetFilter
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
+      propertyPath: fireMode
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
@@ -8697,6 +8722,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
+      propertyPath: fireMode
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: rotationSpeed
       value: 25
       objectReference: {fileID: 0}
@@ -8907,6 +8936,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
       propertyPath: targetFilter
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
+      propertyPath: fireMode
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 850194435089992307, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
@@ -9444,3 +9477,30 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1239400856308769653, guid: 03f459ddd87ee5f4d8001aa7e0952f3e, type: 3}
   m_PrefabInstance: {fileID: 8961865406040173769}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &5430266494744816054
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4981552138547673364}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e41c1a803f17cd43935fa979292d534, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ShieldGenerator
+  capacityFraction: 0.8
+  hullHealthMultiplier: 0.8
+  rechargeDelay: 5
+  rechargeRate: 0.06
+  collapseCooldown: 15
+  restoreFraction: 0.3
+  shieldMaterial: {fileID: 2100000, guid: be3ad53c927d85e45a2e118a29bc7ee4, type: 2}
+  padding: 1.18
+  minimumThickness: 0.4
+  rippleLife: 1.1
+  rippleReach: {x: 0.06, y: 0.13}
+  minimumReach: 2
+  maximumReachFraction: 0.28
+  minimumStrength: 0.85
+  shieldSlider: {fileID: 0}

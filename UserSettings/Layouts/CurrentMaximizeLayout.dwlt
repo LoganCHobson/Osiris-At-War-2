@@ -778,9 +778,9 @@ MonoBehaviour:
   m_AudioPlay: 0
   m_DebugDrawModesUseInteractiveLightBakingData: 0
   m_Position:
-    m_Target: {x: -38.093254, y: -2.052517, z: -82.85931}
+    m_Target: {x: 484.70383, y: -231.27477, z: 400.31378}
     speed: 2
-    m_Value: {x: -38.093254, y: -2.052517, z: -82.85931}
+    m_Value: {x: 484.70383, y: -231.27477, z: 400.31378}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -826,13 +826,13 @@ MonoBehaviour:
     m_GridAxis: 1
     m_gridOpacity: 0.5
   m_Rotation:
-    m_Target: {x: 0.111026436, y: -0.030987473, z: 0.003467586, w: 0.99333954}
+    m_Target: {x: 0.21773855, y: 0.105480105, z: -0.023673698, w: 0.9700136}
     speed: 2
-    m_Value: {x: 0.11102519, y: -0.030987127, z: 0.003467547, w: 0.9933284}
+    m_Value: {x: 0.21773607, y: 0.1054789, z: -0.023673428, w: 0.97000253}
   m_Size:
-    m_Target: 7.5524793
+    m_Target: 474.90802
     speed: 2
-    m_Value: 7.5524793
+    m_Value: 474.90802
   m_Ortho:
     m_Target: 0
     speed: 2
@@ -999,19 +999,14 @@ MonoBehaviour:
     m_TreeViewState:
       scrollPos: {x: 0, y: 0}
       m_SelectedIDs:
-      - m_Data: 315216
+      - m_Data: 228082
       m_LastClickedID:
-        m_Data: 315216
+        m_Data: 0
       m_ExpandedIDs:
-      - m_Data: -682552
-      - m_Data: -441744
-      - m_Data: -105318
-      - m_Data: -62426
-      - m_Data: -45372
-      - m_Data: -45300
-      - m_Data: -45216
-      - m_Data: -45136
-      - m_Data: 228184
+      - m_Data: -45454
+      - m_Data: -45240
+      - m_Data: -45180
+      - m_Data: -1294
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -1029,7 +1024,7 @@ MonoBehaviour:
         m_OriginalEventType: 11
         m_IsRenamingFilename: 0
         m_TrimLeadingAndTrailingWhitespace: 0
-        m_ClientGUIView: {fileID: 0}
+        m_ClientGUIView: {fileID: 8}
       m_SearchString: 
     m_ExpandedScenes: []
     m_CurrenRootInstanceID: 0
@@ -1111,8 +1106,7 @@ MonoBehaviour:
     m_ShowAllHits: 0
     m_SkipHidden: 0
     m_SearchArea: 1
-    m_Folders:
-    - Assets/Art/Materials
+    m_Folders: []
     m_Globs: []
     m_ProductIds: 
     m_AnyWithAssetOrigin: 0
@@ -1134,22 +1128,22 @@ MonoBehaviour:
       m_Data: 0
     m_ExpandedIDs:
     - m_Data: 0
-    - m_Data: 313628
-    - m_Data: 313630
-    - m_Data: 313632
-    - m_Data: 313634
-    - m_Data: 313636
-    - m_Data: 313638
-    - m_Data: 313640
-    - m_Data: 313642
-    - m_Data: 313644
-    - m_Data: 313646
-    - m_Data: 313648
-    - m_Data: 313650
-    - m_Data: 313652
-    - m_Data: 313654
-    - m_Data: 313656
-    - m_Data: 313658
+    - m_Data: 74832
+    - m_Data: 74834
+    - m_Data: 74836
+    - m_Data: 74838
+    - m_Data: 74840
+    - m_Data: 74842
+    - m_Data: 74844
+    - m_Data: 74846
+    - m_Data: 74848
+    - m_Data: 74850
+    - m_Data: 74852
+    - m_Data: 74854
+    - m_Data: 74856
+    - m_Data: 74858
+    - m_Data: 74860
+    - m_Data: 74862
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -1176,29 +1170,29 @@ MonoBehaviour:
       m_Icon: {fileID: 0}
       m_ResourceFile: 
   m_AssetTreeState:
-    scrollPos: {x: 0, y: 1203}
+    scrollPos: {x: 0, y: 1059}
     m_SelectedIDs:
-    - m_Data: 315216
+    - m_Data: 228082
     m_LastClickedID:
-      m_Data: 0
+      m_Data: 228082
     m_ExpandedIDs:
     - m_Data: 0
-    - m_Data: 313628
-    - m_Data: 313630
-    - m_Data: 313632
-    - m_Data: 313634
-    - m_Data: 313636
-    - m_Data: 313638
-    - m_Data: 313640
-    - m_Data: 313642
-    - m_Data: 313644
-    - m_Data: 313646
-    - m_Data: 313648
-    - m_Data: 313650
-    - m_Data: 313652
-    - m_Data: 313654
-    - m_Data: 313656
-    - m_Data: 313658
+    - m_Data: 74832
+    - m_Data: 74834
+    - m_Data: 74836
+    - m_Data: 74838
+    - m_Data: 74840
+    - m_Data: 74842
+    - m_Data: 74844
+    - m_Data: 74846
+    - m_Data: 74848
+    - m_Data: 74850
+    - m_Data: 74852
+    - m_Data: 74854
+    - m_Data: 74856
+    - m_Data: 74858
+    - m_Data: 74860
+    - m_Data: 74862
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -1226,8 +1220,8 @@ MonoBehaviour:
       m_ResourceFile: 
   m_ListAreaState:
     m_SelectedInstanceIDs:
-    - m_Data: 315216
-    m_LastClickedInstanceID: 315216
+    - m_Data: 228082
+    m_LastClickedInstanceID: 228082
     m_HadKeyboardFocusLastEvent: 0
     m_ExpandedInstanceIDs: []
     m_RenameOverlay:

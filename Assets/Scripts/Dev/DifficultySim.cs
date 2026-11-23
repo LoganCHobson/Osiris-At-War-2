@@ -129,13 +129,13 @@ public class DifficultySim : MonoBehaviour
                 if (variant % 2 == 0) // Side-swapped pairs share one budget, and one kind of battle.
                 {
                     battleBudget = Random.Range(MinBudget, MaxBudget + 1);
-                    campaignStyle = FarmBattles && Random.value < CampaignStyleShare;
+                    campaignStyle = FarmBattles && !HasFlag("-openOnly") && Random.value < CampaignStyleShare;
                 }
                 List<ShipEntry> strongFleet = FleetFor(strongFaction), weakFleet = FleetFor(weakFaction);
                 RetreatManager.Simulated = campaignStyle;
                 RetreatManager.Instance?.ResetForBattle();
-                AIBattleCommander strong = Deploy(stronger, strongFaction, strongerAttacks, strongFleet, weakFleet);
-                AIBattleCommander weak = Deploy(weaker, weakFaction, !strongerAttacks, weakFleet, strongFleet);
+                AIBattleCommander strong = Deploy(stronger, strongFaction, strongerAttacks, strongFleet, weakFleet, ablate);
+                AIBattleCommander weak = Deploy(weaker, weakFaction, !strongerAttacks, weakFleet, strongFleet, "");
 
                 yield return new WaitForSeconds(3f); // Let ships finish setting up their health first.
                 float started = Time.time;
@@ -154,15 +154,18 @@ public class DifficultySim : MonoBehaviour
                 bool? retreated = Retreated(strongerAttacks, strong, weak);
                 float strongLeft = Power(strongerAttacks, strong) / Mathf.Max(1f, strongStart);
                 float weakLeft = Power(!strongerAttacks, weak) / Mathf.Max(1f, weakStart);
-                string outcome;
-                if (retreated.HasValue && retreated.Value != strongerAttacks) { strongerWins++; outcome = stronger.ToString(); }
-                else if (retreated.HasValue) { weakerWins++; outcome = weaker.ToString(); }
-                else if (strongLeft > weakLeft + 0.05f) { strongerWins++; outcome = stronger.ToString(); }
-                else if (weakLeft > strongLeft + 0.05f) { weakerWins++; outcome = weaker.ToString(); }
-                else { draws++; outcome = "draw"; }
+                // Which side won, by side (not by level name: in an Admiral-vs-Admiral control both sides share one).
+                int won;
+                if (retreated.HasValue && retreated.Value != strongerAttacks) won = 1;
+                else if (retreated.HasValue) won = -1;
+                else if (strongLeft > weakLeft + 0.05f) won = 1;
+                else if (weakLeft > strongLeft + 0.05f) won = -1;
+                else won = 0;
+                if (won > 0) strongerWins++; else if (won < 0) weakerWins++; else draws++;
+                string outcome = won > 0 ? stronger.ToString() : won < 0 ? weaker.ToString() : "draw";
                 marginTotal += strongLeft - weakLeft;
 
-                bool strongWon = outcome == stronger.ToString(), weakWon = outcome == weaker.ToString();
+                bool strongWon = won > 0, weakWon = won < 0;
                 strong.NotifyBattleEnded(strongWon, strong.Retreating, weak.Retreating);
                 weak.NotifyBattleEnded(weakWon, weak.Retreating, strong.Retreating);
                 if (fixedMatchup.HasValue)
@@ -177,7 +180,7 @@ public class DifficultySim : MonoBehaviour
                         admiral_left = weakLeft,
                         terrain = terrainSeed,
                         budget = battleBudget,
-                        probe = $"{stronger}-vs-{weaker}",
+                        probe = $"{stronger}{(ablate.Length > 0 ? "[" + ablate + "]" : "")}-vs-{weaker}",
                         campaign_style = campaignStyle,
                         retreated = retreated.HasValue ? (retreated.Value == strongerAttacks ? "grand_admiral" : "admiral") : "",
                     }));
@@ -274,6 +277,7 @@ public class DifficultySim : MonoBehaviour
         grandAdmiralOnly = HasFlag("-grandAdmiralOnly");
         probe = Argument("-probe", "");
         matchup = Argument("-matchup", "");
+        ablate = Argument("-ablate", "");
         string report = Argument("-simReport", "");
         if (!string.IsNullOrEmpty(report)) reportPath = report;
     }
@@ -381,13 +385,33 @@ public class DifficultySim : MonoBehaviour
         return power;
     }
 
-    private AIBattleCommander Deploy(DifficultyLevel level, Faction faction, bool attackerSide, List<ShipEntry> fleet, List<ShipEntry> enemyFleet)
+    // -ablate "focusFire=false,holdReserves=false": the first side's profile with those settings changed, to test what
+    // each of a difficulty's behaviours is worth.
+    private string ablate = "";
+
+    private static DifficultyProfile Ablated(DifficultyProfile profile, string changes)
+    {
+        if (string.IsNullOrEmpty(changes)) return profile;
+        foreach (string change in changes.Split(','))
+        {
+            string[] kv = change.Split('=');
+            if (kv.Length != 2) continue;
+            System.Reflection.FieldInfo field = typeof(DifficultyProfile).GetField(kv[0].Trim());
+            if (field == null) { Debug.LogError($"DIFFSIM unknown profile setting '{kv[0]}'"); continue; }
+            object value = field.FieldType == typeof(bool) ? bool.Parse(kv[1]) : field.FieldType == typeof(int) ? (object)int.Parse(kv[1])
+                : float.Parse(kv[1], System.Globalization.CultureInfo.InvariantCulture);
+            field.SetValue(profile, value);
+        }
+        return profile;
+    }
+
+    private AIBattleCommander Deploy(DifficultyLevel level, Faction faction, bool attackerSide, List<ShipEntry> fleet, List<ShipEntry> enemyFleet, string changes)
     {
         GameObject go = new GameObject($"Sim_{level}_{(attackerSide ? "Attacker" : "Defender")}");
         AIBattleCommander commander = go.AddComponent<AIBattleCommander>();
         if (level == DifficultyLevel.GrandAdmiral && (faction == null || !faction.CanBeGrandAdmiral)) Debug.LogError($"DIFFSIM Grand Admiral deployed as {faction?.name}; it must be Avanti");
         commander.useDifficultyOverride = true;
-        commander.difficultyOverride = DifficultyProfile.For(level);
+        commander.difficultyOverride = Ablated(DifficultyProfile.For(level), changes);
         commander.SelfPlay = selfPlay && level == DifficultyLevel.GrandAdmiral;
         if (campaignStyle) commander.KnownEnemyPower = FieldablePower(enemyFleet);
 
