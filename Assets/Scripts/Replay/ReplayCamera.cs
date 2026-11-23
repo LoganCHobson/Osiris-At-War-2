@@ -34,6 +34,7 @@ public class ReplayCamera : MonoBehaviour
     private float lastNow;
     private readonly List<ReplayItem> candidates = new List<ReplayItem>();
 
+    public Renderer SubjectRenderer => subjectRenderer;
     public string ShotName => CurrentMode == Mode.Free ? "Free camera" : subject != null && shot != Shot.Overview ? $"{shot} - {subject.label}" : shot.ToString();
 
     public void Begin(ReplayPlayer owner)
@@ -138,7 +139,7 @@ public class ReplayCamera : MonoBehaviour
             Transform frame = subject.ghostParent != null && subject.subject == ReplayKind.Ship ? subject.ghostParent.ghost : subject.ghostT;
             if (subjectRenderer != null && subjectRenderer.enabled) centre = subjectRenderer.bounds.center;
             else centre = subject.ghostT.position;
-            size = Mathf.Max(1f, subject.subjectSize);
+            size = SizeOf(subject);
             forward = frame.forward; up = frame.up; right = frame.right;
             lastCentre = centre; lastSize = size;
         }
@@ -210,10 +211,19 @@ public class ReplayCamera : MonoBehaviour
         if (subject != null && subject.ghostT != null)
         {
             Transform frame = subject.ghostParent != null ? subject.ghostParent.ghost : subject.ghostT;
-            float size = Mathf.Max(1f, subject.subjectSize);
+            float size = SizeOf(subject);
             Vector3 c = subjectRenderer != null ? subjectRenderer.bounds.center : subject.ghostT.position;
             fixedPoint = c + frame.forward * size * 4f + frame.right * side * size * 1.3f + frame.up * size * 0.35f;
         }
+    }
+
+    // How big the subject is, measured from its hull as drawn now (the size noted when it was recorded can be
+    // taken before the ship was set to its final scale).
+    private float SizeOf(ReplayItem item)
+    {
+        Renderer r = item == subject ? subjectRenderer : item.ghost != null ? item.ghost.GetComponent<Renderer>() : null;
+        if (r != null && r.enabled && r.gameObject.activeInHierarchy) return Mathf.Max(0.5f, r.bounds.extents.magnitude);
+        return Mathf.Max(1f, item.subjectSize);
     }
 
     // Something worth watching: ships mostly (bigger ones more often), sometimes a craft.

@@ -28,7 +28,9 @@ public class ReplayPlayer : MonoBehaviour
     private ReplayShotRenderer shots;
     private int soundCursor, puffCursor, streakCursor;
     private readonly Dictionary<string, ParticleSystem[]> puffEmitters = new Dictionary<string, ParticleSystem[]>();
+    private readonly Dictionary<string, Transform> puffRoots = new Dictionary<string, Transform>();
     private bool exiting;
+    private bool stageWarned;
 
     private class GhostMesh
     {
@@ -147,6 +149,13 @@ public class ReplayPlayer : MonoBehaviour
 
     private void Show(float t)
     {
+        // The stage carries every ghost at world scale: nothing may move or scale it.
+        if (Stage.localScale != Vector3.one || Stage.position != Vector3.zero || Stage.rotation != Quaternion.identity)
+        {
+            if (!stageWarned) { Debug.LogWarning($"Replay stage was moved/scaled ({Stage.position}, {Stage.localScale}) - reset."); stageWarned = true; }
+            Stage.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+            Stage.localScale = Vector3.one;
+        }
         foreach (ReplayAnchor a in Data.anchors) { a.shown = 0; a.placed = false; }
 
         List<ReplayItem> items = Data.items;
@@ -304,8 +313,10 @@ public class ReplayPlayer : MonoBehaviour
                 system.Play(false);
             }
             puffEmitters[p.key] = systems;
+            puffRoots[p.key] = copy.transform;
         }
-        systems[0].transform.root.localScale = p.template.transform.localScale * p.scale;
+        // The puff copy's own scale (not its topmost parent's: that's the replay's whole stage).
+        if (puffRoots.TryGetValue(p.key, out Transform puffRoot) && puffRoot != null) puffRoot.localScale = p.template.transform.localScale * p.scale;
         ParticleSystem.EmitParams at = new ParticleSystem.EmitParams { position = p.position, applyShapeToPosition = true };
         foreach (ParticleSystem system in systems) if (system != null) system.Emit(at, p.count);
     }

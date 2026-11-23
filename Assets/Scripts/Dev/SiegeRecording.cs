@@ -47,6 +47,9 @@ public class SiegeRecording : MonoBehaviour
     {
         ("Human/Human_Battleship", 4), ("Human/Human_Cruiser", 5), ("Human/Human_Destroyer", 6), ("Human/Human_Corvette", 7), ("Human/Human_Carrier", 1),
     };
+    // -mock: a small fight with no strike craft, to check replays frame by frame.
+    private static readonly (string key, int count)[] MockHumans = { ("Human/Human_Battleship", 1), ("Human/Human_Cruiser", 2), ("Human/Human_Destroyer", 2) };
+    private static readonly (string key, int count)[] MockAvanti = { ("Avanti/Avanti_Cruiser", 2), ("Avanti/Avanti_Destroyer", 2) };
     private static readonly (string key, int count)[] AvantiCostFleet =
     {
         ("Avanti/Avanti_Capital", 3), ("Avanti/Avanti_Cruiser", 3), ("Avanti/Avanti_Destroyer", 3), ("Avanti/Avanti_Corvette", 3), ("Avanti/Avanti_Carrier", 1),
@@ -154,7 +157,14 @@ public class SiegeRecording : MonoBehaviour
         context.defenderShipyardTier = int.TryParse(Argument("-yardTier", ""), out int yardTier) ? yardTier : 0; // 0 = the Heavy Cruiser Yard
         context.defenderHasBattleStation = true;
 
-        if (balance == "cost" || balance == "pop")
+        if (HasFlag("-mock"))
+        {
+            context.defenderHasShipyard = false;
+            context.defenderHasBattleStation = false;
+            Fill(context, MockHumans, attacker, "", true);
+            Fill(context, MockAvanti, avanti, "", false);
+        }
+        else if (balance == "cost" || balance == "pop")
         {
             context.defenderHasShipyard = false;
             context.defenderHasBattleStation = false;
@@ -236,6 +246,7 @@ public class SiegeRecording : MonoBehaviour
         if (HasFlag("-hitTest")) { Laser.DiagnoseMisses = true; yield return HitTest(); Finish(); yield break; }
         if (HasFlag("-craftStills")) { yield return CraftStills(); Finish(); yield break; }
         if (HasFlag("-openingTest")) { yield return OpeningTest(); Finish(); yield break; }
+        if (HasFlag("-mock")) { yield return MockReplayTest(); Finish(); yield break; }
         if (HasFlag("-reel")) yield return DestructionReel();
         else yield return Battle();
         Finish();
@@ -1210,6 +1221,16 @@ public class SiegeRecording : MonoBehaviour
     private IEnumerator ReplayTest()
     {
         float.TryParse(Argument("-replayAt", "90"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float at);
+        // Stills of the real battle at a few moments, with the camera that took them, to compare with the replay.
+        List<(float t, Vector3 pos, Quaternion rot, float fov)> moments = new List<(float, Vector3, Quaternion, float)>();
+        foreach (float fraction in new[] { 0.35f, 0.55f, 0.75f, 0.95f })
+        {
+            while (Time.time < startedAt + at * fraction) yield return null;
+            yield return new WaitForEndOfFrame();
+            Camera live = Camera.main;
+            moments.Add((Time.time, live.transform.position, live.transform.rotation, live.fieldOfView));
+            ScreenCapture.CaptureScreenshot(Path.Combine(outputDir, $"pair{moments.Count - 1}_live.png"));
+        }
         while (Time.time < startedAt + at) yield return null;
         ReplayRecorder recorder = ReplayRecorder.Instance;
         if (recorder == null) { report.AppendLine("replay test: no recorder"); Finish(); yield break; }
@@ -1245,6 +1266,26 @@ public class SiegeRecording : MonoBehaviour
             report.AppendLine($"replay {label}: t={player.Now - player.Start0:F1}s speed {speed} {mode} frame avg {total / Mathf.Max(1, frames - 4):F1} ms worst {worst:F0} ms ghosts shown {shown} shot '{player.Camera.ShotName}'");
         }
 
+        // The same moments from the same cameras, replayed.
+        player.Camera.SetMode(ReplayCamera.Mode.Free);
+        player.SetPaused(true);
+        for (int i = 0; i < moments.Count; i++)
+        {
+            player.Seek(moments[i].t);
+            player.Camera.SetMode(ReplayCamera.Mode.Cinematic);
+            Camera.main.transform.SetPositionAndRotation(moments[i].pos, moments[i].rot);
+            player.Camera.SetMode(ReplayCamera.Mode.Free); // (takes its heading from where the camera now looks)
+            Camera.main.fieldOfView = moments[i].fov;
+            for (int f = 0; f < 4; f++) yield return null;
+            ScreenCapture.CaptureScreenshot(Path.Combine(outputDir, $"pair{i}_replay.png"));
+            yield return null;
+            report.AppendLine($"pair{i}: t={moments[i].t - startedAt:F1}s cam {moments[i].pos} fov {moments[i].fov:F1}");
+        }
+        Camera.main.fieldOfView = 60f;
+        System.Text.StringBuilder lines = new System.Text.StringBuilder();
+        foreach (var m in moments) lines.AppendLine(string.Join(",", new[] { m.t, m.pos.x, m.pos.y, m.pos.z, m.rot.x, m.rot.y, m.rot.z, m.rot.w, m.fov }.Select(v => v.ToString(System.Globalization.CultureInfo.InvariantCulture))));
+        File.WriteAllText(Path.Combine(outputDir, "moments.txt"), lines.ToString());
+
         yield return Watch("cinematic_early", Mathf.Min(20f, span * 0.2f), 6f, 1f, ReplayCamera.Mode.Cinematic);
         yield return Watch("cinematic_mid_fast", span * 0.6f, 6f, 4f, ReplayCamera.Mode.Cinematic);
         // Free camera: high over the middle of the fight, looking down at it.
@@ -1254,6 +1295,7 @@ public class SiegeRecording : MonoBehaviour
         yield return Watch("free_late", span * 0.9f, 4f, 1f, ReplayCamera.Mode.Free);
         yield return Watch("rewind_early", Mathf.Min(35f, span * 0.4f), 4f, 1f, ReplayCamera.Mode.Cinematic);
         yield return Watch("forward_end", span - 3f, 5f, 1f, ReplayCamera.Mode.Cinematic);
+        report.AppendLine($"replay stage scale after playback: {player.Stage.localScale}, puffs recorded {player.Data.puffs.Count}");
         player.Exit();
         yield return null;
 
@@ -1273,7 +1315,171 @@ public class SiegeRecording : MonoBehaviour
         report.AppendLine(saved == null ? "replay save: no file after 300 s"
             : $"replay save: {saved} {new FileInfo(saved).Length / 1048576f:F1} MB, main thread {mainThread:F1} s, written after {Time.realtimeSinceStartup - saveStarted:F0} s");
         report.AppendLine(ReplayFile.LastSizes);
+
+        // Round trip: the saved file read back, compared value by value with what was recorded.
+        if (saved != null)
+        {
+            ReplayRecorder loaded = null;
+            yield return ReplayFile.Load(saved, (r, e) => loaded = r);
+            if (loaded == null) report.AppendLine("round trip: load failed");
+            else
+            {
+                int bad = 0;
+                void Diff(string what) { if (bad++ < 25) report.AppendLine("  round trip: " + what); }
+                report.AppendLine($"round trip: anchors {recorder.anchors.Count}/{loaded.anchors.Count} items {recorder.items.Count}/{loaded.items.Count}");
+                for (int i = 0; i < Mathf.Min(recorder.anchors.Count, loaded.anchors.Count); i++)
+                {
+                    ReplayAnchor a = recorder.anchors[i], b = loaded.anchors[i];
+                    foreach (float f in new[] { 0f, 0.5f, 1f })
+                    {
+                        float t = Mathf.Lerp(a.born, Mathf.Min(a.gone, recorder.EndTime), f);
+                        int c1 = 0, c2 = 0;
+                        ReplayPose pa = a.pose.Evaluate(t, ref c1), pb = b.pose.Evaluate(t, ref c2);
+                        if ((pa.p - pb.p).magnitude > 0.01f || (pa.s - pb.s).magnitude > 0.001f) Diff($"anchor {a.name} t={t:F1} pos {pa.p} vs {pb.p} scale {pa.s} vs {pb.s}");
+                    }
+                }
+                for (int i = 0; i < Mathf.Min(recorder.items.Count, loaded.items.Count); i++)
+                {
+                    ReplayItem a = recorder.items[i], b = loaded.items[i];
+                    if (a.GetType() != b.GetType()) { Diff($"item {i} type {a.GetType().Name} vs {b.GetType().Name}"); continue; }
+                    foreach (float f in new[] { 0f, 0.5f, 1f })
+                    {
+                        float t = Mathf.Lerp(a.born, Mathf.Min(a.gone, recorder.EndTime), f);
+                        int c1 = 0, c2 = 0, c3 = 0, c4 = 0;
+                        ReplayPose pa = a.pose.Evaluate(t, ref c1), pb = b.pose.Evaluate(t, ref c2);
+                        ReplayAnchor aa = a.anchors.Evaluate(t, ref c3), ab = b.anchors.Evaluate(t, ref c4);
+                        if ((pa.p - pb.p).magnitude > 0.01f || (pa.s - pb.s).magnitude > 0.001f || ReplayPose.AngleBetween(pa.r, pb.r) > 0.5f)
+                            Diff($"item {a.label} ({a.GetType().Name}) t={t:F1} pos {pa.p} vs {pb.p} scale {pa.s} vs {pb.s} keys {a.pose.Count}/{b.pose.Count} scales {(a.pose.scales != null ? a.pose.scales.Count : -1)}/{(b.pose.scales != null ? b.pose.scales.Count : -1)}");
+                        if ((aa != null ? aa.id : -1) != (ab != null ? ab.id : -1)) Diff($"item {a.label} t={t:F1} anchor {aa?.id} vs {ab?.id}");
+                    }
+                    if (a is ReplayMeshItem ma && b is ReplayMeshItem mb)
+                    {
+                        int c5 = 0, c6 = 0;
+                        Mesh xa = ma.meshes.Evaluate(a.born + 0.01f, ref c5), xb = mb.meshes.Evaluate(a.born + 0.01f, ref c6);
+                        if (xa != null && xb != null && (xa.bounds.size - xb.bounds.size).magnitude > 0.01f * Mathf.Max(1f, xa.bounds.size.magnitude))
+                            Diff($"mesh {a.label}: {xa.name} {xa.bounds.size} vs {xb.name} {xb.bounds.size}");
+                    }
+                }
+                report.AppendLine($"round trip: {bad} differences");
+                Destroy(loaded.gameObject);
+            }
+        }
         Finish();
+    }
+
+    // -mock: the small fight is played out, then its replay is watched with a still free camera on the first
+    // exchange of fire, every frame captured, and every warship hull's size on screen logged frame by frame.
+    private IEnumerator MockReplayTest()
+    {
+        startedAt = Time.time;
+        if (cinematic != null && CinematicCamera.Active) cinematic.Exit();
+        float firstShot = -1f, firstHit = -1f;
+        Vector3 front = Vector3.zero;
+        string hitName = null;
+        Transform hitRoot = null;
+        while (!GameManager.CombatOver && Time.time - startedAt < 300f)
+        {
+            if (firstHit < 0f)
+            {
+                foreach (UnitHealthManager u in UnitHealthManager.Active)
+                {
+                    if (u == null || u.IsDead || u.GetComponent<Squadron>() != null) continue;
+                    ShieldGenerator shield = u.GetComponent<ShieldGenerator>();
+                    bool hurt = u.currentHealth < u.maxHealth - 0.01f || (shield != null && shield.RippleCount > 0);
+                    if (!hurt) continue;
+                    firstHit = Time.time; hitName = u.name; hitRoot = u.transform;
+                    report.AppendLine($"mock: first hit t={firstHit - startedAt:F2}s on {u.name} at {u.transform.position}");
+                    break;
+                }
+            }
+            if (firstShot < 0f && UnitHealthManager.LastShotAnywhere > startedAt)
+            {
+                firstShot = UnitHealthManager.LastShotAnywhere;
+                // Where the two lines meet.
+                Vector3 a = Vector3.zero, b = Vector3.zero; int na = 0, nb = 0;
+                foreach (UnitHealthManager u in UnitHealthManager.Active)
+                {
+                    if (u == null || u.IsDead) continue;
+                    if (u.isAttackerSide) { a += u.transform.position; na++; } else { b += u.transform.position; nb++; }
+                }
+                front = (a / Mathf.Max(1, na) + b / Mathf.Max(1, nb)) * 0.5f;
+                report.AppendLine($"mock: first shot t={firstShot - startedAt:F1}s, lines meet at {front}");
+            }
+            yield return null;
+        }
+        report.AppendLine($"mock: battle over={GameManager.CombatOver} at t={Time.time - startedAt:F0}s");
+        yield return new WaitForSecondsRealtime(3f);
+
+        StartCoroutine(ReplayPlayer.Run());
+        yield return null; yield return null;
+        ReplayPlayer player = ReplayPlayer.Instance;
+        if (player == null || firstShot < 0f) { report.AppendLine("mock: no replay / no shots"); yield break; }
+
+        // A still camera on the first ship hit, from a couple of seconds before.
+        if (firstHit > 0f) firstShot = firstHit;
+        player.SetPaused(true);
+        player.Seek(firstShot - 2f);
+        yield return null; yield return null;
+        Vector3 aim = front;
+        float nearest = float.MaxValue;
+        float frameSize = 20f;
+        foreach (ReplayItem item in player.Data.items)
+        {
+            if (item.subject != ReplayKind.Ship || !item.ghostOn) continue;
+            bool target = hitName != null && item.ghostParent != null && item.ghostParent.name == hitName;
+            float d = target ? -1f : Vector3.Distance(item.ghostT.position, front);
+            if (d < nearest)
+            {
+                nearest = d; aim = item.ghostT.position;
+                Renderer r = item.ghost.GetComponent<Renderer>();
+                if (r != null) { aim = r.bounds.center; frameSize = r.bounds.extents.magnitude; }
+            }
+        }
+        player.Camera.SetMode(ReplayCamera.Mode.Cinematic);
+        Camera.main.transform.position = aim + new Vector3(0.6f, 0.45f, -1f).normalized * frameSize * 3.5f;
+        Camera.main.transform.LookAt(aim);
+        player.Camera.SetMode(ReplayCamera.Mode.Free);
+        Camera.main.fieldOfView = 60f;
+        report.AppendLine($"mock: camera {Camera.main.transform.position} looking at {aim}");
+        yield return null;
+
+        Dictionary<ReplayItem, float> last = new Dictionary<ReplayItem, float>();
+        StringBuilder frames = new StringBuilder();
+        int jumps = 0;
+        player.SetSpeed(1f);
+        player.SetPaused(false);
+        Camera view = Camera.main;
+        for (int frame = 0; frame < 600 && player.Now < firstShot + 6f; frame++)
+        {
+            yield return new WaitForEndOfFrame();
+            Texture2D shot = ScreenCapture.CaptureScreenshotAsTexture();
+            File.WriteAllBytes(Path.Combine(outputDir, $"mock_{frame:000}.jpg"), shot.EncodeToJPG(80));
+            Destroy(shot);
+            frames.Append($"frame {frame} t={player.Now - startedAt:F3}");
+            foreach (ReplayItem item in player.Data.items)
+            {
+                if (item.subject != ReplayKind.Ship || !item.ghostOn) continue;
+                Renderer r = item.ghost.GetComponent<Renderer>();
+                if (r == null) continue;
+                Bounds b = r.bounds;
+                Vector3 c = view.WorldToScreenPoint(b.center);
+                if (c.z <= 0f) continue;
+                float px = (view.WorldToScreenPoint(b.center + view.transform.up * b.extents.magnitude) - c).magnitude; // its radius on screen
+                MeshFilter f = item.ghost.GetComponent<MeshFilter>();
+                frames.Append($" | {item.label} r={px:F1}px lossy={item.ghostT.lossyScale.x:F3} anchor={(item.ghostParent != null ? item.ghostParent.ghost.lossyScale.x : 0f):F3} mesh={(f != null && f.sharedMesh != null ? f.sharedMesh.name + "/" + f.sharedMesh.vertexCount : "-")} ext={b.extents.magnitude:F2}");
+                if (last.TryGetValue(item, out float before) && before > 3f && Mathf.Abs(px - before) / before > 0.15f)
+                {
+                    jumps++;
+                    report.AppendLine($"mock: SIZE JUMP frame {frame} t={player.Now - startedAt:F3} {item.label} {before:F1}px -> {px:F1}px (lossy {item.ghostT.lossyScale.x:F3}, mesh {(f != null && f.sharedMesh != null ? f.sharedMesh.name + "/" + f.sharedMesh.vertexCount + " bounds " + f.sharedMesh.bounds.size : "-")}, drawn ext {b.extents.magnitude:F2})");
+                }
+                last[item] = px;
+            }
+            frames.AppendLine();
+        }
+        File.WriteAllText(Path.Combine(outputDir, "mock_frames.txt"), frames.ToString());
+        report.AppendLine($"mock: {jumps} size jumps");
+        player.Exit();
+        yield return null;
     }
 
     // Development builds: -profile records Unity's profiler through the main engagement (-profileFrom seconds in,

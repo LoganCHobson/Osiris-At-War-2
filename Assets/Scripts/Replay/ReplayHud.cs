@@ -1,3 +1,5 @@
+using System.Linq;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -86,6 +88,7 @@ public class ReplayHud : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.C)) player.Camera.Toggle();
         if (Input.GetKeyDown(KeyCode.Tab)) player.Camera.NextShot();
         if (Input.GetKeyDown(KeyCode.H)) hidden = !hidden;
+        if (Input.GetKeyDown(KeyCode.F8)) Snapshot();
         if (Input.GetKeyDown(KeyCode.Escape)) { player.Exit(); return; }
 
         panel.gameObject.SetActive(!hidden);
@@ -109,6 +112,37 @@ public class ReplayHud : MonoBehaviour
         float bar = Mathf.Max(0f, 1080f * 0.5f * (1f - aspect / 2.35f)) * letterbox;
         topBar.sizeDelta = new Vector2(0f, bar);
         bottomBar.sizeDelta = new Vector2(0f, bar);
+    }
+
+    // F8: what the replay is showing right now, appended to Replays/diagnostics.txt (for hunting display bugs).
+    private void Snapshot()
+    {
+        System.Text.StringBuilder sb = new System.Text.StringBuilder();
+        Camera cam = Camera.main;
+        sb.AppendLine($"==== {System.DateTime.Now:HH:mm:ss.fff} frame {Time.frameCount} replay t={player.Now - player.Start0:F2}s speed {player.Speed} paused {player.Paused} mode {player.Camera.CurrentMode}");
+        foreach (Camera c in FindObjectsByType<Camera>(FindObjectsSortMode.None))
+            sb.AppendLine($"camera {c.name}#{c.GetInstanceID()} on {c.enabled && c.gameObject.activeInHierarchy} main {c == cam} depth {c.depth} fov {c.fieldOfView:F2} pos {c.transform.position} rot {c.transform.eulerAngles} lossy {c.transform.lossyScale} parent {(c.transform.parent != null ? c.transform.parent.name : "-")}");
+        Transform stage = player.Stage;
+        sb.AppendLine($"stage pos {stage.position} rot {stage.eulerAngles} scale {stage.lossyScale} parent {(stage.parent != null ? stage.parent.name : "-")} children {stage.childCount}");
+        int shown = 0, anchorsShown = 0;
+        foreach (ReplayItem item in player.Data.items) if (item.ghostOn) shown++;
+        foreach (ReplayAnchor a in player.Data.anchors) if (a.shown > 0) anchorsShown++;
+        sb.AppendLine($"ghosts on {shown}, anchors drawn {anchorsShown}, ReplayPlayers {FindObjectsByType<ReplayPlayer>(FindObjectsSortMode.None).Length}, stages {GameObject.FindObjectsByType<Transform>(FindObjectsSortMode.None).Count(t => t.name == "ReplayStage")}");
+        if (cam != null)
+        {
+            List<ReplayItem> near = player.Data.items.Where(i => i.ghostOn && i.subject != ReplayKind.Other).OrderBy(i => Vector3.Distance(i.ghostT.position, cam.transform.position)).Take(8).ToList();
+            foreach (ReplayItem i in near)
+            {
+                Renderer r = i.ghost.GetComponent<Renderer>();
+                MeshFilter f = i.ghost.GetComponent<MeshFilter>();
+                sb.AppendLine($"  {i.label} dist {Vector3.Distance(i.ghostT.position, cam.transform.position):F1} pos {i.ghostT.position} lossy {i.ghostT.lossyScale} anchor {(i.ghostParent != null ? i.ghostParent.name + " " + i.ghostParent.ghost.lossyScale : "-")} mesh {(f != null && f.sharedMesh != null ? f.sharedMesh.name + " v" + f.sharedMesh.vertexCount + " b" + f.sharedMesh.bounds.size : "-")} drawn {(r != null ? r.bounds.size.ToString() : "-")}");
+            }
+        }
+        string path = System.IO.Path.Combine(ReplayFile.Folder, "diagnostics.txt");
+        System.IO.Directory.CreateDirectory(ReplayFile.Folder);
+        System.IO.File.AppendAllText(path, sb.ToString());
+        ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(ReplayFile.Folder, $"diagnostics_{Time.frameCount}.png"));
+        Debug.Log("Replay snapshot written to " + path);
     }
 
     private static string Format(float seconds)
