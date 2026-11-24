@@ -1377,8 +1377,31 @@ public class SiegeRecording : MonoBehaviour
         Vector3 front = Vector3.zero;
         string hitName = null;
         Transform hitRoot = null;
+        // Live stills of lit shields, from a camera put right on them (the replay is shown the same moments).
+        List<(float t, Vector3 pos, Quaternion rot)> shieldShots = new List<(float, Vector3, Quaternion)>();
+        float nextShieldShot = 0f;
+        foreach (RTSCameraController c in FindObjectsByType<RTSCameraController>(FindObjectsSortMode.None)) c.enabled = false;
         while (!GameManager.CombatOver && Time.time - startedAt < 300f)
         {
+            if (shieldShots.Count < 4 && Time.time >= nextShieldShot)
+            {
+                foreach (ShieldGenerator g in FindObjectsByType<ShieldGenerator>(FindObjectsSortMode.None))
+                {
+                    MeshRenderer bubble = g.BubbleRenderer;
+                    if (bubble == null || !bubble.enabled || !bubble.gameObject.activeInHierarchy) continue;
+                    Bounds b = bubble.bounds;
+                    Transform eye = Camera.main.transform;
+                    eye.position = b.center + (g.transform.right * 1.2f + Vector3.up * 0.5f).normalized * b.extents.magnitude * 2.5f;
+                    eye.LookAt(b.center);
+                    Camera.main.fieldOfView = 60f;
+                    yield return new WaitForEndOfFrame();
+                    shieldShots.Add((Time.time, eye.position, eye.rotation));
+                    ScreenCapture.CaptureScreenshot(Path.Combine(outputDir, $"shield{shieldShots.Count - 1}_live.png"));
+                    report.AppendLine($"mock: shield still {shieldShots.Count - 1} t={Time.time - startedAt:F2}s on {g.name}, bubble scale {bubble.transform.lossyScale} rot {bubble.transform.rotation.eulerAngles}");
+                    nextShieldShot = Time.time + 6f;
+                    break;
+                }
+            }
             if (firstHit < 0f)
             {
                 foreach (UnitHealthManager u in UnitHealthManager.Active)
@@ -1414,6 +1437,26 @@ public class SiegeRecording : MonoBehaviour
         yield return null; yield return null;
         ReplayPlayer player = ReplayPlayer.Instance;
         if (player == null || firstShot < 0f) { report.AppendLine("mock: no replay / no shots"); yield break; }
+
+        // The live shield stills' moments, replayed from the same cameras.
+        for (int i = 0; i < shieldShots.Count; i++)
+        {
+            player.SetPaused(true);
+            player.Seek(shieldShots[i].t);
+            player.Camera.SetMode(ReplayCamera.Mode.Cinematic);
+            Camera.main.transform.SetPositionAndRotation(shieldShots[i].pos, shieldShots[i].rot);
+            player.Camera.SetMode(ReplayCamera.Mode.Free);
+            Camera.main.fieldOfView = 60f;
+            for (int f = 0; f < 5; f++) yield return null;
+            ScreenCapture.CaptureScreenshot(Path.Combine(outputDir, $"shield{i}_replay.png"));
+            foreach (ReplayItem item in player.Data.items)
+            {
+                if (!(item is ReplayShieldItem) || !item.ghostOn) continue;
+                if (Vector3.Distance(item.ghostT.position, shieldShots[i].pos) > 200f) continue;
+                report.AppendLine($"mock: replay shield {i} {item.label} ghost scale {item.ghostT.lossyScale} rot {item.ghostT.rotation.eulerAngles} local {item.ghostT.localScale}");
+            }
+            yield return null;
+        }
 
         // A still camera on the first ship hit, from a couple of seconds before.
         if (firstHit > 0f) firstShot = firstHit;
@@ -1480,6 +1523,22 @@ public class SiegeRecording : MonoBehaviour
         report.AppendLine($"mock: {jumps} size jumps");
         player.Exit();
         yield return null;
+
+        // Saved, for the same shield moments to be shown from the file (ReplayWatchTest -moments shield_moments.txt).
+        StringBuilder lines = new StringBuilder();
+        foreach (var m in shieldShots) lines.AppendLine(string.Join(",", new[] { m.t, m.pos.x, m.pos.y, m.pos.z, m.rot.x, m.rot.y, m.rot.z, m.rot.w, 60f }.Select(v => v.ToString(System.Globalization.CultureInfo.InvariantCulture))));
+        File.WriteAllText(Path.Combine(outputDir, "shield_moments.txt"), lines.ToString());
+        System.DateTime savedFrom = System.DateTime.Now.AddSeconds(-1);
+        yield return ReplayFile.Save(ReplayRecorder.Instance);
+        for (float waited = 0f; waited < 120f; waited += 1f)
+        {
+            yield return new WaitForSecondsRealtime(1f);
+            bool done = false;
+            if (Directory.Exists(ReplayFile.Folder))
+                foreach (string f in Directory.GetFiles(ReplayFile.Folder, "*" + ReplayFile.Extension, SearchOption.AllDirectories))
+                    if (File.GetLastWriteTime(f) > savedFrom) { report.AppendLine($"mock: saved {f}"); done = true; }
+            if (done) break;
+        }
     }
 
     // Development builds: -profile records Unity's profiler through the main engagement (-profileFrom seconds in,

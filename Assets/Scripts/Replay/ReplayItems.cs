@@ -72,6 +72,7 @@ public abstract class ReplayItem
     public virtual void Shown(ReplayPlayer player, float t) { }
     public virtual void Hidden(ReplayPlayer player) { }
     public virtual Vector3 Scale(Vector3 recorded) => recorded; // the ghost's local scale for a recorded one
+    public virtual bool FacesCamera => false;
 
     public static string NameOf(Transform t) => t != null ? t.name : "item";
 
@@ -253,6 +254,11 @@ public class ReplayMeshItem : ReplayRendererItem
     protected MeshFilter ghostFilter;
 
     public ReplayMeshItem(MeshRenderer r, MeshFilter f) { Capture(r); filter = f; }
+
+    // Glow cards the game turns to face its camera (a strike craft's shield flash, FTL glows): recorded facing the
+    // battle's camera, so a replay turns them to face its own.
+    public override bool FacesCamera => facesCamera ??= label == "ShieldFlash" || label == "FTLCore" || label == "FTLFlash";
+    private bool? facesCamera;
     public ReplayMeshItem() { }
 
     public override int TypeTag => 1;

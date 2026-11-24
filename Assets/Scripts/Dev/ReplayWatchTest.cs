@@ -71,6 +71,48 @@ public class ReplayWatchTest : MonoBehaviour
             yield return null;
             drift = Mathf.Max(drift, Vector3.Distance(from, eye.position));
         }
+        // Glow cards (strike craft shield flashes, FTL glows) must face this camera, whatever the battle's camera did.
+        int cards = 0; float worstCard = 0f;
+        player.SetPaused(false);
+        player.Camera.SetMode(ReplayCamera.Mode.Free);
+        for (float until = Time.unscaledTime + 20f; Time.unscaledTime < until && cards < 50;)
+        {
+            yield return null;
+            Transform eyeCam = Camera.main.transform;
+            foreach (ReplayItem item in player.Data.items)
+            {
+                if (!item.ghostOn || !item.FacesCamera) continue;
+                cards++;
+                worstCard = Mathf.Max(worstCard, Vector3.Angle(item.ghostT.forward, item.ghostT.position - eyeCam.position));
+            }
+        }
+        report.AppendLine($"glow cards seen {cards}, worst angle away from the camera {worstCard:F1} deg");
+        int allCards = 0, cardShots = 0;
+        foreach (ReplayItem item in player.Data.items)
+        {
+            if (!item.FacesCamera) continue;
+            allCards++;
+            if (cardShots >= 3) continue;
+            int vi = item.visible.times.Count > 0 ? item.visible.values.IndexOf(true) : -1;
+            if (vi < 0) continue;
+            float at = item.visible.times[vi] + 0.05f;
+            player.SetPaused(true);
+            player.Seek(at);
+            yield return null; yield return null;
+            if (!item.ghostOn) continue;
+            player.Camera.SetMode(ReplayCamera.Mode.Cinematic);
+            Transform e = Camera.main.transform;
+            e.position = item.ghostT.position + new Vector3(1f, 0.3f, 0.4f).normalized * 12f;
+            e.LookAt(item.ghostT.position);
+            player.Camera.SetMode(ReplayCamera.Mode.Free);
+            yield return null; yield return null;
+            ScreenCapture.CaptureScreenshot(Path.Combine(dir, $"card{cardShots}.png"));
+            yield return null;
+            report.AppendLine($"card {cardShots} {item.label} t={at - player.Start0:F2}: angle from camera {Vector3.Angle(item.ghostT.forward, item.ghostT.position - e.position):F1} deg");
+            cardShots++;
+        }
+        report.AppendLine($"glow cards in the recording: {allCards}");
+
         // Every ship's recorded scale over the whole battle: where it changes, and to what.
         int scaleChanges = 0;
         foreach (ReplayAnchor a in player.Data.anchors)
@@ -117,6 +159,13 @@ public class ReplayWatchTest : MonoBehaviour
                 Camera.main.fieldOfView = v[8];
                 for (int f = 0; f < 6; f++) yield return null;
                 ScreenCapture.CaptureScreenshot(Path.Combine(dir, $"pair{i}_file.png"));
+                foreach (ReplayItem item in player.Data.items)
+                {
+                    if (!(item is ReplayShieldItem) || !item.ghostOn || Vector3.Distance(item.ghostT.position, Camera.main.transform.position) > 200f) continue;
+                    MeshFilter mf = item.ghost.GetComponent<MeshFilter>();
+                    MeshRenderer mr = item.ghost.GetComponent<MeshRenderer>();
+                    report.AppendLine($"file shield {i}: scale {item.ghostT.lossyScale} rot {item.ghostT.rotation.eulerAngles} mesh {(mf.sharedMesh != null ? mf.sharedMesh.name + " v" + mf.sharedMesh.vertexCount + " b" + mf.sharedMesh.bounds.size : "none")} material {(mr.sharedMaterial != null ? mr.sharedMaterial.name + "/" + mr.sharedMaterial.shader.name : "none")}");
+                }
                 yield return null;
                 i++;
             }

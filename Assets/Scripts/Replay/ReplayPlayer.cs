@@ -159,6 +159,7 @@ public class ReplayPlayer : MonoBehaviour
         foreach (ReplayAnchor a in Data.anchors) { a.shown = 0; a.placed = false; }
 
         List<ReplayItem> items = Data.items;
+        UnityEngine.Camera view = UnityEngine.Camera.main;
         for (int i = 0; i < items.Count; i++)
         {
             ReplayItem item = items[i];
@@ -185,6 +186,7 @@ public class ReplayPlayer : MonoBehaviour
                 item.ghostT.localScale = item.Scale(p.s);
                 item.posed = true;
             }
+            if (item.FacesCamera && view != null) item.ghostT.rotation = Quaternion.LookRotation(item.ghostT.position - view.transform.position, view.transform.up);
             bool appearing = !item.ghostOn;
             if (appearing) { item.ghost.SetActive(true); item.ghostOn = true; item.Shown(this, t); }
             item.Apply(this, t, jumped || appearing);
